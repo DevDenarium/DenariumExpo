@@ -160,4 +160,88 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    modalContainer: {
+        width: '80%',
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#D4AF37',
+    },
+    modalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    modalText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 15,
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 6,
+        marginHorizontal: 5,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    cancelButton: {
+        backgroundColor: '#555555',
+    },
+    confirmButton: {
+        backgroundColor: '#D4AF37',
+    },
+    deleteButton: {
+        backgroundColor: '#F44336',
+    },
+    editButton: {
+        backgroundColor: '#2196F3',
+    },
+    modalButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        marginTop: 15,
+        padding: 10,
+        alignItems: 'center',
+    },
+    closeButtonText: {
+        color: '#D4AF37',
+        fontWeight: 'bold',
+    },
+    detailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+        paddingVertical: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    detailLabel: {
+        color: '#AAAAAA',
+        fontSize: 14,
+    },
+    detailValue: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
 });

@@ -4,18 +4,16 @@ import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
 import { FinanceService } from './finance.service';
-import { BalanceSummary, Currency, FinanceSettings, SortOption, FilterOption } from './FinanceScreen.types';
+import { BalanceSummary, Currency, FinanceSettings, SortOption, FilterOption, CURRENCIES } from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_SETTINGS: FinanceSettings = {
-    currency: 'USD',
+    currency: CURRENCIES.find(c => c.code === 'CRC') || CURRENCIES[0],
     sortBy: 'recent',
     filterBy: 'all'
 };
-
-const EXCHANGE_RATE = 560;
 
 const FinanceScreen: React.FC = () => {
     const [balance, setBalance] = useState<BalanceSummary>({
@@ -33,7 +31,16 @@ const FinanceScreen: React.FC = () => {
             try {
                 const savedSettings = await AsyncStorage.getItem('financeSettings');
                 if (savedSettings) {
-                    setSettings(JSON.parse(savedSettings));
+                    const parsedSettings = JSON.parse(savedSettings);
+                    if (typeof parsedSettings.currency === 'string') {
+                        const currency = CURRENCIES.find(c => c.code === parsedSettings.currency) || DEFAULT_SETTINGS.currency;
+                        setSettings({
+                            ...parsedSettings,
+                            currency
+                        });
+                    } else {
+                        setSettings(parsedSettings);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -76,9 +83,7 @@ const FinanceScreen: React.FC = () => {
     }, []);
 
     const formatAmount = (amount: number): string => {
-        const convertedAmount = settings.currency === 'CRC' ? amount * EXCHANGE_RATE : amount;
-        const symbol = settings.currency === 'CRC' ? '₡' : '$';
-        return `${symbol}${convertedAmount.toFixed(2)}`;
+        return `${settings.currency.symbol}${amount.toFixed(2)}`;
     };
 
     return (
@@ -101,7 +106,7 @@ const FinanceScreen: React.FC = () => {
                 }
             >
                 <View style={styles.balanceContainer}>
-                    <Text style={styles.balanceTitle}>Balance Actual ({settings.currency})</Text>
+                    <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
                     <Text style={[
                         styles.balanceAmount,
                         balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
@@ -122,10 +127,10 @@ const FinanceScreen: React.FC = () => {
 
                 <FinanceList
                     refreshTrigger={refreshTrigger}
-                    currency={settings.currency}
+                    currency={settings.currency.symbol}
                     sortBy={settings.sortBy}
                     filterBy={settings.filterBy}
-                    exchangeRate={EXCHANGE_RATE}
+                    onRefresh={onRefresh}
                 />
             </ScrollView>
 

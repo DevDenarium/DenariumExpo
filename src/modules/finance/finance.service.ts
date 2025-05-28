@@ -42,13 +42,32 @@ export const FinanceService = {
     async updateEntry(id: string, updateData: any): Promise<any> {
         const token = await this.getToken();
         try {
-            const response = await axios.patch(`${API_BASE_URL}/finance/${id}`, updateData, {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await axios.put(`${API_BASE_URL}/finance/${id}`, updateData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
-        } catch (error) {
-            console.error('Error updating finance entry:', error);
-            throw error;
+        } catch (error: unknown) {
+            let errorMessage = 'Unknown error occurred';
+            let statusCode = 500;
+
+            if (axios.isAxiosError(error)) {
+                errorMessage = error.response?.data?.message || error.message;
+                statusCode = error.response?.status || 500;
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            console.error('Error updating finance entry:', {
+                url: `${API_BASE_URL}/finance/${id}`,
+                error: errorMessage,
+                status: statusCode,
+                data: axios.isAxiosError(error) ? error.response?.data : undefined
+            });
+
+            throw new Error(errorMessage);
         }
     },
 

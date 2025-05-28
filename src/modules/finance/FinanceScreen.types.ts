@@ -6,7 +6,6 @@ export interface FinanceEntry {
     type: 'income' | 'expense';
     category?: string;
     date: string;
-
 }
 
 export interface CreateEntryDto {
@@ -24,7 +23,17 @@ export interface BalanceSummary {
     expenses: number;
 }
 
-export type Currency = 'CRC' | 'USD';
+export interface Currency {
+    symbol: string;
+    code: string;
+    name: string;
+}
+
+export const CURRENCIES: Currency[] = [
+    { symbol: '$', code: 'USD', name: 'Dólares' },
+    { symbol: '₡', code: 'CRC', name: 'Colones' },
+];
+
 export type SortOption = 'recent' | 'oldest' | 'highest' | 'lowest' | 'type';
 export type FilterOption = 'all' | 'income' | 'expense' | 'lastMonth' | 'last3Months';
 
@@ -33,6 +42,7 @@ export interface FinanceSettings {
     sortBy: SortOption;
     filterBy: FilterOption;
 }
+
 export interface FinanceScreenProps {
     navigation: any;
     route: {
@@ -47,6 +57,4 @@ export interface FinanceScreenProps {
     };
 }
 
-
-
-
+export type CurrencyCode = 'USD' | 'CRC';

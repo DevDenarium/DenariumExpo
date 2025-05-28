@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, Pressable } from 'react-native';
 import { styles } from './ProfileScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +21,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     const handleUpdateProfile = async () => {
         if (!isEditing) {
@@ -28,6 +29,12 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
             return;
         }
 
+        // Mostrar el popup de confirmación antes de guardar
+        setShowConfirmation(true);
+    };
+
+    const confirmUpdateProfile = async () => {
+        setShowConfirmation(false);
         setLoading(true);
         setError(null);
 
@@ -38,7 +45,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
             const response = await axios.put(
                 `${API_BASE_URL}/auth/profile`,
                 {
-                    firstName: user.firstName?.trim(), // Asegura que no sea undefined
+                    firstName: user.firstName?.trim(),
                     lastName: user.lastName?.trim(),
                 },
                 {
@@ -48,7 +55,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                     }
                 }
             );
-            console.log('Update response:', response.data); // Debug
+            console.log('Update response:', response.data);
             Alert.alert('Éxito', 'Perfil actualizado correctamente');
             setIsEditing(false);
         } catch (error) {
@@ -135,6 +142,37 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
 
     return (
         <View style={styles.container}>
+            {/* Modal de confirmación */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={showConfirmation}
+                onRequestClose={() => setShowConfirmation(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Confirmar cambios</Text>
+                        <Text style={styles.modalText}>¿Estás seguro que deseas guardar los cambios en tu perfil?</Text>
+
+                        <View style={styles.modalButtonContainer}>
+                            <Pressable
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setShowConfirmation(false)}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[styles.modalButton, styles.confirmButton]}
+                                onPress={confirmUpdateProfile}
+                            >
+                                <Text style={styles.modalButtonText}>Confirmar</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <View style={styles.profileHeader}>
                 <View style={styles.profileImageContainer}>
                     {user.picture ? (

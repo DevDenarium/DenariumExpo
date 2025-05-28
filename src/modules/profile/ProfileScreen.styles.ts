@@ -1,3 +1,4 @@
+// ProfileScreen.styles.ts
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
@@ -70,5 +71,54 @@ export const styles = StyleSheet.create({
         color: '#FF5555',
         textAlign: 'center',
         marginBottom: 15,
+    },
+    // Estilos para el modal de confirmación
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    modalContainer: {
+        width: '80%',
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#D4AF37',
+    },
+    modalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    modalText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 6,
+        marginHorizontal: 5,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#555555',
+    },
+    confirmButton: {
+        backgroundColor: '#D4AF37',
+    },
+    modalButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
     },
 });
