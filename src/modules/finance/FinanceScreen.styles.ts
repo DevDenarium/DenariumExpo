@@ -45,6 +45,8 @@ export const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 20,
         marginBottom: 20,
+        position: 'relative',
+        zIndex: 1,
     },
     sectionTitle: {
         color: '#D4AF37',
@@ -81,6 +83,25 @@ export const styles = StyleSheet.create({
         padding: 15,
         marginBottom: 15,
         color: '#FFFFFF',
+        width: '100%',
+    },
+    dateInput: {
+        backgroundColor: '#333333',
+        borderRadius: 5,
+        padding: 15,
+        marginBottom: 15,
+        color: '#FFFFFF',
+        width: '100%',
+    },
+    dateInputContainer: {
+        width: '100%',
+        marginBottom: 15,
+        marginTop: 0,
+    },
+    dateInputContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     submitButton: {
         backgroundColor: '#D4AF37',
@@ -131,6 +152,11 @@ export const styles = StyleSheet.create({
     expenseAmount: {
         color: '#F44336',
     },
+    entryDescription: {
+        color: '#AAAAAA',
+        fontSize: 12,
+        marginTop: 4,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -154,11 +180,6 @@ export const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#2a2a2a',
         borderRadius: 20,
-    },
-    entryDescription: {
-        color: '#AAAAAA',
-        fontSize: 12,
-        marginTop: 4,
     },
     modalOverlay: {
         flex: 1,
@@ -242,6 +263,138 @@ export const styles = StyleSheet.create({
     detailValue: {
         color: '#FFFFFF',
         fontSize: 14,
+        fontWeight: 'bold',
+    },
+    datePickerContainer: {
+        position: 'relative',
+        zIndex: 2,
+        width: '100%',
+    },
+    datePickerWrapper: {
+        position: 'absolute',
+        top: 60,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        elevation: 5,
+    },
+    datePickerButton: {
+        backgroundColor: '#D4AF37',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    datePickerButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    calendarHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        backgroundColor: '#2a2a2a',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+    },
+    calendarTitle: {
+        color: '#D4AF37',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    calendarDayNames: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingVertical: 10,
+        backgroundColor: '#333333',
+    },
+    calendarDayName: {
+        color: '#AAAAAA',
+        fontWeight: 'bold',
+        width: 32,
+        textAlign: 'center',
+    },
+    calendarDays: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        backgroundColor: '#2a2a2a',
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
+    },
+    calendarDay: {
+        width: '14.28%',
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    calendarDayText: {
+        color: '#FFFFFF',
+    },
+    calendarDayDisabled: {
+        color: '#555555',
+    },
+    calendarDaySelected: {
+        backgroundColor: '#D4AF37',
+        borderRadius: 16,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calendarDaySelectedText: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    listHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    monthSelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    monthText: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginHorizontal: 10,
+    },
+    filterButton: {
+        padding: 8,
+        backgroundColor: '#333333',
+        borderRadius: 20,
+    },
+    filterContainer: {
+        position: 'absolute',
+        right: 0,
+        top: 40,
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        padding: 10,
+        zIndex: 10,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    filterOption: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+    },
+    filterOptionText: {
+        color: '#FFFFFF',
+    },
+    filterOptionSelected: {
+        backgroundColor: '#D4AF37',
+        borderRadius: 5,
+    },
+    filterOptionSelectedText: {
+        color: '#000000',
         fontWeight: 'bold',
     },
 });

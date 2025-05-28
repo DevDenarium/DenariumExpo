@@ -12,6 +12,7 @@ import { User } from './src/modules/dashboard/DashboardScreen.types';
 import { CommonActions } from '@react-navigation/native';
 import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen';
 
+
 import { RootStackParamList, DrawerParamList } from './src/modules/navegation/navegation.types';
 import PaymentsScreen from "./src/modules/payments/paymentsScreen";
 import PaymentSuccessScreen from "./src/modules/payments/paymentsSuccessScreen";
