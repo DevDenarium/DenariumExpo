@@ -8,12 +8,16 @@ import {
     Modal,
     Pressable,
     TextInput,
-    Alert
+    Alert,
+    Platform,
+    StyleSheet
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './FinanceScreen.styles';
 import { FinanceService } from './finance.service';
 import { FinanceEntry, SortOption, FilterOption } from './FinanceScreen.types';
+import { registerLocale, setDefaultLocale } from "react-datepicker";
+import { es } from 'date-fns/locale';
 
 interface FinanceListProps {
     refreshTrigger: boolean;
@@ -21,6 +25,48 @@ interface FinanceListProps {
     sortBy: SortOption;
     filterBy: FilterOption;
     onRefresh: () => void;
+}
+
+type DateTimePickerProps = {
+    value: Date;
+    mode: 'date' | 'time' | 'datetime';
+    display: 'default' | 'spinner' | 'compact' | 'inline';
+    onChange: (event: any, date?: Date) => void;
+    locale?: string;
+    textColor?: string;
+    themeVariant?: 'light' | 'dark';
+};
+
+type ReactDatePickerProps = {
+    selected: Date;
+    onChange: (date: Date) => void;
+    dateFormat: string;
+    className?: string;
+    customInput?: React.ReactElement;
+    popperPlacement?: string;
+    popperModifiers?: any;
+    locale?: string;
+};
+
+registerLocale('es', es);
+setDefaultLocale('es');
+
+let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
+let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
+
+if (Platform.OS === 'web') {
+    try {
+        ReactDatePicker = require('react-datepicker').default;
+        require('react-datepicker/dist/react-datepicker.css');
+    } catch (error) {
+        console.error('Error al cargar react-datepicker:', error);
+    }
+} else {
+    try {
+        DateTimePicker = require('@react-native-community/datetimepicker').default;
+    } catch (error) {
+        console.error('Error al cargar DateTimePicker:', error);
+    }
 }
 
 const FinanceList: React.FC<FinanceListProps> = ({
@@ -38,6 +84,114 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [showEditModal, setShowEditModal] = useState(false);
     const [editData, setEditData] = useState<Partial<FinanceEntry>>({});
     const [editLoading, setEditLoading] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [editDate, setEditDate] = useState<Date>(new Date());
+
+    useEffect(() => {
+        if (showEditModal && selectedEntry) {
+            setEditDate(new Date(selectedEntry.date));
+        }
+    }, [showEditModal, selectedEntry]);
+
+    const formatDate = (date: Date | string): string => {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        return dateObj.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        if (Platform.OS === 'web') return;
+
+        const currentDate = selectedDate || editDate;
+        setShowDatePicker(Platform.OS === 'ios');
+        setEditDate(currentDate);
+        setEditData({ ...editData, date: currentDate.toISOString() });
+    };
+
+    const handleWebDateChange = (date: Date) => {
+        setEditDate(date);
+        setEditData({ ...editData, date: date.toISOString() });
+    };
+
+    const toggleDatePicker = () => {
+        setShowDatePicker(!showDatePicker);
+    };
+
+    const WebDatePicker = () => {
+        if (!ReactDatePicker) {
+            return (
+                <TextInput
+                    style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
+                    value={formatDate(editDate)}
+                    placeholder="Seleccionar fecha"
+                    editable={false}
+                />
+            );
+        }
+
+        return (
+            <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
+                <ReactDatePicker
+                    selected={editDate}
+                    onChange={handleWebDateChange}
+                    dateFormat="dd/MM/yyyy"
+                    locale="es"
+                    customInput={
+                        <TextInput
+                            style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
+                            value={formatDate(editDate)}
+                            placeholder="Seleccionar fecha"
+                        />
+                    }
+                    popperPlacement="bottom-start"
+                />
+            </View>
+        );
+    };
+
+    const MobileDatePicker = () => {
+        return (
+            <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
+                <TouchableOpacity
+                    style={[styles.input, styles.dateInput]}
+                    onPress={toggleDatePicker}
+                >
+                    <View style={styles.dateInputContent}>
+                        <Text style={{ color: editDate ? '#FFFFFF' : '#AAAAAA' }}>
+                            {editDate ? formatDate(editDate) : 'Seleccionar fecha'}
+                        </Text>
+                        <Icon name="calendar" size={20} color="#D4AF37" />
+                    </View>
+                </TouchableOpacity>
+
+                {showDatePicker && DateTimePicker && (
+                    <View style={styles.datePickerWrapper}>
+                        <DateTimePicker
+                            value={editDate}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleDateChange}
+                            locale="es-ES"
+                            textColor="#FFFFFF"
+                            themeVariant="dark"
+                        />
+                    </View>
+                )}
+
+                {Platform.OS === 'ios' && showDatePicker && (
+                    <TouchableOpacity
+                        style={styles.datePickerButton}
+                        onPress={toggleDatePicker}
+                    >
+                        <Text style={styles.datePickerButtonText}>Listo</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        );
+    };
+
 
     useEffect(() => {
         const loadEntries = async () => {
@@ -97,15 +251,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
     };
 
 
-    const formatDate = (dateString: string): string => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    };
-
     const handleEntryPress = (entry: FinanceEntry) => {
         setSelectedEntry(entry);
         setShowDetailModal(true);
@@ -136,7 +281,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 description: editData.description,
                 amount: Number(editData.amount),
                 type: editData.type,
-                date: editData.date ? new Date(editData.date).toISOString() : new Date().toISOString()
+                date: editDate.toISOString()
             };
 
             await FinanceService.updateEntry(selectedEntry.id, formattedData);
@@ -178,7 +323,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
             </View>
             <View style={styles.entryInfo}>
                 <Text style={styles.entryTitle}>{item.title}</Text>
-                <Text style={styles.entryDate}>{formatDate(item.date)}</Text>
+                <Text style={styles.entryDate}>{formatDate(new Date(item.date))}</Text>
                 {item.description && (
                     <Text style={styles.entryDescription}>{item.description}</Text>
                 )}
@@ -367,12 +512,8 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             }}
                         />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Fecha (YYYY-MM-DD)"
-                            value={editData.date}
-                            onChangeText={(date) => setEditData({ ...editData, date })}
-                        />
+                        {/* Reemplazar el TextInput de fecha por el DatePicker */}
+                        {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
                         <TextInput
                             style={styles.input}

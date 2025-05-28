@@ -230,10 +230,10 @@ export const styles = StyleSheet.create({
         backgroundColor: '#D4AF37',
     },
     deleteButton: {
-        backgroundColor: '#F44336',
+        backgroundColor: '#d3ae37',
     },
     editButton: {
-        backgroundColor: '#2196F3',
+        backgroundColor: '#d3ae37',
     },
     modalButtonText: {
         color: '#000000',
