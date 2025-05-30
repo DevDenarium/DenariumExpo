@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: 30,
         paddingVertical: 20,
@@ -46,6 +46,31 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 3,
         elevation: 3,
+    },
+    inputError: {
+        borderColor: '#FF5555',
+        backgroundColor: 'rgba(255, 85, 85, 0.08)',
+    },
+    countryInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 50,
+        borderColor: '#D4AF37',
+        borderWidth: 1.5,
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        backgroundColor: 'rgba(212, 175, 55, 0.08)',
+    },
+    countrySelectedText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        flex: 1,
+    },
+    placeholderText: {
+        fontSize: 16,
+        color: '#555555',
+        flex: 1,
     },
     button: {
         backgroundColor: '#D4AF37',
@@ -100,11 +125,47 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    icon: {
-        marginRight: 8,
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    disabledInput: {
-        opacity: 0.7,
-        backgroundColor: 'rgba(212, 175, 55, 0.05)',
+    modalPickerContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#2a2a2a',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+        maxHeight: '60%',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        height: 40,
+        color: '#FFFFFF',
+        fontSize: 16,
+    },
+    countryList: {
+        maxHeight: '80%',
+    },
+    countryItem: {
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    countryItemText: {
+        color: '#FFFFFF',
+        fontSize: 16,
     },
 });

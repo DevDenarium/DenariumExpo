@@ -25,18 +25,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
     const navigation = useTypedNavigation();
     const [plans, setPlans] = useState<SubscriptionPlan[]>([
         {
-            id: 'free',
-            name: 'Plan Free',
-            price: 0,
-            period: 'mes',
-            features: [
-                'Acceso básico a métricas',
-                'Acceso a transacciones',
-                'Contenido educativo limitado',
-            ],
-            icon: 'account-star'
-        },
-        {
             id: 'premium',
             name: 'Plan Premium',
             price: 10,
@@ -50,6 +38,18 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
             ],
             highlight: true,
             icon: 'crown'
+        },
+        {
+            id: 'free',
+            name: 'Plan Free',
+            price: 0,
+            period: 'mes',
+            features: [
+                'Acceso básico a métricas',
+                'Acceso a transacciones',
+                'Contenido educativo limitado',
+            ],
+            icon: 'account-star'
         }
     ]);
 
@@ -83,11 +83,27 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                     plan: validPlan
                 });
 
-                setPlans(plansResponse.data.map(plan => ({
+                // 1. Filtramos solo Free y Premium
+                const filteredPlans = plansResponse.data.filter(plan =>
+                    plan.id === 'free_plan_id' || plan.id === 'premium_plan_id'
+                );
+
+                // 2. Ordenamos: Premium primero, Free después
+                const orderedPlans = filteredPlans.sort((a, b) => {
+                    if (a.id === 'premium_plan_id') return -1; // Premium va primero
+                    if (b.id === 'premium_plan_id') return 1;
+                    return 0;
+                });
+
+                // 3. Marcamos el plan actual
+                setPlans(orderedPlans.map(plan => ({
                     ...plan,
-                    isCurrent: (validPlan === 'Premium' && plan.id === 'premium') ||
-                        (validPlan === 'Free' && plan.id === 'free')
+                    isCurrent: (validPlan === 'Premium' && plan.id === 'premium_plan_id') ||
+                        (validPlan === 'Free' && plan.id === 'free_plan_id'),
+                    // Aseguramos que el Premium tenga highlight=true si es necesario
+                    highlight: plan.id === 'premium_plan_id'
                 })));
+
             } catch (error) {
                 console.error('Error fetching data:', error);
                 Alert.alert('Error', 'No se pudo cargar la información de suscripciones');
@@ -108,7 +124,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
 
         return unsubscribe;
     }, [navigation]);
-
     const fetchSubscriptionStatus = async () => {
         try {
             const token = await getAuthToken();

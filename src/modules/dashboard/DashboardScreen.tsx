@@ -25,7 +25,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ route, navigation }) 
                     headers: { Authorization: `Bearer ${token}` }
                 };
 
-                const profileResponse = await axios.get('http://localhost:300/auth/me', config);
+                const profileResponse = await axios.get('http://localhost:3000/auth/me', config);
                 const updatedUser = profileResponse.data;
 
                 if (updatedUser.picture) {

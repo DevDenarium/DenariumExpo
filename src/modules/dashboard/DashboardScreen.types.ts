@@ -30,9 +30,14 @@ export type DashboardScreenProps = {
 export interface User {
     id: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    country: string;
     picture?: string;
+    role?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface FinancialData {

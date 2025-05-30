@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, Pressable, ScrollView } from 'react-native';
 import { styles } from './ProfileScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -10,18 +10,65 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE_URL } from '../../services/auth.service';
+import { getCountries } from '../../services/auth.service';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
 const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
     const navigation = useNavigation<ProfileScreenNavigationProp>();
-    const { user: initialUser } = route.params;
+    const [user, setUser] = useState<User>(route.params?.user || {
+        id: '',
+        email: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        country: '',
+        picture: ''
+    });
 
-    const [user, setUser] = useState<User>(initialUser);
+    // Verificación adicional al acceder a user
+    const safeUser = user || {
+        id: '',
+        email: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        country: '',
+        picture: ''
+    };
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [countries, setCountries] = useState<Array<{name: string, code: string}>>([]);
+    const [showCountryPicker, setShowCountryPicker] = useState(false);
+    const [filteredCountries, setFilteredCountries] = useState<Array<{name: string, code: string}>>([]);
+    const [searchText, setSearchText] = useState('');
+
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const countriesData = await getCountries();
+                setCountries(countriesData);
+                setFilteredCountries(countriesData);
+            } catch (error) {
+                console.error('Error loading countries:', error);
+            }
+        };
+        fetchCountries();
+    }, []);
+
+    const handleSearch = (text: string) => {
+        setSearchText(text);
+        if (text === '') {
+            setFilteredCountries(countries);
+        } else {
+            const filtered = countries.filter(country =>
+                country.name.toLowerCase().includes(text.toLowerCase())
+            );
+            setFilteredCountries(filtered);
+        }
+    };
 
     const handleUpdateProfile = async () => {
         if (!isEditing) {
@@ -29,7 +76,17 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
             return;
         }
 
-        // Mostrar el popup de confirmación antes de guardar
+        // Validación básica
+        if (!user.phone) {
+            setError('Por favor ingresa tu número de teléfono');
+            return;
+        }
+
+        if (!user.country) {
+            setError('Por favor selecciona tu país');
+            return;
+        }
+
         setShowConfirmation(true);
     };
 
@@ -47,6 +104,8 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                 {
                     firstName: user.firstName?.trim(),
                     lastName: user.lastName?.trim(),
+                    phone: user.phone?.trim(),
+                    country: user.country?.trim()
                 },
                 {
                     headers: {
@@ -55,17 +114,29 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                     }
                 }
             );
-            console.log('Update response:', response.data);
-            Alert.alert('Éxito', 'Perfil actualizado correctamente');
+
+            // Maneja ambos formatos de respuesta
+            const updatedUser = response.data.user || response.data;
+
+            if (!updatedUser) {
+                throw new Error('El servidor no devolvió datos de usuario');
+            }
+
+            setUser(updatedUser);
             setIsEditing(false);
+            Alert.alert('Éxito', 'Perfil actualizado correctamente');
+
         } catch (error) {
             console.error('Error updating profile:', error);
-            setError(error instanceof Error ? error.message : 'Error al actualizar el perfil');
+            const errorMessage = error instanceof Error ?
+                error.message :
+                'Error al actualizar el perfil';
+            setError(errorMessage);
+            Alert.alert('Error', errorMessage);
         } finally {
             setLoading(false);
         }
     };
-
     const pickImage = async () => {
         try {
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -132,6 +203,20 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
         }
     };
 
+    const renderCountryItem = ({ item }: { item: { name: string, code: string } }) => (
+        <TouchableOpacity
+            style={styles.countryItem}
+            onPress={() => {
+                setUser({ ...user, country: item.name });
+                setShowCountryPicker(false);
+                setSearchText('');
+                setFilteredCountries(countries);
+            }}
+        >
+            <Text style={styles.countryItemText}>{item.name}</Text>
+        </TouchableOpacity>
+    );
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -141,7 +226,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             {/* Modal de confirmación */}
             <Modal
                 animationType="fade"
@@ -173,9 +258,47 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                 </View>
             </Modal>
 
+            {/* Modal de selección de país */}
+            <Modal
+                visible={showCountryPicker}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowCountryPicker(false)}
+            >
+                <View style={styles.countryModalOverlay}>
+                    <View style={styles.countryModalContainer}>
+                        <View style={styles.searchContainer}>
+                            <Icon name="magnify" size={20} color="#555555" style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Buscar país..."
+                                placeholderTextColor="#555555"
+                                value={searchText}
+                                onChangeText={handleSearch}
+                                autoFocus={true}
+                            />
+                        </View>
+                        <ScrollView style={styles.countryList}>
+                            {filteredCountries.map((country) => (
+                                <TouchableOpacity
+                                    key={country.code}
+                                    style={styles.countryItem}
+                                    onPress={() => {
+                                        setUser({ ...user, country: country.name });
+                                        setShowCountryPicker(false);
+                                    }}
+                                >
+                                    <Text style={styles.countryItemText}>{country.name}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
             <View style={styles.profileHeader}>
                 <View style={styles.profileImageContainer}>
-                    {user.picture ? (
+                    {user?.picture ? (
                         <Image
                             source={{ uri: user.picture }}
                             style={styles.profileImage}
@@ -186,6 +309,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                     <TouchableOpacity
                         style={styles.changePhotoButton}
                         onPress={pickImage}
+                        disabled={loading}
                     >
                         <Icon name="camera" size={20} color="#000000" />
                     </TouchableOpacity>
@@ -221,6 +345,35 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                         editable={false}
                     />
                 </View>
+
+                <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Teléfono *</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={user.phone || ''}
+                        onChangeText={(text) => setUser({ ...user, phone: text })}
+                        editable={isEditing}
+                        keyboardType="phone-pad"
+                        placeholder="Ingresa tu número de teléfono"
+                        placeholderTextColor="#666"
+                    />
+                </View>
+
+                <View style={styles.inputContainer}>
+                    <Text style={styles.label}>País *</Text>
+                    <TouchableOpacity
+                        style={styles.countryInput}
+                        onPress={() => isEditing && setShowCountryPicker(true)}
+                        disabled={!isEditing}
+                    >
+                        <Text style={user.country ? styles.inputText : styles.placeholderText}>
+                            {user.country || 'Selecciona tu país'}
+                        </Text>
+                        {isEditing && (
+                            <Icon name="chevron-down" size={20} color="#555555" />
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -234,7 +387,7 @@ const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
                     {isEditing ? (loading ? 'Guardando...' : 'Guardar cambios') : 'Editar perfil'}
                 </Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 };
 

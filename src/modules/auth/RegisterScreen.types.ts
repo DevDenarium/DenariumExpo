@@ -4,6 +4,8 @@ export interface RegisterFormData {
     confirmPassword: string;
     firstName: string;
     lastName: string;
+    phone?: string;
+    country?: string;
 }
 
 export interface RegisterResponse {
@@ -14,6 +16,9 @@ export interface RegisterResponse {
         email: string;
         firstName: string;
         lastName: string;
+        phone?: string;
+        country?: string;
+        role: string;
     };
 }
 

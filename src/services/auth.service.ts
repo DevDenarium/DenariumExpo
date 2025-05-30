@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { AuthResponse } from '../modules/auth/LoginScreen.types';
 import {RegisterFormData, RegisterResponse} from "../modules/auth/RegisterScreen.types";
+import {User} from "@react-native-google-signin/google-signin";
 
 export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
 const API_URL = `${API_BASE_URL}/auth`;
@@ -53,6 +54,33 @@ export const login = async (credentials: { email: string; password: string }): P
     }
 };
 
+export const updateProfile = async (profileData: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    country?: string;
+}): Promise<User> => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) throw new Error('No authentication token found');
+
+        const response = await axios.put(
+            `${API_URL}/profile`,
+            profileData,
+            {
+                headers: {
+                    ...axiosConfig.headers,
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        handleAuthError(error, 'Error al actualizar el perfil');
+        throw error;
+    }
+};
 export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
     const platform = Platform.OS === 'ios' ? 'ios' :
         Platform.OS === 'android' ? 'android' : 'web';
@@ -81,6 +109,8 @@ export const register = async (formData: Omit<RegisterFormData, 'confirmPassword
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
+                phone: formData.phone,
+                country: formData.country,
                 isSocialAuth: false
             },
             axiosConfig
@@ -101,6 +131,16 @@ export const register = async (formData: Omit<RegisterFormData, 'confirmPassword
             throw new Error(message);
         }
         throw new Error('Error desconocido durante el registro');
+    }
+};
+
+export const getCountries = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/auth/countries`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching countries:', error);
+        throw new Error('Error al obtener la lista de países');
     }
 };
 

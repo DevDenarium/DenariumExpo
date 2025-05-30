@@ -6,8 +6,8 @@ import type { MenuItem, MenuProps } from './Menu.types';
 
 const menuItems: MenuItem[] = [
     { id: 'dashboard', title: 'Dashboard', icon: 'view-dashboard', screen: 'Dashboard' },
-    { id: 'finance', title: 'Finanzas', icon: 'finance', screen: 'Finance' },
     { id: 'transactions', title: 'Transacciones', icon: 'cash-multiple', screen: 'Transactions' },
+    { id: 'finance', title: 'Finanzas', icon: 'finance', screen: 'Finance' },
     { id: 'videos', title: 'Contenido Educativo', icon: 'book-education', screen: 'Videos' },
     { id: 'advisories', title: 'Asesorías', icon: 'account-tie-voice', screen: 'Advisories' },
     { id: 'subscriptions', title: 'Suscripciones', icon: 'credit-card', screen: 'Subscriptions' },
