@@ -190,9 +190,9 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                 options={{ title: 'Inicio' }}
             />
             <Drawer.Screen
-                name="Finance"
+                name="Transactions"
                 component={FinanceScreen}
-                options={{ title: 'Finanzas' }}
+                options={{ title: 'Transacciones' }}
             />
             <Drawer.Screen
                 name="Subscriptions"
