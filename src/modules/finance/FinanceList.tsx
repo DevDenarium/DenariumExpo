@@ -309,6 +309,12 @@ const FinanceList: React.FC<FinanceListProps> = ({
         setShowEditModal(true);
     };
 
+    const formatAmount = (amount: number): string => {
+        return new Intl.NumberFormat('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    };
     const renderItem = ({ item }: { item: FinanceEntry }) => (
         <TouchableOpacity
             style={styles.entryItem}
@@ -332,7 +338,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 styles.entryAmount,
                 item.type === 'income' ? styles.incomeAmount : styles.expenseAmount
             ]}>
-                {currency}{item.amount}
+                {currency}{formatAmount(item.amount)}
             </Text>
         </TouchableOpacity>
     );
@@ -369,12 +375,12 @@ const FinanceList: React.FC<FinanceListProps> = ({
                         <Text style={styles.modalTitle}>{selectedEntry?.title}</Text>
 
                         <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Tipo:</Text>
+                            <Text style={styles.detailLabel}>Monto:</Text>
                             <Text style={[
                                 styles.detailValue,
                                 selectedEntry?.type === 'income' ? styles.incomeAmount : styles.expenseAmount
                             ]}>
-                                {selectedEntry?.type === 'income' ? 'Ingreso' : 'Gasto'}
+                                {selectedEntry && `${currency}${formatAmount(selectedEntry.amount)}`}
                             </Text>
                         </View>
 
@@ -505,9 +511,10 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             style={styles.input}
                             placeholder="Monto"
                             keyboardType="numeric"
-                            value={editData.amount?.toString()}
+                            value={editData.amount ? formatAmount(editData.amount) : ''}
                             onChangeText={(text) => {
-                                const amount = parseFloat(text) || 0;
+                                const cleanValue = text.replace(/[^0-9.]/g, '');
+                                const amount = parseFloat(cleanValue) || 0;
                                 setEditData({ ...editData, amount });
                             }}
                         />

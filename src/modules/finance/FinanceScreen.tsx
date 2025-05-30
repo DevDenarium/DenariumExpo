@@ -83,7 +83,10 @@ const FinanceScreen: React.FC = () => {
     }, []);
 
     const formatAmount = (amount: number): string => {
-        return `${settings.currency.symbol}${amount.toFixed(2)}`;
+        return `${settings.currency.symbol}${amount.toLocaleString(settings.currency.locale || 'en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
     };
 
     return (

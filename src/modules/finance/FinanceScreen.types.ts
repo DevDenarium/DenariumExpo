@@ -27,11 +27,12 @@ export interface Currency {
     symbol: string;
     code: string;
     name: string;
+    locale?: string;
 }
 
 export const CURRENCIES: Currency[] = [
-    { symbol: '$', code: 'USD', name: 'Dólares' },
-    { symbol: '₡', code: 'CRC', name: 'Colones' },
+    { symbol: '$', code: 'USD', name: 'Dólares', locale: 'es-CR' },
+    { symbol: '₡', code: 'CRC', name: 'Colones', locale: 'en-US' },
 ];
 
 export type SortOption = 'recent' | 'oldest' | 'highest' | 'lowest' | 'type';
