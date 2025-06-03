@@ -71,7 +71,6 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
     };
 
     const handleSubmit = async () => {
-        // Marcar todos los campos como tocados al enviar
         const allFieldsTouched = Object.keys(formData).reduce((acc, key) => {
             acc[key as keyof RegisterFormData] = true;
             return acc;
@@ -118,12 +117,22 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 country
             });
 
-            navigation.navigate('Login', {
-                message: 'Registro exitoso. Por favor inicia sesión.'
+            navigation.navigate('Verification', {
+                email: formData.email
             });
 
+
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Error en el registro';
+            let errorMessage = 'Error en el registro';
+
+            if (error instanceof Error) {
+                if (error.message.includes('401')) {
+                    errorMessage = 'No existe una cuenta con ese correo electrónico';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+
             setError(errorMessage);
             Alert.alert('Error', errorMessage);
         } finally {

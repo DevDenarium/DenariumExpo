@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from './src/modules/dashboard/DashboardScreen.types';
 import { CommonActions } from '@react-navigation/native';
 import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen';
-
+import VerificationScreen from './src/modules/auth/VerificationScreen';
 
 import { RootStackParamList, DrawerParamList } from './src/modules/navegation/navegation.types';
 import PaymentsScreen from "./src/modules/payments/paymentsScreen";
@@ -234,6 +234,11 @@ export default function App() {
                         name="Register"
                         component={RegisterScreen}
                         options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="Verification"
+                        component={VerificationScreen}
+                        options={{ title: 'Verificación' }}
                     />
                     <Stack.Screen
                         name="Dashboard"

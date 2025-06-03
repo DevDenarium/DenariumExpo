@@ -1,8 +1,13 @@
 import { User } from '../dashboard/DashboardScreen.types';
 
 export type RootStackParamList = {
-    Login: undefined;
+    Login: {
+        message?: string;
+    };
     Register: undefined;
+    Verification: {
+        email: string;
+    };
     Dashboard: { user: User };
     Subscriptions: { user: User };
     Payments: {

@@ -118,8 +118,9 @@ export const register = async (formData: Omit<RegisterFormData, 'confirmPassword
 
         return {
             success: true,
-            message: response.data.message || 'Registro exitoso',
-            user: response.data.user
+            message: 'Se ha enviado un código de verificación a tu correo electrónico',
+            user: response.data.user,
+            requiresVerification: true
         };
     } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -133,6 +134,55 @@ export const register = async (formData: Omit<RegisterFormData, 'confirmPassword
         throw new Error('Error desconocido durante el registro');
     }
 };
+
+export const verifyEmail = async (email: string, code: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await axios.post(
+            `${API_URL}/verify-email`,
+            { email, code },
+            axiosConfig
+        );
+
+        if (response.data.access_token) {
+            await storeToken(response.data.access_token);
+        }
+
+        return {
+            success: true,
+            message: response.data.message || 'Correo verificado exitosamente'
+        };
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const message = error.response?.data?.message ||
+                'Código inválido o expirado. Por favor intenta nuevamente.';
+            throw new Error(message);
+        }
+        throw new Error('Error desconocido al verificar el correo');
+    }
+};
+
+export const resendVerificationCode = async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await axios.post(
+            `${API_URL}/resend-verification`,
+            { email },
+            axiosConfig
+        );
+
+        return {
+            success: true,
+            message: response.data.message || 'Código de verificación reenviado exitosamente'
+        };
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const message = error.response?.data?.message ||
+                'Error al reenviar el código. Por favor intenta nuevamente.';
+            throw new Error(message);
+        }
+        throw new Error('Error desconocido al reenviar el código');
+    }
+};
+
 
 export const getCountries = async () => {
     try {

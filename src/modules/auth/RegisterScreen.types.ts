@@ -20,11 +20,12 @@ export interface RegisterResponse {
         country?: string;
         role: string;
     };
+    requiresVerification?: boolean;
 }
 
 export interface RegisterScreenProps {
     navigation: {
-        navigate: (route: string, params?: { message?: string }) => void;
+        navigate: (route: string, params?: { email: string }) => void;
         goBack: () => void;
     };
 }

@@ -83,7 +83,15 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             navigation.navigate('Dashboard', { user: result.user });
         } catch (err) {
             console.error('Login error:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión';
+
+            let errorMessage = 'Error al iniciar sesión';
+
+            if (err instanceof Error && err.message.includes('401')) {
+                errorMessage = 'No existe una cuenta con este correo electrónico';
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
+            }
+
             setError(errorMessage);
             Alert.alert('Error', errorMessage);
         } finally {
