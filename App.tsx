@@ -12,6 +12,7 @@ import { User } from './src/modules/dashboard/DashboardScreen.types';
 import { CommonActions } from '@react-navigation/native';
 import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen';
 import VerificationScreen from './src/modules/auth/VerificationScreen';
+import ForgotPasswordScreen from './src/modules/auth/ForgotPasswordScreen';
 
 import { RootStackParamList, DrawerParamList } from './src/modules/navegation/navegation.types';
 import PaymentsScreen from "./src/modules/payments/paymentsScreen";
@@ -234,6 +235,11 @@ export default function App() {
                         name="Register"
                         component={RegisterScreen}
                         options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="ForgotPassword"
+                        component={ForgotPasswordScreen}
+                        options={{ title: 'Recuperar contraseña' }}
                     />
                     <Stack.Screen
                         name="Verification"

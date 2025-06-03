@@ -219,3 +219,43 @@ export const getValidToken = async (): Promise<string> => {
     if (!token) throw new Error('No token found');
     return token;
 };
+
+export const sendPasswordResetCode = async (email: string) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || 'Error al enviar el código');
+        }
+        throw new Error('Error desconocido al enviar el código');
+    }
+};
+
+export const verifyPasswordResetCode = async (email: string, code: string) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/auth/verify-reset-code`, { email, code });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || 'Error al verificar el código');
+        }
+        throw new Error('Error desconocido al verificar el código');
+    }
+};
+
+export const resetPassword = async (email: string, code: string, newPassword: string) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
+            email,
+            code,
+            newPassword
+        });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || 'Error al restablecer la contraseña');
+        }
+        throw new Error('Error desconocido al restablecer la contraseña');
+    }
+};

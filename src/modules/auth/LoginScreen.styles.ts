@@ -145,4 +145,13 @@ export const styles = StyleSheet.create({
     iconContainer: {
         marginRight: 8,
     },
+    forgotPasswordLink: {
+        alignSelf: 'flex-end',
+        marginBottom: 15,
+    },
+    forgotPasswordText: {
+        color: '#D4AF37',
+        fontSize: 14,
+        textDecorationLine: 'underline',
+    },
 });

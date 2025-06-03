@@ -103,6 +103,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
         Alert.alert('Información', 'Login con Apple no implementado aún');
     };
 
+    const handleForgotPassword = () => {
+        navigation.navigate('ForgotPassword');
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.logoContainer}>
@@ -148,6 +152,13 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                     onSubmitEditing={handleSubmit}
                 />
             </View>
+
+            <TouchableOpacity
+                onPress={handleForgotPassword}
+                style={styles.forgotPasswordLink}
+            >
+                <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
                 style={[styles.button, loading && styles.disabledButton]}

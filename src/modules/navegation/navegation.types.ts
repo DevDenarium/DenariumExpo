@@ -8,6 +8,7 @@ export type RootStackParamList = {
     Verification: {
         email: string;
     };
+    ForgotPassword: undefined;
     Dashboard: { user: User };
     Subscriptions: { user: User };
     Payments: {
