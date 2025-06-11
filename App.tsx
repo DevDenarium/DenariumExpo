@@ -14,13 +14,13 @@ import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen
 import VerificationScreen from './src/modules/auth/VerificationScreen';
 import ForgotPasswordScreen from './src/modules/auth/ForgotPasswordScreen';
 
-import { RootStackParamList, DrawerParamList } from './src/modules/navegation/navegation.types';
-import PaymentsScreen from "./src/modules/payments/paymentsScreen";
-import PaymentSuccessScreen from "./src/modules/payments/paymentsSuccessScreen";
+import { RootStackParamList, DrawerParamList } from './src/modules/navegation/Navegation.types';
+import PaymentsScreen from "./src/modules/payments/PaymentsScreen";
+import PaymentSuccessScreen from "./src/modules/payments/PaymentsSuccessScreen";
 import FinanceScreen from "./src/modules/finance/FinanceScreen";
 import ProfileScreen from './src/modules/profile/ProfileScreen';
-import {AppointmentsScreen} from "./src/modules/appointments/AppoitmentsScreen";
-import {VideoLibraryScreen} from "./src/modules/education/VideoLibraryScreen";
+import {AppointmentsScreen} from "./src/admin/appointment/AppointmentManagement";
+import {VideoManagement} from "./src/admin/education/VideoManagement";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -224,7 +224,7 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                 <>
                     <Drawer.Screen
                         name="VideoLibrary"
-                        component={VideoLibraryScreen}
+                        component={VideoManagement}
                         options={{ title: 'Administrar Videos' }}
                     />
                     <Drawer.Screen
@@ -301,7 +301,7 @@ export default function App() {
                     />
                     <Stack.Screen
                         name="VideoLibrary"
-                        component={VideoLibraryScreen}
+                        component={VideoManagement}
                         options={{ title: 'Administrar Videos' }}
                     />
                     <Stack.Screen

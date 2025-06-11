@@ -12,7 +12,7 @@ import axios from "axios";
 import {PaymentsService} from "../../services/payments.service";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from "../navegation/navegation.types"
+import { RootStackParamList } from "../navegation/Navegation.types"
 import {StackNavigationProp} from "@react-navigation/stack";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;

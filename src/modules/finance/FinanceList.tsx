@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './FinanceScreen.styles';
-import { FinanceService } from './finance.service';
+import { FinanceService } from './Finance.service';
 import { FinanceEntry, SortOption, FilterOption } from './FinanceScreen.types';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';

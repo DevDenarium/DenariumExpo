@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Platform, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { FinanceService } from './finance.service';
+import { FinanceService } from './Finance.service';
 import { CreateEntryDto } from './FinanceScreen.types';
 import { styles } from './FinanceScreen.styles';
 import { registerLocale, setDefaultLocale } from "react-datepicker";

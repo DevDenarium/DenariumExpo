@@ -1,6 +1,6 @@
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navegation/navegation.types';
+import { RootStackParamList } from '../navegation/Navegation.types';
 import { User } from '../dashboard/DashboardScreen.types';
 
 export type PaymentSuccessScreenProps = {

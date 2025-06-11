@@ -1,5 +1,5 @@
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navegation/navegation.types';
+import { RootStackParamList } from '../navegation/Navegation.types';
 
 type VerificationScreenNavigationProp = StackNavigationProp<
     RootStackParamList,

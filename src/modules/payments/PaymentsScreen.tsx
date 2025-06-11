@@ -11,8 +11,8 @@ import {
     Alert
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { PaymentsScreenProps } from './paymentsScreen.types';
-import { styles } from './paymentsScreen.styles';
+import { PaymentsScreenProps } from './PaymentsScreen.types';
+import { styles } from './PaymentsScreen.styles';
 import { simulatePremiumPayment, upgradeToPremium } from '../../services/subscription.service';
 
 const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) => {

@@ -1,6 +1,6 @@
 import { RouteProp } from '@react-navigation/native';
 import {StackNavigationProp, StackScreenProps} from '@react-navigation/stack';
-import { RootStackParamList } from '../navegation/navegation.types';
+import { RootStackParamList } from '../navegation/Navegation.types';
 import {User} from "../dashboard/DashboardScreen.types";
 
 export type PaymentsScreenProps = StackScreenProps<RootStackParamList, 'Payments'>;

@@ -1,5 +1,5 @@
 import { DrawerScreenProps } from '@react-navigation/drawer';
-import { DrawerParamList } from '../../modules/navegation/navegation.types';
+import { DrawerParamList } from '../navegation/Navegation.types';
 import { User } from '../dashboard/DashboardScreen.types';
 
 export type SubscriptionsScreenProps = DrawerScreenProps<DrawerParamList, 'Subscriptions'>;

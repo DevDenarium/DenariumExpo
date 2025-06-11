@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Aler
 import { styles } from './ProfileScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../../modules/navegation/navegation.types';
+import { RootStackParamList } from '../navegation/Navegation.types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { User } from '../dashboard/DashboardScreen.types';
 import axios from 'axios';

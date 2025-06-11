@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl, Text, TouchableOpacity } from 'react-
 import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
-import { FinanceService } from './finance.service';
+import { FinanceService } from './Finance.service';
 import { BalanceSummary, Currency, FinanceSettings, SortOption, FilterOption, CURRENCIES } from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';

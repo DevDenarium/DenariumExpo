@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { styles } from './paymentsSuccessScreen.styles';
-import { PaymentSuccessScreenProps } from './paymentsSuccessScreen.types';
+import { styles } from './PaymentsSuccessScreen.styles';
+import { PaymentSuccessScreenProps } from './PaymentsSuccessScreen.types';
 
 const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({ navigation, route }) => {
     const { sessionId, amount, planName, user } = route.params;
