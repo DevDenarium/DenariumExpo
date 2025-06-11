@@ -121,24 +121,4 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ route, navigation }) 
     );
 };
 
-const additionalStyles = StyleSheet.create({
-    profileImagePlaceholder: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        marginRight: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#2a2a2a',
-    },
-    userInfo: {
-        flex: 1,
-    },
-    imageErrorText: {
-        color: '#FF5555',
-        fontSize: 12,
-        marginTop: 5,
-    },
-});
-
 export default DashboardScreen;

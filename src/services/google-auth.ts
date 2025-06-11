@@ -24,8 +24,6 @@ export const useGoogleAuth = () => {
 
     console.log('Redirect URI generado:', redirectUri);
 
-
-
     const [request, response, promptAsync] = useIdTokenAuthRequest({
         clientId: Constants.expoConfig?.extra?.googleClientIdExpo,
         iosClientId: Constants.expoConfig?.extra?.googleClientIdIos,
@@ -38,9 +36,6 @@ export const useGoogleAuth = () => {
             prompt: 'select_account',
         },
     });
-
-
-
 
     return { request, response, promptAsync };
 };

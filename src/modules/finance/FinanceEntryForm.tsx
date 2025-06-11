@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Platform, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { FinanceService } from './Finance.service';
+import { FinanceService } from '../../services/Finance.service';
 import { CreateEntryDto } from './FinanceScreen.types';
 import { styles } from './FinanceScreen.styles';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
@@ -9,7 +9,6 @@ import { es } from 'date-fns/locale';
 registerLocale('es', es);
 setDefaultLocale('es');
 
-// Tipos para los componentes de selección de fecha
 type DateTimePickerProps = {
     value: Date;
     mode: 'date' | 'time' | 'datetime';
@@ -31,11 +30,9 @@ type ReactDatePickerProps = {
     locale?: string;
 };
 
-// Declaración de componentes condicionales
 let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
 let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
 
-// Cargamos los componentes según la plataforma
 if (Platform.OS === 'web') {
     try {
         ReactDatePicker = require('react-datepicker').default;
@@ -134,7 +131,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
                     selected={formData.date}
                     onChange={handleWebDateChange}
                     dateFormat="dd/MM/yyyy"
-                    locale="es"  // Añade esta línea
+                    locale="es"
                     customInput={
                         <TextInput
                             style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
@@ -267,7 +264,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
                 </Text>
             </TouchableOpacity>
 
-            {/* Inyección de estilos solo en web */}
             {Platform.OS === 'web' && (
                 <style>
                     {`

@@ -42,7 +42,7 @@ export const login = async (credentials: { email: string; password: string }): P
 
         if (response.data.access_token) {
             await AsyncStorage.setItem('token', response.data.access_token);
-            console.log('Token guardado exitosamente'); // Debug
+            console.log('Token guardado exitosamente');
         } else {
             throw new Error('El servidor no devolvió un token válido');
         }

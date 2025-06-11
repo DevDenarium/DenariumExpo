@@ -20,7 +20,7 @@ import PaymentSuccessScreen from "./src/modules/payments/PaymentsSuccessScreen";
 import FinanceScreen from "./src/modules/finance/FinanceScreen";
 import ProfileScreen from './src/modules/profile/ProfileScreen';
 import {AppointmentsScreen} from "./src/admin/appointment/AppointmentManagement";
-import {VideoManagement} from "./src/admin/education/VideoManagement";
+import {VideoManagement} from "./src/admin/content/VideoManagement";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();

@@ -24,7 +24,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
     const { user } = route.params;
     const navigation = useTypedNavigation();
 
-    // Definición inicial de los planes
     const initialPlans: SubscriptionPlan[] = [
         {
             id: 'premium',
@@ -65,7 +64,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
     const [loading, setLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Función para obtener el token de autenticación
+
     const getAuthToken = async (): Promise<string> => {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
@@ -74,7 +73,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         return token;
     };
 
-    // Mapeo de nombres de planes a IDs de la API
     const getPlanId = (planName: string): string => {
         const planMap: Record<string, string> = {
             'Plan Free': 'free_plan_id',
@@ -83,14 +81,12 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         return planMap[planName] || 'free_plan_id';
     };
 
-    // Formatear fecha para mostrar
     const formatDate = (dateString: string) => {
         if (!dateString || dateString === 'Invalid Date') return 'No disponible';
         const date = new Date(dateString);
         return date.toLocaleDateString('es-ES');
     };
 
-    // Marcar el plan actual
     const markCurrentPlan = (plan: SubscriptionPlanType) => {
         setPlans(prevPlans =>
             prevPlans.map(p => ({
@@ -101,7 +97,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         );
     };
 
-    // Obtener estado de la suscripción
     const fetchSubscriptionStatus = async () => {
         try {
             const token = await getAuthToken();
@@ -132,7 +127,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         }
     };
 
-    // Cargar datos iniciales
     const fetchData = async () => {
         try {
             const token = await getAuthToken();
@@ -153,7 +147,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                 plan: validPlan
             });
 
-            // Combinamos los planes iniciales con los de la API
             const updatedPlans = initialPlans.map(plan => ({
                 ...plan,
                 isCurrent: (validPlan === 'Premium' && plan.id === 'premium') ||
@@ -182,14 +175,12 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         return unsubscribe;
     }, [navigation]);
 
-    // Manejar la suscripción a un plan
     const handleSubscribe = async (plan: SubscriptionPlan) => {
         setIsProcessing(true);
         try {
             const token = await getAuthToken();
 
             if (plan.id === 'free') {
-                // Activar plan Free sin requerir pago
                 await axios.post(
                     `${API_BASE_URL}/subscriptions/create`,
                     {},
@@ -209,7 +200,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                 return;
             }
 
-            // Proceso para plan Premium
             const planId = getPlanId(plan.name);
 
             if (__DEV__) {
@@ -263,7 +253,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         }
     };
 
-    // Renderizar tarjeta de plan
     const renderPlanCard = (plan: SubscriptionPlan) => (
         <View
             key={plan.id}
