@@ -27,6 +27,9 @@ export type RootStackParamList = {
         user?: User;
     };
     Profile: { user: User };
+    Notifications: undefined;
+    VideoLibrary: undefined;
+    Appointments: undefined;
 };
 
 export type DrawerParamList = {
@@ -38,6 +41,8 @@ export type DrawerParamList = {
     Notifications: undefined;
     Finance: undefined;
     Profile: { user: User };
+    VideoLibrary: undefined;
+    Appointments: undefined;
 };
 
 export type PaymentsStackParamList = {

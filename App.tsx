@@ -19,6 +19,8 @@ import PaymentsScreen from "./src/modules/payments/paymentsScreen";
 import PaymentSuccessScreen from "./src/modules/payments/paymentsSuccessScreen";
 import FinanceScreen from "./src/modules/finance/FinanceScreen";
 import ProfileScreen from './src/modules/profile/ProfileScreen';
+import {AppointmentsScreen} from "./src/modules/appointments/AppoitmentsScreen";
+import {VideoLibraryScreen} from "./src/modules/education/VideoLibraryScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -59,19 +61,31 @@ const headerStyles = StyleSheet.create({
     },
 });
 
-const CustomDrawerContent = ({ navigation, user }: {
-    navigation: any;
-    user: User;
-}) => {
-    const menuItems = [
+const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User }) => {
+    const isAdmin = user.role === 'ADMIN';
+
+    const commonMenuItems = [
         { name: 'MainDashboard', label: 'Inicio', icon: 'view-dashboard' },
         { name: 'Finance', label: 'Finanzas', icon: 'finance' },
         { name: 'Transactions', label: 'Transacciones', icon: 'cash-multiple' },
         { name: 'Videos', label: 'Contenido Educativo', icon: 'bookshelf' },
         { name: 'Advisories', label: 'Asesorías', icon: 'account-tie-voice' },
-        { name: 'Subscriptions', label: 'Suscripciones', icon: 'credit-card' },
         { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
         { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
+    ];
+
+    const adminMenuItems = [
+        { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'video-library' },
+        { name: 'Appointments', label: 'Citas Agendadas', icon: 'calendar-clock' },
+    ];
+
+    const clientMenuItems = [
+        { name: 'Subscriptions', label: 'Suscripciones', icon: 'credit-card' },
+    ];
+
+    const menuItems = [
+        ...commonMenuItems,
+        ...(isAdmin ? adminMenuItems : clientMenuItems),
     ];
 
     return (
@@ -86,7 +100,9 @@ const CustomDrawerContent = ({ navigation, user }: {
                 ) : (
                     <Icon name="account-circle" size={80} color="#D4AF37" />
                 )}
-                <Text style={drawerStyles.userName}>{user.firstName || 'Usuario'}</Text>
+                <Text style={drawerStyles.userName}>
+                    {user.firstName || 'Usuario'} {isAdmin && '(Admin)'}
+                </Text>
                 <Text style={drawerStyles.userEmail}>{user.email}</Text>
             </View>
 
@@ -154,6 +170,7 @@ const drawerStyles = StyleSheet.create({
 
 const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
     const { user } = route.params;
+    const isAdmin = user.role === 'ADMIN';
 
     const handleLogout = async (navigation: any) => {
         await AsyncStorage.removeItem('token');
@@ -195,12 +212,28 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                 component={FinanceScreen}
                 options={{ title: 'Transacciones' }}
             />
-            <Drawer.Screen
-                name="Subscriptions"
-                component={SubscriptionsScreen}
-                initialParams={{ user }}
-                options={{ title: 'Suscripciones' }}
-            />
+            {!isAdmin && (
+                <Drawer.Screen
+                    name="Subscriptions"
+                    component={SubscriptionsScreen}
+                    initialParams={{ user }}
+                    options={{ title: 'Suscripciones' }}
+                />
+            )}
+            {isAdmin && (
+                <>
+                    <Drawer.Screen
+                        name="VideoLibrary"
+                        component={VideoLibraryScreen}
+                        options={{ title: 'Administrar Videos' }}
+                    />
+                    <Drawer.Screen
+                        name="Appointments"
+                        component={AppointmentsScreen}
+                        options={{ title: 'Citas Agendadas' }}
+                    />
+                </>
+            )}
             <Drawer.Screen
                 name="Profile"
                 component={ProfileScreen}
@@ -265,6 +298,16 @@ export default function App() {
                         name="Profile"
                         component={ProfileScreen}
                         options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="VideoLibrary"
+                        component={VideoLibraryScreen}
+                        options={{ title: 'Administrar Videos' }}
+                    />
+                    <Stack.Screen
+                        name="Appointments"
+                        component={AppointmentsScreen}
+                        options={{ title: 'Citas Agendadas' }}
                     />
                 </Stack.Navigator>
             </NavigationContainer>

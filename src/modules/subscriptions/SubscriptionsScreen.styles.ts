@@ -201,6 +201,9 @@ export const styles = StyleSheet.create({
     highlightButton: {
         backgroundColor: '#D4AF37',
     },
+    freeButton: {
+        backgroundColor: '#D4AF37',
+    },
     buttonText: {
         color: '#FFFFFF',
         fontSize: 16,
@@ -210,6 +213,9 @@ export const styles = StyleSheet.create({
     },
     highlightButtonText: {
         color: '#000000',
+    },
+    freeButtonText: {
+        color: '#FFFFFF',
     },
     currentPlan: {
         backgroundColor: 'rgba(76, 175, 80, 0.1)',

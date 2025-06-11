@@ -23,7 +23,9 @@ const API_BASE_URL = 'http://localhost:3000';
 const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
     const { user } = route.params;
     const navigation = useTypedNavigation();
-    const [plans, setPlans] = useState<SubscriptionPlan[]>([
+
+    // Definición inicial de los planes
+    const initialPlans: SubscriptionPlan[] = [
         {
             id: 'premium',
             name: 'Plan Premium',
@@ -51,8 +53,9 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
             ],
             icon: 'account-star'
         }
-    ]);
+    ];
 
+    const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans);
     const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus>({
         plan: 'Free',
         status: 'active',
@@ -62,68 +65,43 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
     const [loading, setLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = await getAuthToken();
-                const [statusResponse, plansResponse] = await Promise.all([
-                    axios.get<SubscriptionStatus>(`${API_BASE_URL}/subscriptions/status`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get<SubscriptionPlan[]>(`${API_BASE_URL}/subscriptions/plans`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
-                ]);
+    // Función para obtener el token de autenticación
+    const getAuthToken = async (): Promise<string> => {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+            throw new Error('No se encontró token de autenticación');
+        }
+        return token;
+    };
 
-                const validPlan: SubscriptionPlanType =
-                    statusResponse.data.plan === 'Premium' ? 'Premium' : 'Free';
-
-                setCurrentSubscription({
-                    ...statusResponse.data,
-                    plan: validPlan
-                });
-
-                // 1. Filtramos solo Free y Premium
-                const filteredPlans = plansResponse.data.filter(plan =>
-                    plan.id === 'free_plan_id' || plan.id === 'premium_plan_id'
-                );
-
-                // 2. Ordenamos: Premium primero, Free después
-                const orderedPlans = filteredPlans.sort((a, b) => {
-                    if (a.id === 'premium_plan_id') return -1; // Premium va primero
-                    if (b.id === 'premium_plan_id') return 1;
-                    return 0;
-                });
-
-                // 3. Marcamos el plan actual
-                setPlans(orderedPlans.map(plan => ({
-                    ...plan,
-                    isCurrent: (validPlan === 'Premium' && plan.id === 'premium_plan_id') ||
-                        (validPlan === 'Free' && plan.id === 'free_plan_id'),
-                    // Aseguramos que el Premium tenga highlight=true si es necesario
-                    highlight: plan.id === 'premium_plan_id'
-                })));
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                Alert.alert('Error', 'No se pudo cargar la información de suscripciones');
-                setCurrentSubscription({
-                    plan: 'Free',
-                    status: 'active',
-                    startDate: new Date().toISOString(),
-                    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                });
-            } finally {
-                setLoading(false);
-            }
+    // Mapeo de nombres de planes a IDs de la API
+    const getPlanId = (planName: string): string => {
+        const planMap: Record<string, string> = {
+            'Plan Free': 'free_plan_id',
+            'Plan Premium': 'premium_plan_id'
         };
+        return planMap[planName] || 'free_plan_id';
+    };
 
-        fetchData();
+    // Formatear fecha para mostrar
+    const formatDate = (dateString: string) => {
+        if (!dateString || dateString === 'Invalid Date') return 'No disponible';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES');
+    };
 
-        const unsubscribe = navigation.addListener('focus', fetchData);
+    // Marcar el plan actual
+    const markCurrentPlan = (plan: SubscriptionPlanType) => {
+        setPlans(prevPlans =>
+            prevPlans.map(p => ({
+                ...p,
+                isCurrent: (plan === 'Premium' && p.id === 'premium') ||
+                    (plan === 'Free' && p.id === 'free')
+            }))
+        );
+    };
 
-        return unsubscribe;
-    }, [navigation]);
+    // Obtener estado de la suscripción
     const fetchSubscriptionStatus = async () => {
         try {
             const token = await getAuthToken();
@@ -154,27 +132,85 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         }
     };
 
-    const markCurrentPlan = (plan: SubscriptionPlanType) => {
-        setPlans(prevPlans =>
-            prevPlans.map(p => ({
-                ...p,
-                isCurrent: (plan === 'Premium' && p.id === 'premium') ||
-                    (plan === 'Free' && p.id === 'free')
-            }))
-        );
+    // Cargar datos iniciales
+    const fetchData = async () => {
+        try {
+            const token = await getAuthToken();
+            const [statusResponse, plansResponse] = await Promise.all([
+                axios.get<SubscriptionStatus>(`${API_BASE_URL}/subscriptions/status`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get<SubscriptionPlan[]>(`${API_BASE_URL}/subscriptions/plans`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
+
+            const validPlan: SubscriptionPlanType =
+                statusResponse.data.plan === 'Premium' ? 'Premium' : 'Free';
+
+            setCurrentSubscription({
+                ...statusResponse.data,
+                plan: validPlan
+            });
+
+            // Combinamos los planes iniciales con los de la API
+            const updatedPlans = initialPlans.map(plan => ({
+                ...plan,
+                isCurrent: (validPlan === 'Premium' && plan.id === 'premium') ||
+                    (validPlan === 'Free' && plan.id === 'free')
+            }));
+
+            setPlans(updatedPlans);
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            Alert.alert('Error', 'No se pudo cargar la información de suscripciones');
+            setCurrentSubscription({
+                plan: 'Free',
+                status: 'active',
+                startDate: new Date().toISOString(),
+                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString || dateString === 'Invalid Date') return 'No disponible';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES');
-    };
+    useEffect(() => {
+        fetchData();
+        const unsubscribe = navigation.addListener('focus', fetchData);
+        return unsubscribe;
+    }, [navigation]);
 
-    const handleSubscribe = async (planName: string) => {
+    // Manejar la suscripción a un plan
+    const handleSubscribe = async (plan: SubscriptionPlan) => {
         setIsProcessing(true);
         try {
             const token = await getAuthToken();
-            const planId = getPlanId(planName);
+
+            if (plan.id === 'free') {
+                // Activar plan Free sin requerir pago
+                await axios.post(
+                    `${API_BASE_URL}/subscriptions/create`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                const newSubscription: SubscriptionStatus = {
+                    plan: 'Free',
+                    status: 'active',
+                    startDate: new Date().toISOString(),
+                    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+                };
+
+                setCurrentSubscription(newSubscription);
+                markCurrentPlan('Free');
+                Alert.alert('Éxito', 'Plan Free activado correctamente');
+                return;
+            }
+
+            // Proceso para plan Premium
+            const planId = getPlanId(plan.name);
 
             if (__DEV__) {
                 const fakeSessionId = `fake_session_${Math.random().toString(36).substring(2, 9)}`;
@@ -212,37 +248,22 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
 
             navigation.navigate('Payments', {
                 sessionId,
-                planName,
-                amount: plans.find(p => p.name === planName)?.price || 0,
+                planName: plan.name,
+                amount: plan.price,
                 user
             });
         } catch (error) {
             console.error('Error en handleSubscribe:', error);
             Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Error desconocido al procesar el pago'
+                error instanceof Error ? error.message : 'Error desconocido al procesar la solicitud'
             );
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const getAuthToken = async (): Promise<string> => {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-            throw new Error('No se encontró token de autenticación');
-        }
-        return token;
-    };
-
-    const getPlanId = (planName: string): string => {
-        const planMap: Record<string, string> = {
-            'Plan Free': 'free_plan_id',
-            'Plan Premium': 'premium_plan_id'
-        };
-        return planMap[planName] || 'free_plan_id';
-    };
-
+    // Renderizar tarjeta de plan
     const renderPlanCard = (plan: SubscriptionPlan) => (
         <View
             key={plan.id}
@@ -329,16 +350,18 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                 <TouchableOpacity
                     style={[
                         styles.button,
-                        plan.highlight && styles.highlightButton
+                        plan.highlight && styles.highlightButton,
+                        plan.id === 'free' && styles.freeButton
                     ]}
-                    onPress={() => handleSubscribe(plan.name)}
+                    onPress={() => handleSubscribe(plan)}
                     disabled={isProcessing}
                 >
                     <Text style={[
                         styles.buttonText,
-                        plan.highlight && styles.highlightButtonText
+                        plan.highlight && styles.highlightButtonText,
+                        plan.id === 'free' && styles.freeButtonText
                     ]}>
-                        {isProcessing ? 'PROCESANDO...' : 'SUSCRIBIRME'}
+                        {isProcessing ? 'PROCESANDO...' : plan.id === 'free' ? 'ACTIVAR' : 'SUSCRIBIRME'}
                     </Text>
                 </TouchableOpacity>
             )}
