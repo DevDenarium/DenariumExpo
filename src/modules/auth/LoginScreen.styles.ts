@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
         marginBottom: 30,
         textAlign: 'center',
         color: '#D4AF37',
-            fontFamily: 'Roboto',
+            fontFamily: 'sans-serif',
         letterSpacing: 0.8,
         textShadowColor: 'rgba(212, 175, 55, 0.4)',
         textShadowOffset: { width: 0, height: 1 },

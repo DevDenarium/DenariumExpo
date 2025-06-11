@@ -15,17 +15,17 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
+        fontSize: 24,
+        fontWeight: '600',
         color: '#D4AF37',
         marginBottom: 5,
-        fontFamily: 'Poppins-Bold',
+        fontFamily: 'sans-serif',
         textAlign: 'center',
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#AAAAAA',
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'sans-serif',
         textAlign: 'center',
         maxWidth: '80%',
     },
@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     statusTitle: {
         color: '#D4AF37',
         fontSize: 12,
-        fontFamily: 'Poppins-Bold',
+        fontFamily: 'sans-serif',
         marginBottom: 10,
         letterSpacing: 1,
     },
@@ -54,13 +54,13 @@ export const styles = StyleSheet.create({
     statusPlan: {
         color: '#FFFFFF',
         fontSize: 18,
-        fontFamily: 'Poppins-SemiBold',
+        fontFamily: 'sans-serif',
         marginBottom: 5,
     },
     statusText: {
         color: '#CCCCCC',
         fontSize: 14,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'sans-serif',
     },
     statusHighlight: {
         color: '#4CAF50',
@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
     statusDate: {
         color: '#AAAAAA',
         fontSize: 13,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'sans-serif',
         marginTop: 5,
     },
     plansContainer: {
@@ -100,10 +100,10 @@ export const styles = StyleSheet.create({
         zIndex: 1,
     },
     recommendedText: {
-        color: '#000000',
+        color: '#ffffff',
         fontSize: 12,
-        fontFamily: 'Poppins-Bold',
-        letterSpacing: 1,
+        fontFamily: 'sans-serif',
+        letterSpacing: 0.5,
     },
     currentBadge: {
         position: 'absolute',
@@ -118,8 +118,8 @@ export const styles = StyleSheet.create({
     currentBadgeText: {
         color: '#FFFFFF',
         fontSize: 12,
-        fontFamily: 'Poppins-Bold',
-        letterSpacing: 1,
+        fontFamily: 'sans-serif',
+        letterSpacing: 0.5,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -133,7 +133,7 @@ export const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: '600',
         color: '#FFFFFF',
-        fontFamily: 'Poppins-SemiBold',
+        fontFamily: 'sans-serif',
     },
     currentPlanTitle: {
         color: '#4CAF50',
@@ -186,14 +186,14 @@ export const styles = StyleSheet.create({
         fontSize: 15,
         marginLeft: 10,
         flex: 1,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'sans-serif',
         lineHeight: 22,
     },
     currentFeatureText: {
         color: '#E0E0E0',
     },
     button: {
-        backgroundColor: '#252525',
+        backgroundColor: '#ffffff',
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: 'center',
@@ -208,11 +208,11 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
-        fontFamily: 'Poppins-Bold',
-        letterSpacing: 0.5,
+        fontFamily: 'sans-serif',
+        letterSpacing: 0.3,
     },
     highlightButtonText: {
-        color: '#000000',
+        color: '#ffffff',
     },
     freeButtonText: {
         color: '#FFFFFF',
@@ -239,8 +239,8 @@ export const styles = StyleSheet.create({
         color: '#4CAF50',
         fontSize: 16,
         fontWeight: 'bold',
-        fontFamily: 'Poppins-Bold',
-        letterSpacing: 1,
+        fontFamily: 'sans-serif',
+        letterSpacing: 0.3,
     },
     loadingContainer: {
         flex: 1,
@@ -262,6 +262,6 @@ export const styles = StyleSheet.create({
         color: '#AAAAAA',
         fontSize: 14,
         flex: 1,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'sans-serif',
     },
 });
