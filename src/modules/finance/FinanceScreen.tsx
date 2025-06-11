@@ -4,7 +4,15 @@ import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
 import { FinanceService } from '../../services/Finance.service';
-import { BalanceSummary, Currency, FinanceSettings, SortOption, FilterOption, CURRENCIES } from './FinanceScreen.types';
+import {
+    BalanceSummary,
+    Currency,
+    FinanceSettings,
+    SortOption,
+    FilterOption,
+    CURRENCIES,
+    MonthYear
+} from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +33,10 @@ const FinanceScreen: React.FC = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(false);
     const [settings, setSettings] = useState<FinanceSettings>(DEFAULT_SETTINGS);
     const [showConfig, setShowConfig] = useState(false);
+    const [selectedMonthYear, setSelectedMonthYear] = useState<MonthYear>({
+        month: new Date().getMonth(),
+        year: new Date().getFullYear()
+    });
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -32,21 +44,17 @@ const FinanceScreen: React.FC = () => {
                 const savedSettings = await AsyncStorage.getItem('financeSettings');
                 if (savedSettings) {
                     const parsedSettings = JSON.parse(savedSettings);
-                    if (typeof parsedSettings.currency === 'string') {
-                        const currency = CURRENCIES.find(c => c.code === parsedSettings.currency) || DEFAULT_SETTINGS.currency;
-                        setSettings({
-                            ...parsedSettings,
-                            currency
-                        });
-                    } else {
-                        setSettings(parsedSettings);
-                    }
+                    const currency = CURRENCIES.find(c => c.code === parsedSettings.currency) || DEFAULT_SETTINGS.currency;
+                    setSettings({
+                        currency,
+                        sortBy: parsedSettings.sortBy || DEFAULT_SETTINGS.sortBy,
+                        filterBy: 'all' // <--- Fuerza que siempre empiece en 'all'
+                    });
                 }
             } catch (error) {
                 console.error('Error loading settings:', error);
             }
         };
-
         loadSettings();
     }, []);
 
@@ -89,6 +97,14 @@ const FinanceScreen: React.FC = () => {
         })}`;
     };
 
+    const getMonthName = (month: number) => {
+        const months = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        return months[month];
+    };
+
     return (
         <View style={{ flex: 1 }}>
             <TouchableOpacity
@@ -110,6 +126,11 @@ const FinanceScreen: React.FC = () => {
             >
                 <View style={styles.balanceContainer}>
                     <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
+                    {settings.filterBy === 'specificMonth' && (
+                        <Text style={{ color: '#D4AF37', fontSize: 14, marginBottom: 5 }}>
+                            {getMonthName(selectedMonthYear.month)} {selectedMonthYear.year}
+                        </Text>
+                    )}
                     <Text style={[
                         styles.balanceAmount,
                         balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
@@ -134,6 +155,7 @@ const FinanceScreen: React.FC = () => {
                     sortBy={settings.sortBy}
                     filterBy={settings.filterBy}
                     onRefresh={onRefresh}
+                    selectedMonthYear={selectedMonthYear}
                 />
             </ScrollView>
 
@@ -142,6 +164,8 @@ const FinanceScreen: React.FC = () => {
                 onClose={() => setShowConfig(false)}
                 settings={settings}
                 onSettingsChange={setSettings}
+                selectedMonthYear={selectedMonthYear}
+                onMonthYearChange={setSelectedMonthYear}
             />
         </View>
     );

@@ -15,7 +15,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './FinanceScreen.styles';
 import { FinanceService } from '../../services/Finance.service';
-import { FinanceEntry, SortOption, FilterOption } from './FinanceScreen.types';
+import {FinanceEntry, SortOption, FilterOption, MonthYear} from './FinanceScreen.types';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';
 
@@ -25,6 +25,7 @@ interface FinanceListProps {
     sortBy: SortOption;
     filterBy: FilterOption;
     onRefresh: () => void;
+    selectedMonthYear?: MonthYear;
 }
 
 type DateTimePickerProps = {
@@ -74,7 +75,8 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                                      currency,
                                                      sortBy,
                                                      filterBy,
-                                                     onRefresh
+                                                     onRefresh,
+                                                     selectedMonthYear
                                                  }) => {
     const [entries, setEntries] = useState<FinanceEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -122,12 +124,14 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const WebDatePicker = () => {
         if (!ReactDatePicker) {
             return (
-                <TextInput
-                    style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
-                    value={formatDate(editDate)}
-                    placeholder="Seleccionar fecha"
-                    editable={false}
-                />
+                <View style={[styles.dateInputContainer, { marginBottom: 0 }]}>
+                    <TextInput
+                        style={[styles.input, styles.dateInput]}
+                        value={formatDate(editDate)}
+                        placeholder="Seleccionar fecha"
+                        editable={false}
+                    />
+                </View>
             );
         }
 
@@ -140,7 +144,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                     locale="es"
                     customInput={
                         <TextInput
-                            style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
+                            style={[styles.input, styles.dateInput]}
                             value={formatDate(editDate)}
                             placeholder="Seleccionar fecha"
                         />
@@ -198,6 +202,8 @@ const FinanceList: React.FC<FinanceListProps> = ({
             try {
                 let data = await FinanceService.getAllEntries();
 
+                console.log('selectedMonthYear:', selectedMonthYear);
+
                 data = filterEntries(data, filterBy);
                 data = sortEntries(data, sortBy);
 
@@ -210,7 +216,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
         };
 
         loadEntries();
-    }, [refreshTrigger, sortBy, filterBy]);
+    }, [refreshTrigger, sortBy, filterBy, selectedMonthYear]);
 
     const filterEntries = (entries: FinanceEntry[], filter: FilterOption): FinanceEntry[] => {
         const now = new Date();
@@ -226,6 +232,17 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 return entries.filter(e => new Date(e.date) >= oneMonthAgo);
             case 'last3Months':
                 return entries.filter(e => new Date(e.date) >= threeMonthsAgo);
+            case 'specificMonth':
+                if (!selectedMonthYear) return entries;
+                const selectedMonth = Number(selectedMonthYear.month);
+                const selectedYear = Number(selectedMonthYear.year);
+                return entries.filter(e => {
+                    const entryDate = new Date(e.date);
+                    return (
+                        entryDate.getUTCMonth() === selectedMonth &&
+                        entryDate.getUTCFullYear() === selectedYear
+                    );
+                });
             default:
                 return entries;
         }
@@ -381,16 +398,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                 selectedEntry?.type === 'income' ? styles.incomeAmount : styles.expenseAmount
                             ]}>
                                 {selectedEntry && `${currency}${formatAmount(selectedEntry.amount)}`}
-                            </Text>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Monto:</Text>
-                            <Text style={[
-                                styles.detailValue,
-                                selectedEntry?.type === 'income' ? styles.incomeAmount : styles.expenseAmount
-                            ]}>
-                                {selectedEntry && `${currency}${selectedEntry.amount}`}
                             </Text>
                         </View>
 

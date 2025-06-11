@@ -85,6 +85,11 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         width: '100%',
     },
+    dateInputContainer: {
+        width: '100%',
+        marginBottom: 15,
+        marginTop: 0,
+    },
     dateInput: {
         backgroundColor: '#333333',
         borderRadius: 5,
@@ -93,10 +98,10 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         width: '100%',
     },
-    dateInputContainer: {
+    datePickerContainer: {
+        position: 'relative',
+        zIndex: 2,
         width: '100%',
-        marginBottom: 15,
-        marginTop: 0,
     },
     dateInputContent: {
         flexDirection: 'row',
@@ -265,11 +270,6 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
     },
-    datePickerContainer: {
-        position: 'relative',
-        zIndex: 2,
-        width: '100%',
-    },
     datePickerWrapper: {
         position: 'absolute',
         top: 60,
@@ -396,5 +396,17 @@ export const styles = StyleSheet.create({
     filterOptionSelectedText: {
         color: '#000000',
         fontWeight: 'bold',
+    },
+    monthSelectorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+        paddingHorizontal: 10,
+    },
+    monthSelectorButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#333333',
     },
 });

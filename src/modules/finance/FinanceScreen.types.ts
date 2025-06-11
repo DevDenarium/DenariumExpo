@@ -8,6 +8,11 @@ export interface FinanceEntry {
     date: string;
 }
 
+export interface MonthYear {
+    month: number;
+    year: number;
+}
+
 export interface CreateEntryDto {
     title: string;
     description?: string;
@@ -36,12 +41,18 @@ export const CURRENCIES: Currency[] = [
 ];
 
 export type SortOption = 'recent' | 'oldest' | 'highest' | 'lowest' | 'type';
-export type FilterOption = 'all' | 'income' | 'expense' | 'lastMonth' | 'last3Months';
+export type FilterOption = 'all' | 'income' | 'expense' | 'lastMonth' | 'last3Months' | 'specificMonth';
+
+export interface MonthFilter {
+    year: number;
+    month: number;
+}
 
 export interface FinanceSettings {
     currency: Currency;
     sortBy: SortOption;
     filterBy: FilterOption;
+    monthFilter?: MonthFilter;
 }
 
 export interface FinanceScreenProps {
