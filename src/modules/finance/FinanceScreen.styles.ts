@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
     },
     balanceDetail: {
         color: '#AAAAAA',
-        fontSize: 14,
+        fontSize: 12,
     },
     formContainer: {
         backgroundColor: '#2a2a2a',

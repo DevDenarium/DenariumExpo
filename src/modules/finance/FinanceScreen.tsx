@@ -91,10 +91,13 @@ const FinanceScreen: React.FC = () => {
     }, []);
 
     const formatAmount = (amount: number): string => {
-        return `${settings.currency.symbol}${amount.toLocaleString(settings.currency.locale || 'en-US', {
+        // Usamos 'en-US' para ambos casos para asegurar comas como separadores de miles
+        const formattedAmount = amount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        })}`;
+        });
+
+        return `${settings.currency.symbol}${formattedAmount}`;
     };
 
     const getMonthName = (month: number) => {
