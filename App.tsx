@@ -19,7 +19,8 @@ import PaymentsScreen from "./src/modules/payments/PaymentsScreen";
 import PaymentSuccessScreen from "./src/modules/payments/PaymentsSuccessScreen";
 import FinanceScreen from "./src/modules/finance/FinanceScreen";
 import ProfileScreen from './src/modules/profile/ProfileScreen';
-import {AppointmentsScreen} from "./src/admin/appointment/AppointmentManagement";
+import AppointmentManagement from "./src/admin/appointment/AppointmentManagement";
+import AppointmentScreen from "./src/modules/appointment/AppointmentScreen";
 import {VideoManagement} from "./src/admin/content/VideoManagement";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,14 +70,14 @@ const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User
         { name: 'Finance', label: 'Finanzas', icon: 'finance' },
         { name: 'Transactions', label: 'Transacciones', icon: 'cash-multiple' },
         { name: 'Videos', label: 'Contenido Educativo', icon: 'bookshelf' },
-        { name: 'Advisories', label: 'Asesorías', icon: 'account-tie-voice' },
+        { name: 'Appointments', label: 'Asesorías', icon: 'account-tie-voice' },
         { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
         { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
     ];
 
     const adminMenuItems = [
         { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'video-library' },
-        { name: 'Appointments', label: 'Citas Agendadas', icon: 'calendar-clock' },
+        { name: 'AppointmentManagement', label: 'Citas Agendadas', icon: 'calendar-clock' },
     ];
 
     const clientMenuItems = [
@@ -212,6 +213,11 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                 component={FinanceScreen}
                 options={{ title: 'Transacciones' }}
             />
+            <Drawer.Screen
+                name="Appointments"
+                component={AppointmentScreen}
+                options={{ title: 'Asesorías' }}
+            />
             {!isAdmin && (
                 <Drawer.Screen
                     name="Subscriptions"
@@ -228,8 +234,8 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                         options={{ title: 'Administrar Videos' }}
                     />
                     <Drawer.Screen
-                        name="Appointments"
-                        component={AppointmentsScreen}
+                        name="AppointmentManagement"
+                        component={AppointmentManagement}
                         options={{ title: 'Citas Agendadas' }}
                     />
                 </>
@@ -245,7 +251,6 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
 };
 
 export default function App() {
-
     return (
         <>
             <StatusBar style="light" />
@@ -306,7 +311,12 @@ export default function App() {
                     />
                     <Stack.Screen
                         name="Appointments"
-                        component={AppointmentsScreen}
+                        component={AppointmentScreen}
+                        options={{ title: 'Asesorías' }}
+                    />
+                    <Stack.Screen
+                        name="AppointmentManagement"
+                        component={AppointmentManagement}
                         options={{ title: 'Citas Agendadas' }}
                     />
                 </Stack.Navigator>
