@@ -1,4 +1,3 @@
-// AppointmentScreen.styles.ts
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const styles = StyleSheet.create({
@@ -28,8 +27,9 @@ export const styles = StyleSheet.create({
     } as ViewStyle,
     emptyContainer: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
+        paddingTop: 70,
     } as ViewStyle,
     emptyText: {
         color: '#AAAAAA',
@@ -81,11 +81,20 @@ export const styles = StyleSheet.create({
     cardFooter: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
+        marginTop: 10,
     } as ViewStyle,
     actionButton: {
         padding: 8,
         borderRadius: 5,
         marginLeft: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    } as ViewStyle,
+    editButton: {
+        backgroundColor: '#2196F3',
+    } as ViewStyle,
+    deleteButton: {
+        backgroundColor: '#F44336',
     } as ViewStyle,
     modalOverlay: {
         flex: 1,
@@ -220,13 +229,30 @@ export const styles = StyleSheet.create({
     timeSlotText: {
         color: '#FFFFFF',
     } as TextStyle,
-    deleteButton: {
-        padding: 5,
-        borderRadius: 15,
-        backgroundColor: 'rgba(244, 67, 54, 0.2)',
-        width: 30,
-        height: 30,
-        justifyContent: 'center',
+    nonEditableText: {
+        color: '#AAAAAA',
+        fontStyle: 'italic',
+        fontSize: 12,
+        marginTop: 5,
+    },
+    filterContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 15,
+    } as ViewStyle,
+    filterButton: {
+        flex: 1,
+        marginHorizontal: 5,
+        paddingVertical: 10,
+        borderRadius: 5,
+        backgroundColor: '#333333',
         alignItems: 'center',
     } as ViewStyle,
+    activeFilterButton: {
+        backgroundColor: '#D4AF37',
+    } as ViewStyle,
+    filterButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '500',
+    } as TextStyle,
 });

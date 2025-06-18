@@ -1,4 +1,3 @@
-// AppointmentScreen.tsx
 import React, {useState, useEffect} from 'react';
 import {
     View,
@@ -18,7 +17,7 @@ import {styles} from './AppointmentScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {AppointmentScreenProps} from './AppointmentScreen.types';
 import {appointmentService} from '../../services/appointment.service';
-import {format, isBefore, parse, setHours, setMinutes, addDays} from 'date-fns';
+import {format, isBefore, parse, setHours, setMinutes, addDays, isAfter} from 'date-fns';
 import {es} from 'date-fns/locale';
 import {Appointment, AppointmentStatus} from '../../modules/navegation/Navegation.types';
 import {registerLocale, setDefaultLocale} from "react-datepicker";
@@ -81,8 +80,11 @@ interface TimeSlot {
     end: Date;
 }
 
+type FilterType = 'upcoming' | 'pending' | 'past' | 'cancelled';
+
 const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -94,15 +96,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         duration: '60',
     });
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-    const [actionType, setActionType] = useState<'create' | 'cancel'>('create');
+    const [actionType, setActionType] = useState<'create' | 'edit' | 'cancel'>('create');
     const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([]);
     const [showTimeSlots, setShowTimeSlots] = useState(false);
     const [timeSlots, setTimeSlots] = useState<Date[]>([]);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<FilterType>('upcoming');
 
     useEffect(() => {
         fetchAppointments();
     }, []);
+
+    useEffect(() => {
+        filterAppointments();
+    }, [appointments, activeFilter]);
 
     const fetchAppointments = async () => {
         try {
@@ -115,6 +122,41 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const filterAppointments = () => {
+        const now = new Date();
+        let filtered = [...appointments];
+
+        switch (activeFilter) {
+            case 'upcoming':
+                filtered = filtered.filter(appt =>
+                    appt.status === 'CONFIRMED' &&
+                    isAfter(new Date(appt.requestedDate), now)
+                );
+                break;
+            case 'pending':
+                filtered = filtered.filter(appt =>
+                    (appt.status === 'PENDING' || appt.status === 'RESCHEDULED') &&
+                    isAfter(new Date(appt.requestedDate), now)
+                );
+                break;
+            case 'past':
+                filtered = filtered.filter(appt =>
+                    (appt.status === 'CONFIRMED' || appt.status === 'PENDING' || appt.status === 'RESCHEDULED') &&
+                    isBefore(new Date(appt.requestedDate), now)
+                );
+                break;
+            case 'cancelled':
+                filtered = filtered.filter(appt =>
+                    appt.status === 'CANCELLED' || appt.status === 'REJECTED'
+                );
+                break;
+            default:
+                break;
+        }
+
+        setFilteredAppointments(filtered);
     };
 
     const fetchAvailability = async (date: Date) => {
@@ -169,20 +211,30 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 return;
             }
 
-            await appointmentService.createAppointment({
-                title: formData.title,
-                description: formData.description,
-                requestedDate: finalDate.toISOString(),
-                duration,
-            });
+            if (actionType === 'create') {
+                await appointmentService.createAppointment({
+                    title: formData.title,
+                    description: formData.description,
+                    requestedDate: finalDate.toISOString(),
+                    duration,
+                });
+                Alert.alert('Éxito', 'Cita creada correctamente');
+            } else if (actionType === 'edit' && selectedAppointment) {
+                await appointmentService.updateAppointment(selectedAppointment.id, {
+                    title: formData.title,
+                    description: formData.description,
+                    requestedDate: finalDate.toISOString(),
+                    duration,
+                });
+                Alert.alert('Éxito', 'Cita actualizada correctamente');
+            }
 
-            Alert.alert('Éxito', 'Cita creada correctamente');
             setShowModal(false);
             fetchAppointments();
             resetForm();
         } catch (error: any) {
-            console.error('Error creating appointment:', error);
-            Alert.alert('Error', error.message || 'No se pudo crear la cita');
+            console.error('Error creating/updating appointment:', error);
+            Alert.alert('Error', error.message || 'No se pudo procesar la solicitud');
         }
     };
 
@@ -370,6 +422,27 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         );
     };
 
+    const handleEditAppointment = (appointment: Appointment) => {
+        setSelectedAppointment(appointment);
+        setActionType('edit');
+
+        // Parse the appointment date
+        const appointmentDate = new Date(appointment.requestedDate);
+        setSelectedDate(appointmentDate);
+        setSelectedTime(appointmentDate);
+
+        // Set form data
+        setFormData({
+            title: appointment.title,
+            description: appointment.description || '',
+            duration: appointment.duration.toString(),
+        });
+
+        // Fetch availability and show modal
+        fetchAvailability(appointmentDate);
+        setShowModal(true);
+    };
+
     const renderAppointmentCard = ({item}: { item: Appointment }) => {
         const [statusContainerStyle, statusTextStyle] = getStatusStyle(item.status);
 
@@ -382,17 +455,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             {getStatusText(item.status)}
                         </Text>
                     </View>
-                    {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
-                        <TouchableOpacity
-                            onPress={() => {
-                                setSelectedAppointment(item);
-                                setShowDeleteConfirmation(true);
-                            }}
-                            style={styles.deleteButton}
-                        >
-                            <Icon name="close" size={20} color="#F44336"/>
-                        </TouchableOpacity>
-                    )}
                 </View>
                 <View style={styles.cardBody}>
                     {item.description && (
@@ -420,6 +482,30 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     <Text style={styles.cardDate}>
                         <Text style={{fontWeight: 'bold'}}>Duración:</Text> {item.duration} minutos
                     </Text>
+                </View>
+                <View style={styles.cardFooter}>
+                    {/* Botón EDITAR - Solo para PENDING o RESCHEDULED */}
+                    {(item.status === 'PENDING' || item.status === 'RESCHEDULED') && (
+                        <TouchableOpacity
+                            style={[styles.actionButton, styles.editButton]}
+                            onPress={() => handleEditAppointment(item)}
+                        >
+                            <Icon name="pencil" size={20} color="#FFFFFF"/>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Botón CANCELAR - Para PENDING, RESCHEDULED y CONFIRMED */}
+                    {(item.status === 'PENDING' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
+                        <TouchableOpacity
+                            style={[styles.actionButton, styles.deleteButton]}
+                            onPress={() => {
+                                setSelectedAppointment(item);
+                                setShowDeleteConfirmation(true);
+                            }}
+                        >
+                            <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         );
@@ -451,14 +537,59 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 </TouchableOpacity>
             </View>
 
-            {appointments.length === 0 ? (
+            {/* Filter Buttons */}
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButton,
+                        activeFilter === 'upcoming' ? styles.activeFilterButton : {}
+                    ]}
+                    onPress={() => setActiveFilter('upcoming')}
+                >
+                    <Text style={styles.filterButtonText}>Próximas</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButton,
+                        activeFilter === 'pending' ? styles.activeFilterButton : {}
+                    ]}
+                    onPress={() => setActiveFilter('pending')}
+                >
+                    <Text style={styles.filterButtonText}>Pendientes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButton,
+                        activeFilter === 'past' ? styles.activeFilterButton : {}
+                    ]}
+                    onPress={() => setActiveFilter('past')}
+                >
+                    <Text style={styles.filterButtonText}>Pasadas</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButton,
+                        activeFilter === 'cancelled' ? styles.activeFilterButton : {}
+                    ]}
+                    onPress={() => setActiveFilter('cancelled')}
+                >
+                    <Text style={styles.filterButtonText}>Canceladas</Text>
+                </TouchableOpacity>
+            </View>
+
+            {filteredAppointments.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Icon name="calendar-remove" size={60} color="#AAAAAA"/>
-                    <Text style={styles.emptyText}>No tienes citas agendadas</Text>
+                    <Text style={styles.emptyText}>
+                        {activeFilter === 'upcoming' && 'No tienes citas próximas'}
+                        {activeFilter === 'pending' && 'No tienes citas pendientes'}
+                        {activeFilter === 'past' && 'No tienes citas pasadas'}
+                        {activeFilter === 'cancelled' && 'No tienes citas canceladas'}
+                    </Text>
                 </View>
             ) : (
                 <FlatList
-                    data={appointments}
+                    data={filteredAppointments}
                     renderItem={renderAppointmentCard}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContainer}
@@ -477,90 +608,62 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 <View style={styles.modalOverlay}>
                     <ScrollView style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>
-                            {actionType === 'create' ? 'Nueva Cita' : 'Cancelar Cita'}
+                            {actionType === 'create' ? 'Nueva Cita' : 'Editar Cita'}
                         </Text>
 
-                        {actionType !== 'cancel' && (
-                            <>
-                                <TextInput
-                                    style={styles.modalInput}
-                                    placeholder="Título*"
-                                    placeholderTextColor="#AAAAAA"
-                                    value={formData.title}
-                                    onChangeText={(text) => setFormData({...formData, title: text})}
-                                />
-                                <TextInput
-                                    style={[styles.modalInput, {minHeight: 80}]}
-                                    placeholder="Descripción (opcional)"
-                                    placeholderTextColor="#AAAAAA"
-                                    value={formData.description}
-                                    onChangeText={(text) => setFormData({...formData, description: text})}
-                                    multiline
-                                />
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="Título*"
+                            placeholderTextColor="#AAAAAA"
+                            value={formData.title}
+                            onChangeText={(text) => setFormData({...formData, title: text})}
+                        />
+                        <TextInput
+                            style={[styles.modalInput, {minHeight: 80}]}
+                            placeholder="Descripción (opcional)"
+                            placeholderTextColor="#AAAAAA"
+                            value={formData.description}
+                            onChangeText={(text) => setFormData({...formData, description: text})}
+                            multiline
+                        />
 
-                                {Platform.OS === 'web' ? <WebDatePicker/> : <MobileDatePicker/>}
+                        {Platform.OS === 'web' ? <WebDatePicker/> : <MobileDatePicker/>}
 
-                                {renderTimeSlots()}
+                        {renderTimeSlots()}
 
-                                <TextInput
-                                    style={styles.durationInput}
-                                    placeholder="Duración en minutos (mínimo 15)*"
-                                    placeholderTextColor="#AAAAAA"
-                                    keyboardType="numeric"
-                                    value={formData.duration}
-                                    onChangeText={(text) => setFormData({...formData, duration: text})}
-                                />
+                        <TextInput
+                            style={styles.durationInput}
+                            placeholder="Duración en minutos (mínimo 15)*"
+                            placeholderTextColor="#AAAAAA"
+                            keyboardType="numeric"
+                            value={formData.duration}
+                            onChangeText={(text) => setFormData({...formData, duration: text})}
+                        />
 
-                                <View style={styles.modalButtonContainer}>
-                                    <TouchableOpacity
-                                        style={[styles.modalButton, styles.cancelButton]}
-                                        onPress={() => {
-                                            setShowModal(false);
-                                            resetForm();
-                                        }}
-                                    >
-                                        <Text style={styles.modalButtonText}>Cancelar</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.modalButton, styles.confirmButton, !selectedTime ? styles.disabledButton : {}]}
-                                        onPress={handleCreateAppointment}
-                                        disabled={!selectedTime}
-                                    >
-                                        <Text style={styles.modalButtonText}>Crear Cita</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </>
-                        )}
-
-                        {actionType === 'cancel' && (
-                            <>
-                                <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
-                                    ¿Estás seguro que deseas cancelar esta cita?
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => {
+                                    setShowModal(false);
+                                    resetForm();
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.confirmButton, !selectedTime ? styles.disabledButton : {}]}
+                                onPress={handleCreateAppointment}
+                                disabled={!selectedTime}
+                            >
+                                <Text style={styles.modalButtonText}>
+                                    {actionType === 'create' ? 'Crear Cita' : 'Actualizar Cita'}
                                 </Text>
-                                <View style={styles.modalButtonContainer}>
-                                    <TouchableOpacity
-                                        style={[styles.modalButton, styles.cancelButton]}
-                                        onPress={() => {
-                                            setShowModal(false);
-                                            resetForm();
-                                        }}
-                                    >
-                                        <Text style={styles.modalButtonText}>No</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.modalButton, styles.confirmButton]}
-                                        onPress={handleCancelAppointment}
-                                    >
-                                        <Text style={styles.modalButtonText}>Sí, Cancelar</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </>
-                        )}
+                            </TouchableOpacity>
+                        </View>
                     </ScrollView>
                 </View>
             </Modal>
 
-            {/* Modal de confirmación para eliminar cita */}
             <Modal
                 visible={showDeleteConfirmation}
                 transparent={true}

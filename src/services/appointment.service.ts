@@ -106,6 +106,37 @@ class AppointmentService {
             );
         }
     }
+
+    // Actualizar una cita existente
+    async updateAppointment(
+        id: string,
+        dto: {
+            title: string;
+            description?: string;
+            requestedDate: string;
+            duration?: number;
+        }
+    ): Promise<ApiResponse<Appointment>> {
+        try {
+            // Primero obtener la cita actual para verificar su estado
+            const headers = await this.getHeaders();
+            const currentAppointment = await axios.get(`${API_BASE_URL}/appointments/${id}`, { headers });
+
+            if (currentAppointment.data.status === 'CONFIRMED') {
+                throw new Error('No se puede editar una cita confirmada');
+            }
+
+            const response = await axios.put(`${API_BASE_URL}/appointments/${id}`, dto, { headers });
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error updating appointment:', error);
+            throw new Error(error.response?.data?.message || 'No se pudo actualizar la cita');
+        }
+    }
 }
+
 
 export const appointmentService = new AppointmentService();
