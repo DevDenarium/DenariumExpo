@@ -34,8 +34,8 @@ type DateTimePickerProps = {
     locale?: string;
     textColor?: string;
     themeVariant?: 'light' | 'dark';
-    minimumDate?: Date;  // Añadimos esta propiedad
-    minimumTime?: Date;  // Opcional: para compatibilidad futura
+    minimumDate?: Date;
+    minimumTime?: Date;
     maximumDate?: Date;
 };
 
@@ -55,6 +55,7 @@ type ReactDatePickerProps = {
     startDate?: Date;
     endDate?: Date;
     filterTime?: (time: Date) => boolean;
+    inline?: boolean;
 };
 
 let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
@@ -84,7 +85,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [showMobileDatePicker, setShowMobileDatePicker] = useState(false); // Cambiado el nombre aquí
+    const [showMobileDatePicker, setShowMobileDatePicker] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -255,6 +256,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                     dateFormat="dd/MM/yyyy HH:mm"
                     locale="es"
                     minDate={new Date()}
+                    inline
                     customInput={
                         <TextInput
                             style={styles.modalInput}
@@ -272,20 +274,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
             <View style={styles.datePickerContainer}>
                 <TouchableOpacity
                     style={styles.modalInput}
-                    onPress={() => setShowMobileDatePicker(true)} // Usamos el nuevo nombre aquí
+                    onPress={() => setShowMobileDatePicker(true)}
                 >
                     <Text style={{ color: '#FFFFFF' }}>
                         {formatDisplayDate(selectedDate)}
                     </Text>
                 </TouchableOpacity>
 
-                {showMobileDatePicker && DateTimePicker && ( // Y aquí
+                {showMobileDatePicker && DateTimePicker && (
                     <DateTimePicker
                         value={selectedDate}
                         mode="datetime"
                         display="default"
                         onChange={(event, date) => {
-                            setShowMobileDatePicker(false); // Y aquí
+                            setShowMobileDatePicker(false);
                             if (date) {
                                 setSelectedDate(date);
                                 if (actionType === 'create') {
@@ -527,13 +529,15 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                             font-family: inherit;
                             background-color: #2a2a2a;
                             border: 1px solid #444;
-                            position: absolute;
-                            top: 100% !important;
-                            left: 0 !important;
+                            position: relative !important;
+                            top: auto !important;
+                            left: auto !important;
                             z-index: 10000 !important;
+                            margin-top: 10px;
                         }
                         .react-datepicker-popper {
                             z-index: 10000 !important;
+                            position: relative !important;
                         }
                         .react-datepicker__triangle {
                             display: none;
@@ -573,6 +577,16 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                         .react-datepicker__time-list-item--selected {
                             background-color: #D4AF37;
                             color: black;
+                        }
+                        .react-datepicker__month-container {
+                            float: none;
+                        }
+                        .react-datepicker__time-container {
+                            float: none;
+                            width: 100%;
+                        }
+                        .react-datepicker__time-box {
+                            width: 100%;
                         }
                     `}
                 </style>
