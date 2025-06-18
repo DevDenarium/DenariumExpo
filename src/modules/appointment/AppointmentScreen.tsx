@@ -172,8 +172,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const generateTimeSlots = (date: Date) => {
         const slots: Date[] = [];
-        const startHour = 9; // 9 AM
-        const endHour = 21; // 9 PM
+        const startHour = 9;
+        const endHour = 21;
 
         for (let hour = startHour; hour < endHour; hour++) {
             for (let minute = 0; minute < 60; minute += 30) {
@@ -201,7 +201,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 return;
             }
 
-            // Combine selected date with selected time
             const finalDate = new Date(selectedDate);
             finalDate.setHours(selectedTime.getHours());
             finalDate.setMinutes(selectedTime.getMinutes());

@@ -1,5 +1,3 @@
-import { StackNavigationProp } from '@react-navigation/stack';
-
 export type AppointmentStatus =
     'PENDING' |
     'CONFIRMED' |
@@ -8,14 +6,14 @@ export type AppointmentStatus =
     'REJECTED' |
     'COMPLETED';
 
-export type User = {
+export interface User {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
-};
+}
 
-export type Appointment = {
+export interface Appointment {
     id: string;
     title: string;
     description?: string;
@@ -24,15 +22,9 @@ export type Appointment = {
     confirmedDate?: string;
     duration: number;
     status: AppointmentStatus;
-    user?: User;
-};
+    user: User;
+}
 
-export type RootStackParamList = {
-    Login: { message?: string };
-    AppointmentManagement: undefined;
-    // Agrega otras rutas aquí según sea necesario
-};
-
-export type AppointmentManagementProps = {
-    navigation: StackNavigationProp<RootStackParamList, 'AppointmentManagement'>;
-};
+export interface AppointmentManagementProps {
+    navigation: any;
+}

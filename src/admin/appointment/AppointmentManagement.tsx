@@ -18,24 +18,51 @@ import {Appointment, AppointmentManagementProps, AppointmentStatus} from './Appo
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format, isBefore } from 'date-fns';
+import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const API_BASE_URL = 'http://localhost:3000';
 
+type FilterType = 'day' | 'month' | 'none';
+type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all';
+
 const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigation }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [actionType, setActionType] = useState<'confirm' | 'reschedule' | 'cancel'>('confirm');
+    const [filterType, setFilterType] = useState<FilterType>('none');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [filterDate, setFilterDate] = useState<Date | null>(null);
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
     useEffect(() => {
         fetchAppointments();
     }, []);
 
+    useEffect(() => {
+        applyFilters();
+    }, [appointments, filterType, filterDate, statusFilter]);
+
+    const handleMonthSelect = (month: number) => {
+        setSelectedMonth(month);
+        const newDate = new Date(selectedYear, month, 1);
+        setFilterDate(newDate);
+        setShowMonthPicker(false);
+    };
+
+  const handleYearChange = (increment: number) => {
+        const newYear = selectedYear + increment;
+        setSelectedYear(newYear);
+        const newDate = new Date(newYear, selectedMonth, 1);
+        setFilterDate(newDate);
+    };
     const fetchAppointments = async () => {
         try {
             setLoading(true);
@@ -58,6 +85,60 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         } finally {
             setLoading(false);
         }
+    };
+
+    const applyFilters = () => {
+        let result = [...appointments];
+
+        // Apply date filter
+        if (filterType !== 'none' && filterDate) {
+            if (filterType === 'day') {
+                result = result.filter(appointment =>
+                    isSameDay(parseISO(appointment.requestedDate), filterDate)
+                );
+            } else if (filterType === 'month') {
+                result = result.filter(appointment =>
+                    isSameMonth(parseISO(appointment.requestedDate), filterDate) &&
+                    isSameYear(parseISO(appointment.requestedDate), filterDate)
+                );
+            }
+        }
+
+        // Apply status filter
+        switch (statusFilter) {
+            case 'upcoming':
+                result = result.filter(appointment =>
+                    appointment.status === 'CONFIRMED' ||
+                    appointment.status === 'RESCHEDULED'
+                ).sort((a, b) =>
+                    new Date(a.confirmedDate || a.requestedDate).getTime() -
+                    new Date(b.confirmedDate || b.requestedDate).getTime()
+                );
+                break;
+            case 'pending':
+                result = result.filter(appointment =>
+                    appointment.status === 'PENDING'
+                ).sort((a, b) =>
+                    new Date(a.requestedDate).getTime() -
+                    new Date(b.requestedDate).getTime()
+                );
+                break;
+            case 'cancelled':
+                result = result.filter(appointment =>
+                    appointment.status === 'CANCELLED' ||
+                    appointment.status === 'REJECTED'
+                ).sort((a, b) =>
+                    new Date(b.requestedDate).getTime() -
+                    new Date(a.requestedDate).getTime()
+                );
+                break;
+            case 'all':
+            default:
+                // No additional filtering needed
+                break;
+        }
+
+        setFilteredAppointments(result);
     };
 
     const handleConfirmAppointment = async () => {
@@ -158,6 +239,10 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         return format(date, "dd/MM/yyyy HH:mm", { locale: es });
     };
 
+    const formatMonth = (date: Date) => {
+        return format(date, "MMMM yyyy", { locale: es });
+    };
+
     const getStatusStyle = (status: AppointmentStatus): [{ backgroundColor: string }, { color: string }] => {
         switch (status) {
             case 'PENDING':
@@ -193,6 +278,13 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         setShowDatePicker(false);
         if (date) {
             setSelectedDate(date);
+        }
+    };
+
+    const handleFilterDateChange = (event: any, date?: Date) => {
+        setShowDatePicker(false);
+        if (date) {
+            setFilterDate(date);
         }
     };
 
@@ -293,20 +385,155 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 <Text style={styles.title}>Gestión de Citas</Text>
             </View>
 
-            {appointments.length === 0 ? (
+            {/* Filtros */}
+            <View style={styles.filterContainer}>
+                <View style={styles.dateFilterContainer}>
+                    <TouchableOpacity
+                        style={[styles.filterButton, filterType === 'day' && styles.activeFilter]}
+                        onPress={() => {
+                            setFilterType(filterType === 'day' ? 'none' : 'day');
+                            if (filterType !== 'day') {
+                                setFilterDate(new Date());
+                            } else {
+                                setFilterDate(null);
+                            }
+                        }}
+                    >
+                        <Text style={styles.filterButtonText}>Día</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.filterButton, filterType === 'month' && styles.activeFilter]}
+                        onPress={() => {
+                            setFilterType(filterType === 'month' ? 'none' : 'month');
+                            if (filterType !== 'month') {
+                                setFilterDate(new Date());
+                                setSelectedMonth(new Date().getMonth());
+                                setSelectedYear(new Date().getFullYear());
+                            } else {
+                                setFilterDate(null);
+                            }
+                        }}
+                    >
+                        <Text style={styles.filterButtonText}>Mes</Text>
+                    </TouchableOpacity>
+
+                    {filterType !== 'none' && filterDate && (
+                        <TouchableOpacity
+                            style={styles.dateDisplayButton}
+                            onPress={() => {
+                                if (filterType === 'month') {
+                                    setShowMonthPicker(true);
+                                } else {
+                                    setShowDatePicker(true);
+                                }
+                            }}
+                        >
+                            <Text style={styles.dateDisplayText}>
+                                {filterType === 'day'
+                                    ? format(filterDate, "dd/MM/yyyy", { locale: es })
+                                    : format(filterDate, "MMMM yyyy", { locale: es })}
+                            </Text>
+                            <Icon name="calendar" size={20} color="#D4AF37" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.statusFilterContainer}
+                    contentContainerStyle={styles.statusFilterContent}
+                >
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'all' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('all')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Todas</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'upcoming' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('upcoming')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Próximas</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'pending' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('pending')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Pendientes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'cancelled' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('cancelled')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Canceladas</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+
+            {filteredAppointments.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Icon name="calendar-remove" size={60} color="#AAAAAA" />
-                    <Text style={styles.emptyText}>No hay citas pendientes</Text>
+                    <Text style={styles.emptyText}>No hay citas con los filtros actuales</Text>
                 </View>
             ) : (
                 <FlatList
-                    data={appointments}
+                    data={filteredAppointments}
                     renderItem={renderAppointmentCard}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContainer}
                 />
             )}
 
+            {/* Modal para seleccionar mes */}
+            <Modal
+                visible={showMonthPicker}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowMonthPicker(false)}
+            >
+                <View style={styles.monthPickerOverlay}>
+                    <View style={styles.monthPickerContainer}>
+                        <View style={styles.monthPickerHeader}>
+                            <TouchableOpacity onPress={() => handleYearChange(-1)}>
+                                <Icon name="chevron-left" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                            <Text style={styles.monthPickerYearText}>{selectedYear}</Text>
+                            <TouchableOpacity onPress={() => handleYearChange(1)}>
+                                <Icon name="chevron-right" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.monthPickerGrid}>
+                            {Array.from({ length: 12 }).map((_, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.monthPickerButton,
+                                        selectedMonth === index && styles.monthPickerButtonSelected
+                                    ]}
+                                    onPress={() => handleMonthSelect(index)}
+                                >
+                                    <Text style={[
+                                        styles.monthPickerButtonText,
+                                        selectedMonth === index && styles.monthPickerButtonTextSelected
+                                    ]}>
+                                        {format(new Date(selectedYear, index, 1), 'MMM', { locale: es })}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <TouchableOpacity
+                            style={styles.monthPickerCloseButton}
+                            onPress={() => setShowMonthPicker(false)}
+                        >
+                            <Text style={styles.monthPickerCloseButtonText}>Cerrar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal para acciones de cita */}
             <Modal
                 visible={showModal}
                 transparent={true}
@@ -339,11 +566,11 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
                         {showDatePicker && (
                             <DateTimePicker
-                                value={selectedDate}
-                                mode="datetime"
+                                value={filterType !== 'none' && filterDate ? filterDate : selectedDate}
+                                mode={filterType === 'month' ? 'date' : 'datetime'}
                                 display="default"
                                 minimumDate={new Date()}
-                                onChange={handleDateChange}
+                                onChange={filterType !== 'none' ? handleFilterDateChange : handleDateChange}
                             />
                         )}
 

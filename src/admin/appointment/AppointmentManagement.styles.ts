@@ -183,4 +183,123 @@ export const styles = StyleSheet.create({
     statusTextRescheduled: {
         color: '#2196F3',
     },
+    // Nuevos estilos para los filtros
+    filterContainer: {
+        padding: 10,
+        backgroundColor: '#1E1E1E',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    dateFilterContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    filterButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        backgroundColor: '#333',
+        marginRight: 10,
+    },
+    activeFilter: {
+        backgroundColor: '#D4AF37',
+    },
+    filterButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    dateDisplayButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        backgroundColor: '#333',
+    },
+    dateDisplayText: {
+        color: '#FFFFFF',
+        marginRight: 5,
+    },
+    statusFilterContainer: {
+        marginTop: 5,
+    },
+    statusFilterContent: {
+        paddingHorizontal: 5,
+    },
+    statusFilterButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        backgroundColor: '#333',
+        marginRight: 10,
+    },
+    activeStatusFilter: {
+        backgroundColor: '#D4AF37',
+    },
+    statusFilterButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    monthPickerOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    monthPickerContainer: {
+        backgroundColor: '#1E1E1E',
+        borderRadius: 10,
+        padding: 20,
+        width: '90%',
+        maxWidth: 400,
+    },
+    monthPickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+        paddingHorizontal: 10,
+    },
+    monthPickerYearText: {
+        color: '#D4AF37',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    monthPickerGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+    },
+    monthPickerButton: {
+        width: '30%',
+        padding: 12,
+        margin: 5,
+        borderRadius: 5,
+        backgroundColor: '#333',
+        alignItems: 'center',
+    },
+    monthPickerButtonSelected: {
+        backgroundColor: '#D4AF37',
+    },
+    monthPickerButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+    },
+    monthPickerButtonTextSelected: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    monthPickerCloseButton: {
+        marginTop: 15,
+        padding: 12,
+        backgroundColor: '#D4AF37',
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    monthPickerCloseButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
 });
