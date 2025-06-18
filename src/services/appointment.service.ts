@@ -81,6 +81,7 @@ class AppointmentService {
     }
 
     // Cancelar una cita
+    // En appointment.service.ts
     async cancelAppointment(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
@@ -94,8 +95,15 @@ class AppointmentService {
                 status: response.status
             };
         } catch (error: any) {
-            console.error('Error canceling appointment:', error);
-            throw new Error(error.response?.data?.message || 'Error al cancelar la cita');
+            console.error('Error canceling appointment:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+            });
+            throw new Error(
+                error.response?.data?.message ||
+                'No se pudo cancelar la cita. Verifica que tengas permisos o que la cita esté en un estado cancelable'
+            );
         }
     }
 }

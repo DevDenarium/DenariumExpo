@@ -45,6 +45,7 @@ export const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 10,
     } as ViewStyle,
     cardTitle: {
@@ -52,12 +53,14 @@ export const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         flex: 1,
+        marginRight: 10,
     } as TextStyle,
     cardStatus: {
         paddingHorizontal: 10,
         paddingVertical: 3,
         borderRadius: 5,
         alignSelf: 'flex-start',
+        marginRight: 10,
     } as ViewStyle,
     statusText: {
         fontSize: 12,
@@ -217,4 +220,13 @@ export const styles = StyleSheet.create({
     timeSlotText: {
         color: '#FFFFFF',
     } as TextStyle,
+    deleteButton: {
+        padding: 5,
+        borderRadius: 15,
+        backgroundColor: 'rgba(244, 67, 54, 0.2)',
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    } as ViewStyle,
 });

@@ -98,6 +98,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([]);
     const [showTimeSlots, setShowTimeSlots] = useState(false);
     const [timeSlots, setTimeSlots] = useState<Date[]>([]);
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
         fetchAppointments();
@@ -192,6 +193,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             await appointmentService.cancelAppointment(selectedAppointment.id);
             Alert.alert('Éxito', 'Cita cancelada correctamente');
             setShowModal(false);
+            setShowDeleteConfirmation(false);
             fetchAppointments();
             resetForm();
         } catch (error: any) {
@@ -380,6 +382,17 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             {getStatusText(item.status)}
                         </Text>
                     </View>
+                    {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setSelectedAppointment(item);
+                                setShowDeleteConfirmation(true);
+                            }}
+                            style={styles.deleteButton}
+                        >
+                            <Icon name="close" size={20} color="#F44336"/>
+                        </TouchableOpacity>
+                    )}
                 </View>
                 <View style={styles.cardBody}>
                     {item.description && (
@@ -407,20 +420,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     <Text style={styles.cardDate}>
                         <Text style={{fontWeight: 'bold'}}>Duración:</Text> {item.duration} minutos
                     </Text>
-                </View>
-                <View style={styles.cardFooter}>
-                    {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, {backgroundColor: '#F44336'}]}
-                            onPress={() => {
-                                setSelectedAppointment(item);
-                                setActionType('cancel');
-                                setShowModal(true);
-                            }}
-                        >
-                            <Icon name="close" size={20} color="#FFFFFF"/>
-                        </TouchableOpacity>
-                    )}
                 </View>
             </View>
         );
@@ -558,6 +557,37 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             </>
                         )}
                     </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Modal de confirmación para eliminar cita */}
+            <Modal
+                visible={showDeleteConfirmation}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDeleteConfirmation(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Confirmar Cancelación</Text>
+                        <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
+                            ¿Estás seguro que deseas cancelar esta cita?
+                        </Text>
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setShowDeleteConfirmation(false)}
+                            >
+                                <Text style={styles.modalButtonText}>No</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.confirmButton]}
+                                onPress={handleCancelAppointment}
+                            >
+                                <Text style={styles.modalButtonText}>Sí, Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </Modal>
 
