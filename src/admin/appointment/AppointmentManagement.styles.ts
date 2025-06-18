@@ -8,8 +8,6 @@ export const styles = StyleSheet.create({
     header: {
         padding: 20,
         backgroundColor: '#1E1E1E',
-        borderBottomWidth: 1,
-        borderBottomColor: '#D4AF37',
     },
     title: {
         fontSize: 24,
@@ -192,12 +190,9 @@ export const styles = StyleSheet.create({
     statusTextRescheduled: {
         color: '#2196F3',
     },
-    // Estilos para los filtros
     filterContainer: {
         padding: 10,
         backgroundColor: '#1E1E1E',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
     },
     dateFilterContainer: {
         flexDirection: 'row',
@@ -315,9 +310,7 @@ export const styles = StyleSheet.create({
     // Nuevos estilos para el datepicker web
     webDatePickerContainer: {
         marginBottom: 20,
-        backgroundColor: '#2a2a2a',
         borderRadius: 5,
-        padding: 10,
     },
     timeSlotsContainer: {
         flexDirection: 'row',

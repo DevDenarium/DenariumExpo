@@ -499,7 +499,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Gestión de Citas</Text>
+                <Text style={styles.title}>Citas Agendadas</Text>
             </View>
 
             {/* Filtros */}
