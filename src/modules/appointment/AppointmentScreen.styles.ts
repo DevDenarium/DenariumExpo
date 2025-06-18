@@ -1,18 +1,5 @@
+// AppointmentScreen.styles.ts
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navegation/Navegation.types';
-import { Appointment, AppointmentStatus } from '../navegation/Navegation.types';
-
-export interface AppointmentScreenProps {
-    navigation: StackNavigationProp<RootStackParamList, 'AppointmentScreen'>;
-    route: {
-        params?: {
-            appointment?: Appointment;
-            onSave?: (appointment: Appointment) => void;
-            onDelete?: (appointmentId: string) => void;
-        };
-    };
-}
 
 export const styles = StyleSheet.create({
     container: {
@@ -142,6 +129,9 @@ export const styles = StyleSheet.create({
     confirmButton: {
         backgroundColor: '#D4AF37',
     } as ViewStyle,
+    disabledButton: {
+        opacity: 0.5,
+    } as ViewStyle,
     modalButtonText: {
         color: '#000000',
         fontWeight: 'bold',
@@ -207,5 +197,24 @@ export const styles = StyleSheet.create({
         padding: 15,
         color: '#FFFFFF',
         marginBottom: 15,
+    } as TextStyle,
+    timeSlotsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    } as ViewStyle,
+    timeSlot: {
+        width: '30%',
+        backgroundColor: '#333333',
+        padding: 10,
+        borderRadius: 5,
+        marginBottom: 10,
+        alignItems: 'center',
+    } as ViewStyle,
+    selectedTimeSlot: {
+        backgroundColor: '#D4AF37',
+    } as ViewStyle,
+    timeSlotText: {
+        color: '#FFFFFF',
     } as TextStyle,
 });

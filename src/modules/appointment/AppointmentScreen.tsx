@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// AppointmentScreen.tsx
+import React, {useState, useEffect} from 'react';
 import {
     View,
     Text,
@@ -13,14 +14,14 @@ import {
     ViewStyle,
     Platform,
 } from 'react-native';
-import { styles } from './AppointmentScreen.styles';
+import {styles} from './AppointmentScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { AppointmentScreenProps } from './AppointmentScreen.types';
-import { appointmentService } from '../../services/appointment.service';
-import { format, isBefore } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Appointment, AppointmentStatus } from '../../modules/navegation/Navegation.types';
-import { registerLocale, setDefaultLocale } from "react-datepicker";
+import {AppointmentScreenProps} from './AppointmentScreen.types';
+import {appointmentService} from '../../services/appointment.service';
+import {format, isBefore, parse, setHours, setMinutes, addDays} from 'date-fns';
+import {es} from 'date-fns/locale';
+import {Appointment, AppointmentStatus} from '../../modules/navegation/Navegation.types';
+import {registerLocale, setDefaultLocale} from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 registerLocale('es', es);
@@ -40,22 +41,22 @@ type DateTimePickerProps = {
 };
 
 type ReactDatePickerProps = {
-    selected: Date;
-    onChange: (date: Date) => void;
-    showTimeSelect?: boolean;
-    timeFormat?: string;
-    timeIntervals?: number;
-    dateFormat?: string;
-    className?: string;
-    customInput?: React.ReactElement;
-    locale?: string;
-    minDate?: Date;
-    selectsStart?: boolean;
-    selectsEnd?: boolean;
-    startDate?: Date;
-    endDate?: Date;
-    filterTime?: (time: Date) => boolean;
-    inline?: boolean;
+    onChange: (date: Date) => void,
+    showTimeSelect?: boolean,
+    timeFormat?: string,
+    timeIntervals?: number,
+    dateFormat?: string,
+    className?: string,
+    customInput?: React.ReactElement,
+    locale?: string,
+    minDate?: Date,
+    selectsStart?: boolean,
+    selectsEnd?: boolean,
+    startDate?: Date,
+    endDate?: Date,
+    filterTime?: (time: Date) => boolean,
+    inline?: boolean,
+    selected?: Date | null
 };
 
 let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
@@ -80,11 +81,12 @@ interface TimeSlot {
     end: Date;
 }
 
-const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => {
+const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedTime, setSelectedTime] = useState<Date | null>(null);
     const [showMobileDatePicker, setShowMobileDatePicker] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
@@ -94,7 +96,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [actionType, setActionType] = useState<'create' | 'cancel'>('create');
     const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([]);
-    const [showAvailability, setShowAvailability] = useState(false);
+    const [showTimeSlots, setShowTimeSlots] = useState(false);
+    const [timeSlots, setTimeSlots] = useState<Date[]>([]);
 
     useEffect(() => {
         fetchAppointments();
@@ -117,15 +120,33 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
         try {
             const response = await appointmentService.getAvailability(date);
             setAvailabilitySlots(response.data);
+            generateTimeSlots(date);
         } catch (error: any) {
             console.error('Error fetching availability:', error);
             Alert.alert('Error', error.message || 'No se pudieron cargar los horarios disponibles');
         }
     };
 
+    const generateTimeSlots = (date: Date) => {
+        const slots: Date[] = [];
+        const startHour = 9; // 9 AM
+        const endHour = 21; // 9 PM
+
+        for (let hour = startHour; hour < endHour; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const slot = new Date(date);
+                slot.setHours(hour, minute, 0, 0);
+                slots.push(slot);
+            }
+        }
+
+        setTimeSlots(slots);
+        setShowTimeSlots(true);
+    };
+
     const handleCreateAppointment = async () => {
         try {
-            if (!formData.title || !selectedDate) {
+            if (!formData.title || !selectedDate || !selectedTime) {
                 Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
                 return;
             }
@@ -137,7 +158,12 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                 return;
             }
 
-            if (isBefore(selectedDate, new Date())) {
+            // Combine selected date with selected time
+            const finalDate = new Date(selectedDate);
+            finalDate.setHours(selectedTime.getHours());
+            finalDate.setMinutes(selectedTime.getMinutes());
+
+            if (isBefore(finalDate, new Date())) {
                 Alert.alert('Error', 'No se pueden agendar citas en el pasado');
                 return;
             }
@@ -145,7 +171,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
             await appointmentService.createAppointment({
                 title: formData.title,
                 description: formData.description,
-                requestedDate: selectedDate.toISOString(),
+                requestedDate: finalDate.toISOString(),
                 duration,
             });
 
@@ -180,26 +206,34 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
             description: '',
             duration: '60',
         });
-        setSelectedDate(new Date());
+        setSelectedDate(null);
+        setSelectedTime(null);
         setSelectedAppointment(null);
         setActionType('create');
-        setShowAvailability(false);
+        setShowTimeSlots(false);
     };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return format(date, "dd/MM/yyyy HH:mm", { locale: es });
+        return format(date, "dd/MM/yyyy hh:mm a", {locale: es});
     };
 
     const formatDisplayDate = (date: Date) => {
-        return format(date, "dd/MM/yyyy HH:mm", { locale: es });
+        return format(date, "dd/MM/yyyy", {locale: es});
+    };
+
+    const formatTime = (date: Date) => {
+        return format(date, "hh:mm a", {locale: es});
     };
 
     const handleDateChange = (date: Date) => {
         setSelectedDate(date);
-        if (actionType === 'create') {
-            fetchAvailability(date);
-        }
+        setSelectedTime(null);
+        fetchAvailability(date);
+    };
+
+    const handleTimeSelect = (time: Date) => {
+        setSelectedTime(time);
     };
 
     const getStatusStyle = (status: AppointmentStatus): [ViewStyle, ViewStyle] => {
@@ -223,13 +257,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
 
     const getStatusText = (status: AppointmentStatus) => {
         switch (status) {
-            case 'PENDING': return 'PENDIENTE';
-            case 'CONFIRMED': return 'CONFIRMADA';
-            case 'CANCELLED': return 'CANCELADA';
-            case 'RESCHEDULED': return 'REAGENDADA';
-            case 'REJECTED': return 'RECHAZADA';
-            case 'COMPLETED': return 'COMPLETADA';
-            default: return status;
+            case 'PENDING':
+                return 'PENDIENTE';
+            case 'CONFIRMED':
+                return 'CONFIRMADA';
+            case 'CANCELLED':
+                return 'CANCELADA';
+            case 'RESCHEDULED':
+                return 'REAGENDADA';
+            case 'REJECTED':
+                return 'RECHAZADA';
+            case 'COMPLETED':
+                return 'COMPLETADA';
+            default:
+                return status;
         }
     };
 
@@ -237,31 +278,29 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
         if (!ReactDatePicker) {
             return (
                 <TextInput
-                    style={[styles.modalInput, { marginBottom: 15 }]}
-                    value={formatDisplayDate(selectedDate)}
-                    placeholder="Seleccionar fecha y hora"
+                    style={[styles.modalInput, {marginBottom: 15}]}
+                    value={selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
+                    placeholder="Seleccionar fecha"
                     editable={false}
                 />
             );
         }
 
         return (
-            <View style={{ marginBottom: 15 }}>
+            <View style={{marginBottom: 15}}>
                 <ReactDatePicker
                     selected={selectedDate}
                     onChange={handleDateChange}
-                    showTimeSelect
-                    timeFormat="HH:mm"
-                    timeIntervals={15}
-                    dateFormat="dd/MM/yyyy HH:mm"
+                    showTimeSelect={false}
+                    dateFormat="dd/MM/yyyy"
                     locale="es"
                     minDate={new Date()}
                     inline
                     customInput={
                         <TextInput
                             style={styles.modalInput}
-                            value={formatDisplayDate(selectedDate)}
-                            placeholder="Seleccionar fecha y hora"
+                            value={selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
+                            placeholder="Seleccionar fecha"
                         />
                     }
                 />
@@ -276,23 +315,22 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                     style={styles.modalInput}
                     onPress={() => setShowMobileDatePicker(true)}
                 >
-                    <Text style={{ color: '#FFFFFF' }}>
-                        {formatDisplayDate(selectedDate)}
+                    <Text style={{color: '#FFFFFF'}}>
+                        {selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
                     </Text>
                 </TouchableOpacity>
 
                 {showMobileDatePicker && DateTimePicker && (
                     <DateTimePicker
-                        value={selectedDate}
-                        mode="datetime"
+                        value={selectedDate || new Date()}
+                        mode="date"
                         display="default"
                         onChange={(event, date) => {
                             setShowMobileDatePicker(false);
                             if (date) {
                                 setSelectedDate(date);
-                                if (actionType === 'create') {
-                                    fetchAvailability(date);
-                                }
+                                setSelectedTime(null);
+                                fetchAvailability(date);
                             }
                         }}
                         minimumDate={new Date()}
@@ -302,7 +340,35 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
         );
     };
 
-    const renderAppointmentCard = ({ item }: { item: Appointment }) => {
+    const renderTimeSlots = () => {
+        if (!showTimeSlots || !selectedDate) return null;
+
+        return (
+            <View style={{marginBottom: 15}}>
+                <Text style={{color: '#FFFFFF', marginBottom: 10}}>
+                    Horarios disponibles para {formatDisplayDate(selectedDate)}:
+                </Text>
+                <View style={styles.timeSlotsContainer}>
+                    {timeSlots.map((time, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.timeSlot,
+                                selectedTime && selectedTime.getTime() === time.getTime() ? styles.selectedTimeSlot : {}
+                            ]}
+                            onPress={() => handleTimeSelect(time)}
+                        >
+                            <Text style={styles.timeSlotText}>
+                                {formatTime(time)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+        );
+    };
+
+    const renderAppointmentCard = ({item}: { item: Appointment }) => {
         const [statusContainerStyle, statusTextStyle] = getStatusStyle(item.status);
 
         return (
@@ -320,38 +386,39 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                         <Text style={styles.cardDescription}>{item.description}</Text>
                     )}
                     <Text style={styles.cardDate}>
-                        <Text style={{ fontWeight: 'bold' }}>Solicitada:</Text> {formatDate(item.requestedDate)}
+                        <Text style={{fontWeight: 'bold'}}>Solicitada:</Text> {formatDate(item.requestedDate)}
                     </Text>
                     {item.suggestedDate && (
                         <Text style={styles.cardDate}>
-                            <Text style={{ fontWeight: 'bold' }}>Sugerida:</Text> {formatDate(item.suggestedDate)}
+                            <Text style={{fontWeight: 'bold'}}>Sugerida:</Text> {formatDate(item.suggestedDate)}
                         </Text>
                     )}
                     {item.confirmedDate && (
                         <Text style={styles.cardDate}>
-                            <Text style={{ fontWeight: 'bold' }}>Confirmada:</Text> {formatDate(item.confirmedDate)}
+                            <Text style={{fontWeight: 'bold'}}>Confirmada:</Text> {formatDate(item.confirmedDate)}
                         </Text>
                     )}
                     {item.admin && (
                         <Text style={styles.cardDate}>
-                            <Text style={{ fontWeight: 'bold' }}>Asesor:</Text> {item.admin.firstName} {item.admin.lastName} ({item.admin.email})
+                            <Text
+                                style={{fontWeight: 'bold'}}>Asesor:</Text> {item.admin.firstName} {item.admin.lastName} ({item.admin.email})
                         </Text>
                     )}
                     <Text style={styles.cardDate}>
-                        <Text style={{ fontWeight: 'bold' }}>Duración:</Text> {item.duration} minutos
+                        <Text style={{fontWeight: 'bold'}}>Duración:</Text> {item.duration} minutos
                     </Text>
                 </View>
                 <View style={styles.cardFooter}>
                     {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
                         <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: '#F44336' }]}
+                            style={[styles.actionButton, {backgroundColor: '#F44336'}]}
                             onPress={() => {
                                 setSelectedAppointment(item);
                                 setActionType('cancel');
                                 setShowModal(true);
                             }}
                         >
-                            <Icon name="close" size={20} color="#FFFFFF" />
+                            <Icon name="close" size={20} color="#FFFFFF"/>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -362,7 +429,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#D4AF37" />
+                <ActivityIndicator size="large" color="#D4AF37"/>
             </View>
         );
     }
@@ -375,18 +442,19 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                     style={styles.addButton}
                     onPress={() => {
                         setActionType('create');
-                        setSelectedDate(new Date());
-                        fetchAvailability(new Date());
+                        setSelectedDate(null);
+                        setSelectedTime(null);
+                        setShowTimeSlots(false);
                         setShowModal(true);
                     }}
                 >
-                    <Icon name="plus" size={24} color="#000000" />
+                    <Icon name="plus" size={24} color="#000000"/>
                 </TouchableOpacity>
             </View>
 
             {appointments.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Icon name="calendar-remove" size={60} color="#AAAAAA" />
+                    <Icon name="calendar-remove" size={60} color="#AAAAAA"/>
                     <Text style={styles.emptyText}>No tienes citas agendadas</Text>
                 </View>
             ) : (
@@ -420,18 +488,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                                     placeholder="Título*"
                                     placeholderTextColor="#AAAAAA"
                                     value={formData.title}
-                                    onChangeText={(text) => setFormData({ ...formData, title: text })}
+                                    onChangeText={(text) => setFormData({...formData, title: text})}
                                 />
                                 <TextInput
-                                    style={[styles.modalInput, { minHeight: 80 }]}
+                                    style={[styles.modalInput, {minHeight: 80}]}
                                     placeholder="Descripción (opcional)"
                                     placeholderTextColor="#AAAAAA"
                                     value={formData.description}
-                                    onChangeText={(text) => setFormData({ ...formData, description: text })}
+                                    onChangeText={(text) => setFormData({...formData, description: text})}
                                     multiline
                                 />
 
-                                {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
+                                {Platform.OS === 'web' ? <WebDatePicker/> : <MobileDatePicker/>}
+
+                                {renderTimeSlots()}
 
                                 <TextInput
                                     style={styles.durationInput}
@@ -439,77 +509,54 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({ navigation }) => 
                                     placeholderTextColor="#AAAAAA"
                                     keyboardType="numeric"
                                     value={formData.duration}
-                                    onChangeText={(text) => setFormData({ ...formData, duration: text })}
+                                    onChangeText={(text) => setFormData({...formData, duration: text})}
                                 />
 
-                                <TouchableOpacity
-                                    style={[styles.modalButton, { marginBottom: 15 }]}
-                                    onPress={() => setShowAvailability(!showAvailability)}
-                                >
-                                    <Text style={styles.modalButtonText}>
-                                        {showAvailability ? 'Ocultar disponibilidad' : 'Ver horarios disponibles'}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {showAvailability && (
-                                    <View style={{ marginBottom: 15 }}>
-                                        <Text style={{ color: '#FFFFFF', marginBottom: 5 }}>
-                                            Horarios disponibles para {format(selectedDate, "dd/MM/yyyy", { locale: es })}:
-                                        </Text>
-                                        {availabilitySlots.length > 0 ? (
-                                            availabilitySlots.map((slot, index) => (
-                                                <View key={index} style={{
-                                                    backgroundColor: '#333333',
-                                                    padding: 10,
-                                                    borderRadius: 5,
-                                                    marginBottom: 5
-                                                }}>
-                                                    <Text style={{ color: '#FFFFFF' }}>
-                                                        {format(slot.start, "HH:mm")} - {format(slot.end, "HH:mm")}
-                                                    </Text>
-                                                </View>
-                                            ))
-                                        ) : (
-                                            <Text style={{ color: '#AAAAAA' }}>
-                                                No hay horarios disponibles para esta fecha
-                                            </Text>
-                                        )}
-                                    </View>
-                                )}
+                                <View style={styles.modalButtonContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.cancelButton]}
+                                        onPress={() => {
+                                            setShowModal(false);
+                                            resetForm();
+                                        }}
+                                    >
+                                        <Text style={styles.modalButtonText}>Cancelar</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.confirmButton, !selectedTime ? styles.disabledButton : {}]}
+                                        onPress={handleCreateAppointment}
+                                        disabled={!selectedTime}
+                                    >
+                                        <Text style={styles.modalButtonText}>Crear Cita</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </>
                         )}
 
                         {actionType === 'cancel' && (
-                            <Text style={{ color: '#FFFFFF', textAlign: 'center', marginBottom: 20 }}>
-                                ¿Estás seguro que deseas cancelar esta cita?
-                            </Text>
-                        )}
-
-                        <View style={styles.modalButtonContainer}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => {
-                                    setShowModal(false);
-                                    resetForm();
-                                }}
-                            >
-                                <Text style={styles.modalButtonText}>Cancelar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={() => {
-                                    if (actionType === 'create') {
-                                        handleCreateAppointment();
-                                    } else {
-                                        handleCancelAppointment();
-                                    }
-                                }}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    {actionType === 'create' ? 'Crear' : 'Cancelar Cita'}
+                            <>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
+                                    ¿Estás seguro que deseas cancelar esta cita?
                                 </Text>
-                            </TouchableOpacity>
-                        </View>
+                                <View style={styles.modalButtonContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.cancelButton]}
+                                        onPress={() => {
+                                            setShowModal(false);
+                                            resetForm();
+                                        }}
+                                    >
+                                        <Text style={styles.modalButtonText}>No</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.confirmButton]}
+                                        onPress={handleCancelAppointment}
+                                    >
+                                        <Text style={styles.modalButtonText}>Sí, Cancelar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        )}
                     </ScrollView>
                 </View>
             </Modal>
