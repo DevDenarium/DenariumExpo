@@ -11,15 +11,61 @@ import {
     StyleSheet,
     ScrollView,
     ViewStyle,
+    Platform,
 } from 'react-native';
 import { styles } from './AppointmentManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Appointment, AppointmentManagementProps, AppointmentStatus} from './AppointmentManagement.types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { registerLocale, setDefaultLocale } from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+registerLocale('es', es);
+setDefaultLocale('es');
+
+// Definición de tipos para los pickers
+type DateTimePickerProps = {
+    value: Date;
+    mode: 'date' | 'time' | 'datetime';
+    display: 'default' | 'spinner' | 'compact' | 'inline';
+    onChange: (event: any, date?: Date) => void;
+    minimumDate?: Date;
+};
+
+type ReactDatePickerProps = {
+    selected?: Date | null;
+    onChange: (date: Date) => void;
+    showTimeSelect?: boolean;
+    timeFormat?: string;
+    timeIntervals?: number;
+    dateFormat?: string;
+    locale?: string;
+    minDate?: Date;
+    inline?: boolean;
+    customInput?: React.ReactElement;
+};
+
+let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
+let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | undefined;
+
+if (Platform.OS === 'web') {
+    try {
+        const rdp = require('react-datepicker');
+        ReactDatePicker = rdp.default;
+    } catch (error) {
+        console.error('Error al cargar react-datepicker:', error);
+    }
+} else {
+    try {
+        const dtp = require('@react-native-community/datetimepicker');
+        DateTimePicker = dtp.default;
+    } catch (error) {
+        console.error('Error al cargar DateTimePicker:', error);
+    }
+}
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -41,6 +87,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [showCalendar, setShowCalendar] = useState(false); // Nuevo estado para controlar la visibilidad del calendario
 
     useEffect(() => {
         fetchAppointments();
@@ -50,6 +97,81 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         applyFilters();
     }, [appointments, filterType, filterDate, statusFilter]);
 
+    const WebDatePicker = ({ value, onChange, mode = 'date' }: { value: Date, onChange: (date: Date) => void, mode?: 'date' | 'datetime' }) => {
+        if (!ReactDatePicker) {
+            return (
+                <TextInput
+                    style={[styles.modalInput, { marginBottom: 15 }]}
+                    value={value ? format(value, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                    placeholder="Seleccionar fecha"
+                    editable={false}
+                />
+            );
+        }
+
+        const DatePickerComponent = ReactDatePicker;
+
+        return (
+            <View style={{ marginBottom: 15 }}>
+                <TouchableOpacity
+                    style={styles.dateDisplayButton}
+                    onPress={() => setShowCalendar(!showCalendar)}
+                >
+                    <Text style={styles.dateDisplayText}>
+                        {value ? format(value, mode === 'datetime' ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                    </Text>
+                    <Icon name="calendar" size={20} color="#D4AF37" />
+                </TouchableOpacity>
+                {showCalendar && (
+                    <DatePickerComponent
+                        selected={value}
+                        onChange={(date: Date) => {
+                            onChange(date);
+                            setShowCalendar(false);
+                        }}
+                        showTimeSelect={mode === 'datetime'}
+                        timeFormat="HH:mm"
+                        timeIntervals={15}
+                        dateFormat={mode === 'datetime' ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy"}
+                        locale="es"
+                        minDate={new Date()}
+                        inline
+                    />
+                )}
+            </View>
+        );
+    };
+
+    const MobileDatePicker = ({ value, onChange, mode = 'date' }: { value: Date, onChange: (date: Date) => void, mode?: 'date' | 'datetime' }) => {
+        return (
+            <View style={styles.datePickerContainer}>
+                <TouchableOpacity
+                    style={styles.modalInput}
+                    onPress={() => setShowDatePicker(true)}
+                >
+                    <Text style={{ color: '#FFFFFF' }}>
+                        {value ? format(value, mode === 'datetime' ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                    </Text>
+                </TouchableOpacity>
+
+                {showDatePicker && DateTimePicker && (
+                    <DateTimePicker
+                        value={value}
+                        mode={mode}
+                        display="default"
+                        onChange={(event, date) => {
+                            setShowDatePicker(false);
+                            if (date) {
+                                onChange(date);
+                            }
+                        }}
+                        minimumDate={new Date()}
+                    />
+                )}
+            </View>
+        );
+    };
+
     const handleMonthSelect = (month: number) => {
         setSelectedMonth(month);
         const newDate = new Date(selectedYear, month, 1);
@@ -57,12 +179,13 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         setShowMonthPicker(false);
     };
 
-  const handleYearChange = (increment: number) => {
+    const handleYearChange = (increment: number) => {
         const newYear = selectedYear + increment;
         setSelectedYear(newYear);
         const newDate = new Date(newYear, selectedMonth, 1);
         setFilterDate(newDate);
     };
+
     const fetchAppointments = async () => {
         try {
             setLoading(true);
@@ -274,18 +397,12 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         }
     };
 
-    const handleDateChange = (event: any, date?: Date) => {
-        setShowDatePicker(false);
-        if (date) {
-            setSelectedDate(date);
-        }
+    const handleDateChange = (date: Date) => {
+        setSelectedDate(date);
     };
 
-    const handleFilterDateChange = (event: any, date?: Date) => {
-        setShowDatePicker(false);
-        if (date) {
-            setFilterDate(date);
-        }
+    const handleFilterDateChange = (date: Date) => {
+        setFilterDate(date);
     };
 
     const renderAppointmentCard = ({ item }: { item: Appointment }) => {
@@ -397,6 +514,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                             } else {
                                 setFilterDate(null);
                             }
+                            setShowCalendar(false);
                         }}
                     >
                         <Text style={styles.filterButtonText}>Día</Text>
@@ -413,6 +531,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                             } else {
                                 setFilterDate(null);
                             }
+                            setShowCalendar(false);
                         }}
                     >
                         <Text style={styles.filterButtonText}>Mes</Text>
@@ -425,7 +544,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 if (filterType === 'month') {
                                     setShowMonthPicker(true);
                                 } else {
-                                    setShowDatePicker(true);
+                                    setShowCalendar(!showCalendar);
                                 }
                             }}
                         >
@@ -438,6 +557,23 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                         </TouchableOpacity>
                     )}
                 </View>
+
+                {filterType === 'day' && showCalendar && Platform.OS === 'web' && ReactDatePicker && (
+                    <View style={styles.webDatePickerContainer}>
+                        <ReactDatePicker
+                            selected={filterDate}
+                            onChange={(date: Date) => {
+                                handleFilterDateChange(date);
+                                setShowCalendar(false);
+                            }}
+                            showTimeSelect={false}
+                            dateFormat="dd/MM/yyyy"
+                            locale="es"
+                            minDate={new Date()}
+                            inline
+                        />
+                    </View>
+                )}
 
                 <ScrollView
                     horizontal
@@ -552,26 +688,20 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
                         {(actionType === 'confirm' || actionType === 'reschedule') && (
                             <View style={styles.datePickerContainer}>
-                                <TouchableOpacity
-                                    style={styles.datePickerButton}
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <Text style={styles.datePickerText}>
-                                        {format(selectedDate, "dd/MM/yyyy HH:mm", { locale: es })}
-                                    </Text>
-                                    <Icon name="calendar" size={20} color="#D4AF37" />
-                                </TouchableOpacity>
+                                {Platform.OS === 'web' ? (
+                                    <WebDatePicker
+                                        value={selectedDate}
+                                        onChange={handleDateChange}
+                                        mode={actionType === 'reschedule' ? 'datetime' : 'date'}
+                                    />
+                                ) : (
+                                    <MobileDatePicker
+                                        value={selectedDate}
+                                        onChange={handleDateChange}
+                                        mode={actionType === 'reschedule' ? 'datetime' : 'date'}
+                                    />
+                                )}
                             </View>
-                        )}
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={filterType !== 'none' && filterDate ? filterDate : selectedDate}
-                                mode={filterType === 'month' ? 'date' : 'datetime'}
-                                display="default"
-                                minimumDate={new Date()}
-                                onChange={filterType !== 'none' ? handleFilterDateChange : handleDateChange}
-                            />
                         )}
 
                         {actionType === 'cancel' && (
@@ -611,6 +741,84 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     </ScrollView>
                 </View>
             </Modal>
+
+            {Platform.OS === 'web' && (
+                <style>
+                    {`
+                        .react-datepicker-wrapper {
+                            width: 100%;
+                            display: block !important;
+                        }
+                        .react-datepicker__input-container {
+                            width: 100%;
+                            display: block !important;
+                        }
+                        .react-datepicker {
+                            font-family: inherit;
+                            background-color: #2a2a2a;
+                            border: 1px solid #444;
+                            position: relative !important;
+                            top: auto !important;
+                            left: auto !important;
+                            z-index: 10000 !important;
+                            margin-top: 10px;
+                        }
+                        .react-datepicker-popper {
+                            z-index: 10000 !important;
+                            position: relative !important;
+                        }
+                        .react-datepicker__triangle {
+                            display: none;
+                        }
+                        .react-datepicker__header {
+                            background-color: #333;
+                            border-bottom: 1px solid #444;
+                        }
+                        .react-datepicker__current-month,
+                        .react-datepicker__day-name,
+                        .react-datepicker__day {
+                            color: white;
+                        }
+                        .react-datepicker__day:hover {
+                            background-color: #444;
+                        }
+                        .react-datepicker__day--selected {
+                            background-color: #D4AF37;
+                            color: black;
+                        }
+                        .react-datepicker__navigation-icon::before {
+                            border-color: white;
+                        }
+                        .react-datepicker-time__header {
+                            color: white;
+                        }
+                        .react-datepicker__time-container {
+                            background-color: #2a2a2a;
+                            border-left: 1px solid #444;
+                        }
+                        .react-datepicker__time-list-item {
+                            color: white;
+                        }
+                        .react-datepicker__time-list-item:hover {
+                            background-color: #444;
+                        }
+                        .react-datepicker__time-list-item--selected {
+                            background-color: #D4AF37;
+                            color: black;
+                        }
+                        .react-datepicker__month-container {
+                            float: none;
+                        }
+                        .react-datepicker__time-container {
+                            float: none;
+                            width: 100%;
+                        }
+                        .react-datepicker__time-box {
+                            width: 100%;
+                        }
+                    `}
+                </style>
+            )}
         </View>
     );
 };

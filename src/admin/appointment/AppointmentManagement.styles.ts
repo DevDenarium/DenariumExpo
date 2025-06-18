@@ -121,6 +121,15 @@ export const styles = StyleSheet.create({
     datePickerContainer: {
         marginBottom: 20,
     },
+    modalInput: {
+        backgroundColor: '#333',
+        color: '#FFFFFF',
+        padding: 15,
+        borderRadius: 5,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#444',
+    },
     datePickerButton: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -183,7 +192,7 @@ export const styles = StyleSheet.create({
     statusTextRescheduled: {
         color: '#2196F3',
     },
-    // Nuevos estilos para los filtros
+    // Estilos para los filtros
     filterContainer: {
         padding: 10,
         backgroundColor: '#1E1E1E',
@@ -241,6 +250,7 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: 'bold',
     },
+    // Estilos para el selector de mes
     monthPickerOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -301,5 +311,44 @@ export const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    // Nuevos estilos para el datepicker web
+    webDatePickerContainer: {
+        marginBottom: 20,
+        backgroundColor: '#2a2a2a',
+        borderRadius: 5,
+        padding: 10,
+    },
+    timeSlotsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
+    timeSlot: {
+        width: '30%',
+        padding: 10,
+        marginBottom: 10,
+        backgroundColor: '#333',
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    selectedTimeSlot: {
+        backgroundColor: '#D4AF37',
+    },
+    timeSlotText: {
+        color: '#FFFFFF',
+    },
+    durationInput: {
+        backgroundColor: '#333',
+        color: '#FFFFFF',
+        padding: 15,
+        borderRadius: 5,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#444',
+    },
+    disabledButton: {
+        opacity: 0.6,
     },
 });
