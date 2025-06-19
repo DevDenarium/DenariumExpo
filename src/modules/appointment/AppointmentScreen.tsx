@@ -176,11 +176,9 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         const endHour = 21;
 
         for (let hour = startHour; hour < endHour; hour++) {
-            for (let minute = 0; minute < 60; minute += 30) {
-                const slot = new Date(date);
-                slot.setHours(hour, minute, 0, 0);
-                slots.push(slot);
-            }
+            const slot = new Date(date);
+            slot.setHours(hour, 0, 0, 0);
+            slots.push(slot);
         }
 
         setTimeSlots(slots);
