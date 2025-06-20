@@ -196,11 +196,14 @@ export const styles = StyleSheet.create({
     },
     dateDisplayButton: {
         backgroundColor: '#333333',
-        borderRadius: 5,
-        padding: 15,
+        borderRadius: 20, // Bordes redondeados consistentes
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        height: 36, // Misma altura que los botones
+        minWidth: 120, // Ancho mínimo para fechas
     },
     dateDisplayText: {
         color: '#FFFFFF',
@@ -208,14 +211,18 @@ export const styles = StyleSheet.create({
     dateFilterContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 10,
+        gap: 8
     },
     filterButton: {
-        flex: 1,
-        marginHorizontal: 5,
-        paddingVertical: 10,
-        borderRadius: 20,
+        paddingVertical: 8, // Reducido de 10
+        paddingHorizontal: 12, // Reducido de 15
+        borderRadius: 20, // Bordes redondeados
         backgroundColor: '#333333',
         alignItems: 'center',
+        minWidth: 60, // Ancho mínimo para mantener proporción
+        height: 36, // Altura fija para consistencia
+        justifyContent: 'center',
     },
     activeFilter: {
         backgroundColor: '#D4AF37', // Amarillo dorado para filtro activo
@@ -306,9 +313,9 @@ export const styles = StyleSheet.create({
     },
     monthPickerButton: {
         width: '30%',
-        padding: 12,
-        margin: 5,
-        borderRadius: 5,
+        padding: 10, // Reducido de 12
+        margin: 4, // Reducido de 5
+        borderRadius: 10, // Bordes más redondeados
         backgroundColor: '#333333',
         alignItems: 'center',
     },
@@ -324,11 +331,13 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     monthPickerCloseButton: {
-        marginTop: 15,
-        padding: 12,
+        marginTop: 12,
+        padding: 10,
         backgroundColor: '#D4AF37',
         borderRadius: 5,
         alignItems: 'center',
+        width: '50%',
+        alignSelf: 'center'
     },
     monthPickerCloseButtonText: {
         color: '#000000',
