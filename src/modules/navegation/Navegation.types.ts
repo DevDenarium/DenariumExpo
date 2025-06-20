@@ -1,6 +1,5 @@
 import { User } from '../dashboard/DashboardScreen.types';
 
-// Tipos principales para citas (alineados con el backend)
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED' | 'REJECTED' | 'COMPLETED';
 
 export interface Appointment {
@@ -30,7 +29,6 @@ export interface Appointment {
     updatedAt?: string;
 };
 
-// Parámetros específicos para pantallas de citas
 export type AppointmentManagementParams = {
     refresh?: boolean;
     appointmentId?: string;
@@ -43,7 +41,6 @@ export type AppointmentScreenParams = {
     onDelete?: (appointmentId: string) => void;
 };
 
-// Stack principal
 export type RootStackParamList = {
     Login: {
         message?: string;
@@ -76,10 +73,8 @@ export type RootStackParamList = {
     Appointments: undefined;
     AppointmentManagement: AppointmentManagementParams;
     AppointmentScreen: AppointmentScreenParams;
-    // Puedes añadir más rutas aquí
 };
 
-// Drawer navigation
 export type DrawerParamList = {
     MainDashboard: { user: User };
     Transactions: undefined;
@@ -94,7 +89,6 @@ export type DrawerParamList = {
     AppointmentManagement: AppointmentManagementParams;
 };
 
-// Stack de pagos
 export type PaymentsStackParamList = {
     Payments: {
         sessionId: string;
@@ -113,7 +107,6 @@ export type PaymentsStackParamList = {
     };
 };
 
-// Tipos para props de navegación
 export type AppointmentManagementScreenProps = {
     navigation: StackNavigationProp<RootStackParamList, 'AppointmentManagement'>;
     route: RouteProp<RootStackParamList, 'AppointmentManagement'>;
@@ -124,13 +117,11 @@ export type AppointmentScreenProps = {
     route: RouteProp<RootStackParamList, 'AppointmentScreen'>;
 };
 
-// Tipos utilitarios
 export interface ApiResponse<T> {
     data: T;
     status: number;
     message?: string;
 }
 
-// No olvides importar estos tipos de React Navigation
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';

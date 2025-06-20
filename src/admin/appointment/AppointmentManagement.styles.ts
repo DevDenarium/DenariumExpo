@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: '600',
-        color: '#D4AF37', // Amarillo dorado como en AppointmentScreen
+        color: '#D4AF37',
     },
     loadingContainer: {
         flex: 1,
@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     appointmentCard: {
-        backgroundColor: '#2a2a2a', // Gris oscuro como en AppointmentScreen
+        backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 15,
         marginBottom: 15,
@@ -49,7 +49,7 @@ export const styles = StyleSheet.create({
         marginBottom: 10,
     },
     cardTitle: {
-        color: '#D4AF37', // Amarillo dorado para el título de la cita
+        color: '#D4AF37',
         fontSize: 18,
         fontWeight: '600',
         flex: 1,
@@ -92,16 +92,16 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     editButton: {
-        backgroundColor: '#2196F3', // Azul para editar
+        backgroundColor: '#2196F3',
     },
     deleteButton: {
-        backgroundColor: '#F44336', // Rojo para eliminar
+        backgroundColor: '#F44336',
     },
     acceptButton: {
-        backgroundColor: '#4CAF50', // Verde para aceptar
+        backgroundColor: '#4CAF50',
     },
     rejectButton: {
-        backgroundColor: '#F44336', // Rojo para rechazar
+        backgroundColor: '#F44336',
     },
     modalOverlay: {
         flex: 1,
@@ -111,20 +111,26 @@ export const styles = StyleSheet.create({
     },
     modalContainer: {
         width: '90%',
-        maxHeight: '80%',
-        backgroundColor: '#2a2a2a', // Gris oscuro como el fondo de las cards
+        maxHeight: '65%',
+        backgroundColor: '#2a2a2a',
         borderRadius: 10,
-        padding: 20,
+        padding: 10,
     },
     modalTitle: {
-        color: '#D4AF37', // Amarillo dorado para el título del modal
+        color: '#D4AF37',
         fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 15,
         textAlign: 'center',
     },
+    modalSubtitle: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
     modalInput: {
-        backgroundColor: '#333333', // Gris más oscuro para los inputs
+        backgroundColor: '#333333',
         borderRadius: 5,
         padding: 15,
         color: '#FFFFFF',
@@ -143,10 +149,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: '#555555', // Gris para cancelar
+        backgroundColor: '#555555',
     },
     confirmButton: {
-        backgroundColor: '#D4AF37', // Amarillo dorado para confirmar
+        backgroundColor: '#D4AF37',
     },
     disabledButton: {
         opacity: 0.5,
@@ -196,14 +202,14 @@ export const styles = StyleSheet.create({
     },
     dateDisplayButton: {
         backgroundColor: '#333333',
-        borderRadius: 20, // Bordes redondeados consistentes
+        borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: 36, // Misma altura que los botones
-        minWidth: 120, // Ancho mínimo para fechas
+        height: 36,
+        minWidth: 120,
     },
     dateDisplayText: {
         color: '#FFFFFF',
@@ -215,17 +221,17 @@ export const styles = StyleSheet.create({
         gap: 8
     },
     filterButton: {
-        paddingVertical: 8, // Reducido de 10
-        paddingHorizontal: 12, // Reducido de 15
-        borderRadius: 20, // Bordes redondeados
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20,
         backgroundColor: '#333333',
         alignItems: 'center',
-        minWidth: 60, // Ancho mínimo para mantener proporción
-        height: 36, // Altura fija para consistencia
+        minWidth: 60,
+        height: 36,
         justifyContent: 'center',
     },
     activeFilter: {
-        backgroundColor: '#D4AF37', // Amarillo dorado para filtro activo
+        backgroundColor: '#D4AF37',
     },
     filterButtonText: {
         color: '#FFFFFF',
@@ -245,7 +251,7 @@ export const styles = StyleSheet.create({
         marginRight: 10,
     },
     activeStatusFilter: {
-        backgroundColor: '#D4AF37', // Amarillo dorado para filtro de estado activo
+        backgroundColor: '#D4AF37',
     },
     statusFilterButtonText: {
         color: '#FFFFFF',
@@ -259,6 +265,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
+        marginBottom: 20,
     },
     timeSlot: {
         width: '30%',
@@ -269,7 +276,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     selectedTimeSlot: {
-        backgroundColor: '#D4AF37', // Amarillo dorado para slot seleccionado
+        backgroundColor: '#D4AF37',
     },
     timeSlotText: {
         color: '#FFFFFF',
@@ -313,9 +320,9 @@ export const styles = StyleSheet.create({
     },
     monthPickerButton: {
         width: '30%',
-        padding: 10, // Reducido de 12
-        margin: 4, // Reducido de 5
-        borderRadius: 10, // Bordes más redondeados
+        padding: 10,
+        margin: 4,
+        borderRadius: 10,
         backgroundColor: '#333333',
         alignItems: 'center',
     },
@@ -343,8 +350,7 @@ export const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         fontSize: 16,
-    },// En los estilos, agrega/modifica estas propiedades:
-
+    },
     filterContainer: {
         padding: 10,
         backgroundColor: '#1E1E1E',
@@ -357,5 +363,4 @@ export const styles = StyleSheet.create({
     statusFilterRow: {
         marginTop: 5,
     },
-// Los demás estilos se mantienen igual que antes
 });

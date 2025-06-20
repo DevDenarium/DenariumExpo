@@ -70,17 +70,17 @@ const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User
         { name: 'Finance', label: 'Finanzas', icon: 'finance' },
         { name: 'Transactions', label: 'Transacciones', icon: 'cash-multiple' },
         { name: 'Videos', label: 'Contenido Educativo', icon: 'bookshelf' },
-        { name: 'Appointments', label: 'Asesorías', icon: 'account-tie-voice' },
-        { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
         { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
+        { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
     ];
 
     const adminMenuItems = [
-        { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'video-library' },
+        { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'play-box-multiple' },
         { name: 'AppointmentManagement', label: 'Citas Agendadas', icon: 'calendar-clock' },
     ];
 
     const clientMenuItems = [
+        { name: 'Appointments', label: 'Asesorías', icon: 'account-tie-voice' },
         { name: 'Subscriptions', label: 'Suscripciones', icon: 'credit-card' },
     ];
 
