@@ -57,10 +57,10 @@ export const styles = StyleSheet.create({
     } as TextStyle,
     cardStatus: {
         paddingHorizontal: 10,
-        paddingVertical: 3,
-        borderRadius: 5,
-        alignSelf: 'flex-start',
-        marginRight: 10,
+        paddingVertical: 5,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
     } as ViewStyle,
     statusText: {
         fontSize: 12,
@@ -84,8 +84,9 @@ export const styles = StyleSheet.create({
         marginTop: 10,
     } as ViewStyle,
     actionButton: {
-        padding: 8,
-        borderRadius: 5,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         marginLeft: 10,
         justifyContent: 'center',
         alignItems: 'center',
@@ -131,7 +132,7 @@ export const styles = StyleSheet.create({
     modalButton: {
         flex: 1,
         padding: 12,
-        borderRadius: 6,
+        borderRadius: 20,
         marginHorizontal: 5,
         alignItems: 'center',
     } as ViewStyle,
@@ -219,7 +220,7 @@ export const styles = StyleSheet.create({
         width: '30%',
         backgroundColor: '#333333',
         padding: 10,
-        borderRadius: 5,
+        borderRadius: 10,
         marginBottom: 10,
         alignItems: 'center',
     } as ViewStyle,
@@ -229,12 +230,6 @@ export const styles = StyleSheet.create({
     timeSlotText: {
         color: '#FFFFFF',
     } as TextStyle,
-    nonEditableText: {
-        color: '#AAAAAA',
-        fontStyle: 'italic',
-        fontSize: 12,
-        marginTop: 5,
-    },
     filterContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -244,7 +239,7 @@ export const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: 5,
         paddingVertical: 10,
-        borderRadius: 5,
+        borderRadius: 20,
         backgroundColor: '#333333',
         alignItems: 'center',
     } as ViewStyle,
@@ -255,4 +250,10 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: '500',
     } as TextStyle,
+    acceptButton: {
+        backgroundColor: '#4CAF50',
+    } as ViewStyle,
+    rejectButton: {
+        backgroundColor: '#F44336',
+    } as ViewStyle,
 });

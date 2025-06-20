@@ -136,7 +136,65 @@ class AppointmentService {
             throw new Error(error.response?.data?.message || 'No se pudo actualizar la cita');
         }
     }
+
+    async proposeReschedule(id: string, suggestedDate: string): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.put(
+                `${API_BASE_URL}/appointments/${id}/reschedule`,  // Cambiado de propose-reschedule a reschedule
+                { date: suggestedDate },  // Cambiado de suggestedDate a date para coincidir con el backend
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error proposing reschedule:', error);
+            throw new Error(error.response?.data?.message || 'Error al proponer reagendamiento');
+        }
+    }
+
+    // Aceptar reagendamiento (cliente)
+    async acceptReschedule(id: string): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.put(
+                `${API_BASE_URL}/appointments/${id}/accept-reschedule`,
+                {},
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error accepting reschedule:', error);
+            throw new Error(error.response?.data?.message || 'Error al aceptar el reagendamiento');
+        }
+    }
+
+    // Rechazar reagendamiento (cliente)
+    async rejectReschedule(id: string): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.put(
+                `${API_BASE_URL}/appointments/${id}/reject-reschedule`,
+                {},
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error rejecting reschedule:', error);
+            throw new Error(error.response?.data?.message || 'Error al rechazar el reagendamiento');
+        }
+    }
 }
+
+
 
 
 export const appointmentService = new AppointmentService();

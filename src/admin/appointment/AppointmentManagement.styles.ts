@@ -1,51 +1,46 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#121212',
+        backgroundColor: '#1c1c1c',
+        padding: 20,
     },
     header: {
-        padding: 20,
-        backgroundColor: '#1E1E1E',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
-        color: '#D4AF37',
-        textAlign: 'center',
+        fontWeight: '600',
+        color: '#D4AF37', // Amarillo dorado como en AppointmentScreen
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#121212',
     },
     emptyContainer: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        padding: 20,
+        paddingTop: 70,
     },
     emptyText: {
-        fontSize: 18,
         color: '#AAAAAA',
-        marginTop: 20,
+        fontSize: 16,
         textAlign: 'center',
     },
     listContainer: {
-        padding: 10,
+        flex: 1,
     },
     appointmentCard: {
-        backgroundColor: '#1E1E1E',
+        backgroundColor: '#2a2a2a', // Gris oscuro como en AppointmentScreen
         borderRadius: 10,
         padding: 15,
         marginBottom: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        elevation: 5,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -54,10 +49,11 @@ export const styles = StyleSheet.create({
         marginBottom: 10,
     },
     cardTitle: {
+        color: '#D4AF37', // Amarillo dorado para el título de la cita
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
+        fontWeight: '600',
         flex: 1,
+        marginRight: 10,
     },
     cardStatus: {
         paddingHorizontal: 10,
@@ -74,14 +70,13 @@ export const styles = StyleSheet.create({
         marginBottom: 10,
     },
     cardDescription: {
+        color: '#FFFFFF',
         fontSize: 14,
-        color: '#CCCCCC',
-        marginBottom: 10,
+        marginBottom: 5,
     },
     cardDate: {
-        fontSize: 14,
-        color: '#CCCCCC',
-        marginBottom: 5,
+        color: '#AAAAAA',
+        fontSize: 12,
     },
     cardFooter: {
         flexDirection: 'row',
@@ -92,141 +87,145 @@ export const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
+        marginLeft: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 10,
+    },
+    editButton: {
+        backgroundColor: '#2196F3', // Azul para editar
+    },
+    deleteButton: {
+        backgroundColor: '#F44336', // Rojo para eliminar
+    },
+    acceptButton: {
+        backgroundColor: '#4CAF50', // Verde para aceptar
+    },
+    rejectButton: {
+        backgroundColor: '#F44336', // Rojo para rechazar
     },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     modalContainer: {
         width: '90%',
         maxHeight: '80%',
-        backgroundColor: '#1E1E1E',
+        backgroundColor: '#2a2a2a', // Gris oscuro como el fondo de las cards
         borderRadius: 10,
         padding: 20,
     },
     modalTitle: {
+        color: '#D4AF37', // Amarillo dorado para el título del modal
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#D4AF37',
+        marginBottom: 15,
         textAlign: 'center',
-        marginBottom: 20,
-    },
-    datePickerContainer: {
-        marginBottom: 20,
     },
     modalInput: {
-        backgroundColor: '#333',
-        color: '#FFFFFF',
-        padding: 15,
+        backgroundColor: '#333333', // Gris más oscuro para los inputs
         borderRadius: 5,
+        padding: 15,
+        color: '#FFFFFF',
         marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#444',
-    },
-    datePickerButton: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderWidth: 1,
-        borderColor: '#D4AF37',
-        borderRadius: 5,
-    },
-    datePickerText: {
-        color: '#FFFFFF',
-        fontSize: 16,
     },
     modalButtonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 20,
+        marginTop: 15,
     },
     modalButton: {
         flex: 1,
-        padding: 15,
-        borderRadius: 5,
-        justifyContent: 'center',
+        padding: 12,
+        borderRadius: 20,
+        marginHorizontal: 5,
         alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: '#F44336',
-        marginRight: 10,
+        backgroundColor: '#555555', // Gris para cancelar
     },
     confirmButton: {
-        backgroundColor: '#4CAF50',
-        marginLeft: 10,
+        backgroundColor: '#D4AF37', // Amarillo dorado para confirmar
+    },
+    disabledButton: {
+        opacity: 0.5,
     },
     modalButtonText: {
-        color: '#FFFFFF',
+        color: '#000000',
         fontWeight: 'bold',
-        fontSize: 16,
     },
     statusPending: {
         backgroundColor: 'rgba(255, 193, 7, 0.2)',
     },
-    statusTextPending: {
-        color: '#FFC107',
-    },
     statusConfirmed: {
         backgroundColor: 'rgba(76, 175, 80, 0.2)',
-    },
-    statusTextConfirmed: {
-        color: '#4CAF50',
     },
     statusCancelled: {
         backgroundColor: 'rgba(244, 67, 54, 0.2)',
     },
-    statusTextCancelled: {
-        color: '#F44336',
-    },
     statusRescheduled: {
         backgroundColor: 'rgba(33, 150, 243, 0.2)',
+    },
+    statusRejected: {
+        backgroundColor: 'rgba(244, 67, 54, 0.2)',
+    },
+    statusCompleted: {
+        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    },
+    statusTextPending: {
+        color: '#FFC107',
+    },
+    statusTextConfirmed: {
+        color: '#4CAF50',
+    },
+    statusTextCancelled: {
+        color: '#F44336',
     },
     statusTextRescheduled: {
         color: '#2196F3',
     },
-    filterContainer: {
-        padding: 10,
-        backgroundColor: '#1E1E1E',
+    statusTextRejected: {
+        color: '#F44336',
+    },
+    statusTextCompleted: {
+        color: '#4CAF50',
+    },
+    datePickerContainer: {
+        marginBottom: 15,
+    },
+    dateDisplayButton: {
+        backgroundColor: '#333333',
+        borderRadius: 5,
+        padding: 15,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    dateDisplayText: {
+        color: '#FFFFFF',
     },
     dateFilterContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
     },
     filterButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 15,
+        flex: 1,
+        marginHorizontal: 5,
+        paddingVertical: 10,
         borderRadius: 20,
-        backgroundColor: '#333',
-        marginRight: 10,
+        backgroundColor: '#333333',
+        alignItems: 'center',
     },
     activeFilter: {
-        backgroundColor: '#D4AF37',
+        backgroundColor: '#D4AF37', // Amarillo dorado para filtro activo
     },
     filterButtonText: {
         color: '#FFFFFF',
-        fontWeight: 'bold',
-    },
-    dateDisplayButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        backgroundColor: '#333',
-    },
-    dateDisplayText: {
-        color: '#FFFFFF',
-        marginRight: 5,
+        fontWeight: '500',
     },
     statusFilterContainer: {
-        marginTop: 5,
+        marginTop: 10,
     },
     statusFilterContent: {
         paddingHorizontal: 5,
@@ -235,17 +234,46 @@ export const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 15,
         borderRadius: 20,
-        backgroundColor: '#333',
+        backgroundColor: '#333333',
         marginRight: 10,
     },
     activeStatusFilter: {
-        backgroundColor: '#D4AF37',
+        backgroundColor: '#D4AF37', // Amarillo dorado para filtro de estado activo
     },
     statusFilterButtonText: {
         color: '#FFFFFF',
         fontWeight: 'bold',
     },
-    // Estilos para el selector de mes
+    webDatePickerContainer: {
+        marginBottom: 20,
+        borderRadius: 5,
+    },
+    timeSlotsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    timeSlot: {
+        width: '30%',
+        padding: 10,
+        marginBottom: 10,
+        backgroundColor: '#333333',
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    selectedTimeSlot: {
+        backgroundColor: '#D4AF37', // Amarillo dorado para slot seleccionado
+    },
+    timeSlotText: {
+        color: '#FFFFFF',
+    },
+    durationInput: {
+        backgroundColor: '#333333',
+        borderRadius: 5,
+        padding: 15,
+        color: '#FFFFFF',
+        marginBottom: 15,
+    },
     monthPickerOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -253,7 +281,7 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     monthPickerContainer: {
-        backgroundColor: '#1E1E1E',
+        backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 20,
         width: '90%',
@@ -281,7 +309,7 @@ export const styles = StyleSheet.create({
         padding: 12,
         margin: 5,
         borderRadius: 5,
-        backgroundColor: '#333',
+        backgroundColor: '#333333',
         alignItems: 'center',
     },
     monthPickerButtonSelected: {
@@ -306,42 +334,19 @@ export const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         fontSize: 16,
-    },
-    // Nuevos estilos para el datepicker web
-    webDatePickerContainer: {
-        marginBottom: 20,
-        borderRadius: 5,
-    },
-    timeSlotsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
-    timeSlot: {
-        width: '30%',
+    },// En los estilos, agrega/modifica estas propiedades:
+
+    filterContainer: {
         padding: 10,
-        marginBottom: 10,
-        backgroundColor: '#333',
-        borderRadius: 5,
+        backgroundColor: '#1E1E1E',
+    },
+    dateFilterRow: {
+        flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 10,
     },
-    selectedTimeSlot: {
-        backgroundColor: '#D4AF37',
+    statusFilterRow: {
+        marginTop: 5,
     },
-    timeSlotText: {
-        color: '#FFFFFF',
-    },
-    durationInput: {
-        backgroundColor: '#333',
-        color: '#FFFFFF',
-        padding: 15,
-        borderRadius: 5,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#444',
-    },
-    disabledButton: {
-        opacity: 0.6,
-    },
+// Los demás estilos se mantienen igual que antes
 });

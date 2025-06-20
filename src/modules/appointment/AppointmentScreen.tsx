@@ -185,6 +185,28 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         setShowTimeSlots(true);
     };
 
+    const handleAcceptReschedule = async (appointment: Appointment) => {
+        try {
+            await appointmentService.acceptReschedule(appointment.id);
+            Alert.alert('Éxito', 'Has aceptado la nueva fecha para tu cita');
+            fetchAppointments();
+        } catch (error: any) {
+            console.error('Error accepting reschedule:', error);
+            Alert.alert('Error', error.message || 'No se pudo aceptar el reagendamiento');
+        }
+    };
+
+    const handleRejectReschedule = async (appointment: Appointment) => {
+        try {
+            await appointmentService.rejectReschedule(appointment.id);
+            Alert.alert('Éxito', 'Has rechazado la propuesta de reagendamiento');
+            fetchAppointments();
+        } catch (error: any) {
+            console.error('Error rejecting reschedule:', error);
+            Alert.alert('Error', error.message || 'No se pudo rechazar el reagendamiento');
+        }
+    };
+
     const handleCreateAppointment = async () => {
         try {
             if (!formData.title || !selectedDate || !selectedTime) {
@@ -423,25 +445,23 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         setSelectedAppointment(appointment);
         setActionType('edit');
 
-        // Parse the appointment date
         const appointmentDate = new Date(appointment.requestedDate);
         setSelectedDate(appointmentDate);
         setSelectedTime(appointmentDate);
 
-        // Set form data
         setFormData({
             title: appointment.title,
             description: appointment.description || '',
             duration: appointment.duration.toString(),
         });
 
-        // Fetch availability and show modal
         fetchAvailability(appointmentDate);
         setShowModal(true);
     };
 
     const renderAppointmentCard = ({item}: { item: Appointment }) => {
         const [statusContainerStyle, statusTextStyle] = getStatusStyle(item.status);
+        const isPastAppointment = isBefore(new Date(item.requestedDate), new Date());
 
         return (
             <View style={styles.appointmentCard}>
@@ -472,38 +492,58 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     )}
                     {item.admin && (
                         <Text style={styles.cardDate}>
-                            <Text
-                                style={{fontWeight: 'bold'}}>Asesor:</Text> {item.admin.firstName} {item.admin.lastName} ({item.admin.email})
+                            <Text style={{fontWeight: 'bold'}}>Asesor:</Text> {item.admin.firstName} {item.admin.lastName} ({item.admin.email})
                         </Text>
                     )}
                     <Text style={styles.cardDate}>
                         <Text style={{fontWeight: 'bold'}}>Duración:</Text> {item.duration} minutos
                     </Text>
                 </View>
-                <View style={styles.cardFooter}>
-                    {/* Botón EDITAR - Solo para PENDING o RESCHEDULED */}
-                    {(item.status === 'PENDING' || item.status === 'RESCHEDULED') && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.editButton]}
-                            onPress={() => handleEditAppointment(item)}
-                        >
-                            <Icon name="pencil" size={20} color="#FFFFFF"/>
-                        </TouchableOpacity>
-                    )}
 
-                    {/* Botón CANCELAR - Para PENDING, RESCHEDULED y CONFIRMED */}
-                    {(item.status === 'PENDING' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.deleteButton]}
-                            onPress={() => {
-                                setSelectedAppointment(item);
-                                setShowDeleteConfirmation(true);
-                            }}
-                        >
-                            <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                {/* Solo mostrar botones si la cita no es pasada */}
+                {!isPastAppointment && (
+                    <View style={styles.cardFooter}>
+                        {/* Botones para citas reagendadas */}
+                        {item.status === 'RESCHEDULED' && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.acceptButton]}
+                                    onPress={() => handleAcceptReschedule(item)}
+                                >
+                                    <Icon name="check" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.rejectButton]}
+                                    onPress={() => handleRejectReschedule(item)}
+                                >
+                                    <Icon name="close" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                            </>
+                        )}
+
+                        {/* Botones para otros estados */}
+                        {(item.status === 'PENDING') && (
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.editButton]}
+                                onPress={() => handleEditAppointment(item)}
+                            >
+                                <Icon name="pencil" size={20} color="#FFFFFF"/>
+                            </TouchableOpacity>
+                        )}
+
+                        {(item.status === 'PENDING' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.deleteButton]}
+                                onPress={() => {
+                                    setSelectedAppointment(item);
+                                    setShowDeleteConfirmation(true);
+                                }}
+                            >
+                                <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
             </View>
         );
     };

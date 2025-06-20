@@ -22,6 +22,7 @@ import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO } from '
 import { es } from 'date-fns/locale';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import {appointmentService} from "../../services/appointment.service";
 
 registerLocale('es', es);
 setDefaultLocale('es');
@@ -70,7 +71,7 @@ if (Platform.OS === 'web') {
 const API_BASE_URL = 'http://localhost:3000';
 
 type FilterType = 'day' | 'month' | 'none';
-type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all';
+type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all' | 'past';
 
 const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigation }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -87,7 +88,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [showCalendar, setShowCalendar] = useState(false); // Nuevo estado para controlar la visibilidad del calendario
+    const [showCalendar, setShowCalendar] = useState(false);
 
     useEffect(() => {
         fetchAppointments();
@@ -212,6 +213,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
     const applyFilters = () => {
         let result = [...appointments];
+        const now = new Date();
 
         // Apply date filter
         if (filterType !== 'none' && filterDate) {
@@ -231,8 +233,8 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         switch (statusFilter) {
             case 'upcoming':
                 result = result.filter(appointment =>
-                    appointment.status === 'CONFIRMED' ||
-                    appointment.status === 'RESCHEDULED'
+                    (appointment.status === 'CONFIRMED' || appointment.status === 'RESCHEDULED') &&
+                    isBefore(now, new Date(appointment.confirmedDate || appointment.requestedDate))
                 ).sort((a, b) =>
                     new Date(a.confirmedDate || a.requestedDate).getTime() -
                     new Date(b.confirmedDate || b.requestedDate).getTime()
@@ -253,6 +255,15 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 ).sort((a, b) =>
                     new Date(b.requestedDate).getTime() -
                     new Date(a.requestedDate).getTime()
+                );
+                break;
+            case 'past':
+                result = result.filter(appointment =>
+                    (appointment.status === 'CONFIRMED' || appointment.status === 'RESCHEDULED') &&
+                    isBefore(new Date(appointment.confirmedDate || appointment.requestedDate), now)
+                ).sort((a, b) =>
+                    new Date(b.confirmedDate || b.requestedDate).getTime() -
+                    new Date(a.confirmedDate || a.requestedDate).getTime()
                 );
                 break;
             case 'all':
@@ -303,19 +314,15 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 return;
             }
 
-            await axios.put(
-                `${API_BASE_URL}/appointments/${selectedAppointment.id}/reschedule`,
-                { date: selectedDate.toISOString() },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
+            await appointmentService.proposeReschedule(
+                selectedAppointment.id,
+                selectedDate.toISOString()
             );
 
             setShowModal(false);
             fetchAppointments();
             resetForm();
+            Alert.alert('Éxito', 'Se ha enviado la propuesta de reagendamiento al cliente');
         } catch (error) {
             console.error('Error rescheduling appointment:', error);
             Alert.alert('Error', 'No se pudo reagendar la cita');
@@ -407,6 +414,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
     const renderAppointmentCard = ({ item }: { item: Appointment }) => {
         const [statusContainerStyle, statusTextStyle] = getStatusStyle(item.status);
+        const isPastAppointment = isBefore(new Date(item.confirmedDate || item.requestedDate), new Date());
 
         return (
             <View style={styles.appointmentCard}>
@@ -444,46 +452,50 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                         <Text style={{ fontWeight: 'bold' }}>Duración:</Text> {item.duration} minutos
                     </Text>
                 </View>
-                <View style={styles.cardFooter}>
-                    {item.status === 'PENDING' && (
-                        <>
+
+                {/* Solo mostrar botones si la cita no es pasada y no está cancelada */}
+                {!isPastAppointment && item.status !== 'CANCELLED' && item.status !== 'REJECTED' && (
+                    <View style={styles.cardFooter}>
+                        {item.status === 'PENDING' && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                                    onPress={() => {
+                                        setSelectedAppointment(item);
+                                        setSelectedDate(new Date(item.requestedDate));
+                                        setActionType('confirm');
+                                        setShowModal(true);
+                                    }}
+                                >
+                                    <Icon name="check" size={20} color="#FFFFFF" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
+                                    onPress={() => {
+                                        setSelectedAppointment(item);
+                                        setSelectedDate(new Date(item.requestedDate));
+                                        setActionType('reschedule');
+                                        setShowModal(true);
+                                    }}
+                                >
+                                    <Icon name="calendar-clock" size={20} color="#FFFFFF" />
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
                             <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                                style={[styles.actionButton, { backgroundColor: '#F44336' }]}
                                 onPress={() => {
                                     setSelectedAppointment(item);
-                                    setSelectedDate(new Date(item.requestedDate));
-                                    setActionType('confirm');
+                                    setActionType('cancel');
                                     setShowModal(true);
                                 }}
                             >
-                                <Icon name="check" size={20} color="#FFFFFF" />
+                                <Icon name="close" size={20} color="#FFFFFF" />
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
-                                onPress={() => {
-                                    setSelectedAppointment(item);
-                                    setSelectedDate(new Date(item.requestedDate));
-                                    setActionType('reschedule');
-                                    setShowModal(true);
-                                }}
-                            >
-                                <Icon name="calendar-clock" size={20} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        </>
-                    )}
-                    {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: '#F44336' }]}
-                            onPress={() => {
-                                setSelectedAppointment(item);
-                                setActionType('cancel');
-                                setShowModal(true);
-                            }}
-                        >
-                            <Icon name="close" size={20} color="#FFFFFF" />
-                        </TouchableOpacity>
-                    )}
-                </View>
+                        )}
+                    </View>
+                )}
             </View>
         );
     };
@@ -605,13 +617,25 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     >
                         <Text style={styles.statusFilterButtonText}>Canceladas</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'past' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('past')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Pasadas</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </View>
 
             {filteredAppointments.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Icon name="calendar-remove" size={60} color="#AAAAAA" />
-                    <Text style={styles.emptyText}>No hay citas con los filtros actuales</Text>
+                    <Text style={styles.emptyText}>
+                        {statusFilter === 'upcoming' && 'No hay citas próximas'}
+                        {statusFilter === 'pending' && 'No hay citas pendientes'}
+                        {statusFilter === 'cancelled' && 'No hay citas canceladas'}
+                        {statusFilter === 'past' && 'No hay citas pasadas'}
+                        {statusFilter === 'all' && 'No hay citas con los filtros actuales'}
+                    </Text>
                 </View>
             ) : (
                 <FlatList
