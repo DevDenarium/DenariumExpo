@@ -11,11 +11,29 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { verifyEmail, resendVerificationCode } from '../../services/auth.service';
-import { VerificationScreenProps } from './VerificationScreen.types';
 import { styles } from './VerificationScreen.styles';
 import axios from "axios";
+import {StackNavigationProp, StackScreenProps} from '@react-navigation/stack';
+import { RootStackParamList } from '../navegation/Navegation.types';
+import {RouteProp} from "@react-navigation/native";
+
+type VerificationScreenNavigationProp = StackNavigationProp<
+    RootStackParamList,
+    'Verification'
+>;
+
+type VerificationScreenRouteProp = RouteProp<
+    RootStackParamList,
+    'Verification'
+>;
+
+type VerificationScreenProps = StackScreenProps<
+    RootStackParamList,
+    'Verification'
+>;
 
 const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, route }) => {
+    const { email, userRole } = route.params;
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [resendLoading, setResendLoading] = useState(false);
@@ -24,7 +42,6 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, rou
     const [modalMessage, setModalMessage] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
     const inputRefs = useRef<Array<TextInput | null>>([]);
-    const { email } = route.params;
 
     useEffect(() => {
         if (countdown > 0) {
@@ -43,10 +60,11 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, rou
         setModalVisible(false);
         if (isSuccess && modalMessage.includes('verificado correctamente')) {
             navigation.navigate('Login', {
-                message: 'Verificación exitosa. Por favor inicia sesión.'
+                message: 'Email verified successfully. Please login.'
             });
         }
     };
+
 
     const handleVerify = async () => {
         if (!code || code.length !== 6) {

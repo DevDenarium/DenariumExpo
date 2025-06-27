@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
         color: '#D4AF37',
         fontSize: 22,
         fontWeight: '600',
-        fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
+        fontFamily: Platform.OS === 'ios' ? 'sans-serif' : 'sans-serif',
     },
     closeButton: {
         padding: 4,

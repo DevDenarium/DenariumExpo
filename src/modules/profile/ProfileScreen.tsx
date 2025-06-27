@@ -5,37 +5,29 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../navegation/Navegation.types';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { User } from '../dashboard/DashboardScreen.types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE_URL } from '../../services/auth.service';
 import { getCountries } from '../../services/auth.service';
+import { useAuth } from '../auth/AuthContext';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
-const ProfileScreen = ({ route }: { route: { params: { user: User } } }) => {
+const ProfileScreen = () => {
     const navigation = useNavigation<ProfileScreenNavigationProp>();
-    const [user, setUser] = useState<User>(route.params?.user || {
-        id: '',
-        email: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        country: '',
-        picture: ''
+    const { user: authUser, updateUser } = useAuth();
+
+    const [user, setUser] = useState({
+        id: authUser?.id || '',
+        email: authUser?.email || '',
+        firstName: authUser?.firstName || '',
+        lastName: authUser?.lastName || '',
+        phone: authUser?.phone || '',
+        country: authUser?.country || '',
+        picture: authUser?.profilePicture || ''
     });
 
-    // Verificación adicional al acceder a user
-    const safeUser = user || {
-        id: '',
-        email: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        country: '',
-        picture: ''
-    };
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);

@@ -2,84 +2,116 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { styles } from './SubscriptionsScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {
-    SubscriptionPlan,
-    SubscriptionsScreenProps,
-    SubscriptionStatus,
-    SubscriptionPlanType
-} from './SubscriptionsScreen.types';
-import axios from "axios";
-import {PaymentsService} from "../../services/payments.service";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SubscriptionsScreenProps, SubscriptionPlan, SubscriptionStatus, SubscriptionPlanType } from './SubscriptionsScreen.types';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from "../navegation/Navegation.types"
-import {StackNavigationProp} from "@react-navigation/stack";
+import { RootStackParamList } from "../navegation/Navegation.types";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { UserRole } from '../auth/user.types';
+import { SubscriptionsService } from '../../services/subscription.service';
+import { useAuth } from '../auth/AuthContext';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 const useTypedNavigation = () => useNavigation<NavigationProp>();
 
-const API_BASE_URL = 'http://localhost:3000';
+const corporatePlans: SubscriptionPlan[] = [
+    {
+        id: 'corporate_premium',
+        name: 'Plan Premium Corporativo',
+        price: 100,
+        period: 'mes',
+        features: [
+            'Acceso completo a métricas',
+            'Acceso a transacciones',
+            'Acceso completo a contenido educativo',
+            'Notificaciones informativas de gastos',
+            'Suscripción de 50 empleados',
+            '1 asesoría al mes gratuita'
+        ],
+        highlight: true,
+        icon: 'trophy',
+        employeeLimit: 50,
+        freeAdvisoryCount: 1,
+        type: 'CORPORATE_PREMIUM'
+    },
+    {
+        id: 'corporate_gold',
+        name: 'Plan Gold Corporativo',
+        price: 50,
+        period: 'mes',
+        features: [
+            'Acceso completo a métricas',
+            'Acceso a transacciones',
+            'Acceso completo a contenido educativo',
+            'Notificaciones limitadas informativas de gastos',
+            'Suscripción de 10 empleados'
+        ],
+        icon: 'medal',
+        employeeLimit: 10,
+        type: 'CORPORATE_GOLD'
+    },
+    {
+        id: 'corporate_free',
+        name: 'Plan Free Corporativo',
+        price: 0,
+        period: 'mes',
+        features: [
+            'Acceso completo a métricas',
+            'Acceso a transacciones',
+            'Acceso limitado a contenido educativo',
+            'Notificaciones limitadas informativas de gastos'
+        ],
+        icon: 'office-building',
+        type: 'CORPORATE_FREE'
+    }
+];
 
-const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
-    const { user } = route.params;
+const personalPlans: SubscriptionPlan[] = [
+    {
+        id: 'personal_premium',
+        name: 'Plan Premium Personal',
+        price: 20,
+        period: 'mes',
+        features: [
+            'Acceso completo a métricas',
+            'Acceso a transacciones',
+            'Acceso completo a contenido educativo',
+            'Notificaciones informativas de gastos',
+            '1 asesoría al mes gratuita'
+        ],
+        highlight: true,
+        icon: 'star',
+        freeAdvisoryCount: 1,
+        type: 'PERSONAL_PREMIUM'
+    },
+    {
+        id: 'personal_free',
+        name: 'Plan Free Personal',
+        price: 0,
+        period: 'mes',
+        features: [
+            'Acceso básico a métricas',
+            'Acceso a transacciones básicas',
+            'Acceso limitado a contenido educativo'
+        ],
+        icon: 'account-outline',
+        type: 'PERSONAL_FREE'
+    }
+];
+
+const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
+    const { user, loading: authLoading, updateUser } = useAuth();
     const navigation = useTypedNavigation();
 
-    const initialPlans: SubscriptionPlan[] = [
-        {
-            id: 'premium',
-            name: 'Plan Premium',
-            price: 10,
-            period: 'mes',
-            features: [
-                'Acceso completo a métricas',
-                'Acceso a transacciones',
-                'Acceso completo a contenido educativo',
-                'Asesorías personalizadas',
-                'Notificaciones informativas de gastos'
-            ],
-            highlight: true,
-            icon: 'crown'
-        },
-        {
-            id: 'free',
-            name: 'Plan Free',
-            price: 0,
-            period: 'mes',
-            features: [
-                'Acceso básico a métricas',
-                'Acceso a transacciones',
-                'Contenido educativo limitado',
-            ],
-            icon: 'account-star'
-        }
-    ];
-
-    const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans);
-    const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus>({
-        plan: 'Free',
-        status: 'active',
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-    });
+    const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+    const [currentSubscription, setCurrentSubscription] = useState<SubscriptionStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-
-    const getAuthToken = async (): Promise<string> => {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-            throw new Error('No se encontró token de autenticación');
+    useEffect(() => {
+        if (!authLoading && !user) {
+            navigation.navigate('Login');
         }
-        return token;
-    };
-
-    const getPlanId = (planName: string): string => {
-        const planMap: Record<string, string> = {
-            'Plan Free': 'free_plan_id',
-            'Plan Premium': 'premium_plan_id'
-        };
-        return planMap[planName] || 'free_plan_id';
-    };
+    }, [authLoading, user, navigation]);
 
     const formatDate = (dateString: string) => {
         if (!dateString || dateString === 'Invalid Date') return 'No disponible';
@@ -87,221 +119,196 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
         return date.toLocaleDateString('es-ES');
     };
 
-    const markCurrentPlan = (plan: SubscriptionPlanType) => {
-        setPlans(prevPlans =>
-            prevPlans.map(p => ({
-                ...p,
-                isCurrent: (plan === 'Premium' && p.id === 'premium') ||
-                    (plan === 'Free' && p.id === 'free')
-            }))
-        );
-    };
-
     const fetchSubscriptionStatus = async () => {
         try {
-            const token = await getAuthToken();
-            const response = await axios.get<SubscriptionStatus>(
-                `${API_BASE_URL}/subscriptions/status`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const status = await SubscriptionsService.getSubscriptionStatus();
 
-            const validPlan: SubscriptionPlanType =
-                response.data.plan === 'Premium' ? 'Premium' : 'Free';
-
-            setCurrentSubscription({
-                ...response.data,
-                plan: validPlan
-            });
-
-            markCurrentPlan(validPlan);
+            if (status) {
+                // Si es usuario personal/corporativo y no tiene plan, asignar FREE correspondiente
+                if (user?.role === UserRole.CORPORATE && !status.planType) {
+                    status.planType = 'CORPORATE_FREE';
+                    status.status = 'ACTIVE';
+                    status.daysRemaining = Infinity;
+                } else if (user?.role === UserRole.PERSONAL && !status.planType) {
+                    status.planType = 'PERSONAL_FREE';
+                    status.status = 'ACTIVE';
+                    status.daysRemaining = Infinity;
+                }
+                setCurrentSubscription(status);
+            } else if (user) {
+                // Crear una suscripción por defecto basada en el rol
+                const defaultSubscription: SubscriptionStatus = {
+                    planType: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
+                    status: 'ACTIVE',
+                    startDate: new Date().toISOString(),
+                    endDate: '9999-12-31',
+                    daysRemaining: Infinity
+                };
+                setCurrentSubscription(defaultSubscription);
+            }
         } catch (error) {
             console.error('Error fetching subscription status:', error);
-            setCurrentSubscription({
-                plan: 'Free',
-                status: 'active',
-                startDate: new Date().toISOString(),
-                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-            });
-        } finally {
-            setLoading(false);
+            if (user) {
+                const defaultSubscription: SubscriptionStatus = {
+                    planType: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
+                    status: 'ACTIVE',
+                    startDate: new Date().toISOString(),
+                    endDate: '9999-12-31',
+                    daysRemaining: Infinity
+                };
+                setCurrentSubscription(defaultSubscription);
+            }
         }
     };
 
-    const fetchData = async () => {
+    const fetchAvailablePlans = async () => {
         try {
-            const token = await getAuthToken();
-            const [statusResponse, plansResponse] = await Promise.all([
-                axios.get<SubscriptionStatus>(`${API_BASE_URL}/subscriptions/status`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get<SubscriptionPlan[]>(`${API_BASE_URL}/subscriptions/plans`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-            ]);
+            if (!user) return;
 
-            const validPlan: SubscriptionPlanType =
-                statusResponse.data.plan === 'Premium' ? 'Premium' : 'Free';
+            let availablePlans: SubscriptionPlan[] = [];
 
-            setCurrentSubscription({
-                ...statusResponse.data,
-                plan: validPlan
-            });
+            switch(user.role) {
+                case UserRole.CORPORATE:
+                    availablePlans = [...corporatePlans];
+                    break;
+                case UserRole.CORPORATE_EMPLOYEE:
+                    // No mostrar planes para empleados corporativos
+                    availablePlans = [];
+                    break;
+                case UserRole.PERSONAL:
+                    availablePlans = [...personalPlans];
+                    break;
+                default:
+                    availablePlans = [];
+            }
 
-            const updatedPlans = initialPlans.map(plan => ({
-                ...plan,
-                isCurrent: (validPlan === 'Premium' && plan.id === 'premium') ||
-                    (validPlan === 'Free' && plan.id === 'free')
-            }));
-
-            setPlans(updatedPlans);
-
+            setPlans(availablePlans);
         } catch (error) {
-            console.error('Error fetching data:', error);
-            Alert.alert('Error', 'No se pudo cargar la información de suscripciones');
-            setCurrentSubscription({
-                plan: 'Free',
-                status: 'active',
-                startDate: new Date().toISOString(),
-                endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-            });
-        } finally {
-            setLoading(false);
+            console.error('Error fetching available plans:', error);
+            Alert.alert('Error', 'No se pudieron cargar los planes disponibles');
         }
     };
-
-    useEffect(() => {
-        fetchData();
-        const unsubscribe = navigation.addListener('focus', fetchData);
-        return unsubscribe;
-    }, [navigation]);
 
     const handleSubscribe = async (plan: SubscriptionPlan) => {
         setIsProcessing(true);
         try {
-            const token = await getAuthToken();
+            if (plan.price === 0) {
+                const response = await SubscriptionsService.activateFreeSubscription(plan.type as SubscriptionPlanType);
 
-            if (plan.id === 'free') {
-                await axios.post(
-                    `${API_BASE_URL}/subscriptions/create`,
-                    {},
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                if (response.success) {
+                    Alert.alert('Éxito', 'Plan activado correctamente');
+                    await fetchSubscriptionStatus();
 
-                const newSubscription: SubscriptionStatus = {
-                    plan: 'Free',
-                    status: 'active',
-                    startDate: new Date().toISOString(),
-                    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                };
-
-                setCurrentSubscription(newSubscription);
-                markCurrentPlan('Free');
-                Alert.alert('Éxito', 'Plan Free activado correctamente');
-                return;
-            }
-
-            const planId = getPlanId(plan.name);
-
-            if (__DEV__) {
-                const fakeSessionId = `fake_session_${Math.random().toString(36).substring(2, 9)}`;
-
-                const newSubscription: SubscriptionStatus = {
-                    plan: 'Premium',
-                    status: 'active',
-                    startDate: new Date().toISOString(),
-                    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                };
-
-                setCurrentSubscription(newSubscription);
-                markCurrentPlan('Premium');
-
-                navigation.navigate('Payments', {
-                    sessionId: fakeSessionId,
-                    planName: 'Plan Premium',
-                    amount: 10,
-                    user
+                    // Actualizar el usuario en el contexto
+                    if (user) {
+                        await updateUser({
+                            ...user,
+                            subscriptionType: plan.type
+                        });
+                    }
+                }
+            } else {
+                navigation.navigate('PaymentsScreen', {
+                    plan,
+                    onSuccess: async () => {
+                        await fetchSubscriptionStatus();
+                        // Actualizar el usuario en el contexto
+                        if (user) {
+                            await updateUser({
+                                ...user,
+                                subscriptionType: plan.type
+                            });
+                        }
+                    }
                 });
-
-                return;
             }
-
-            const checkoutUrl = await PaymentsService.createCheckoutSession(
-                user.email,
-                planId,
-                token
-            );
-
-            const sessionId = new URL(checkoutUrl).searchParams.get('session_id');
-            if (!sessionId) {
-                throw new Error('No se pudo obtener el ID de sesión de pago');
-            }
-
-            navigation.navigate('Payments', {
-                sessionId,
-                planName: plan.name,
-                amount: plan.price,
-                user
-            });
         } catch (error) {
-            console.error('Error en handleSubscribe:', error);
+            console.error('Subscription error:', error);
             Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Error desconocido al procesar la solicitud'
+                error instanceof Error ? error.message : 'Error al procesar la suscripción'
             );
         } finally {
             setIsProcessing(false);
         }
     };
 
+    const fetchData = async () => {
+        if (!user) return;
+
+        setLoading(true);
+        try {
+            await Promise.all([fetchSubscriptionStatus(), fetchAvailablePlans()]);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            fetchData();
+        }
+    }, [authLoading, user?.role]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            if (user) {
+                fetchData();
+            }
+        });
+        return unsubscribe;
+    }, [navigation, user]);
+
     const renderPlanCard = (plan: SubscriptionPlan) => (
         <View
             key={plan.id}
             style={[
                 styles.card,
-                plan.isCurrent && styles.currentPlan,
+                currentSubscription?.planType === plan.type && styles.currentPlan,
                 plan.highlight && styles.highlightCard
             ]}
         >
-            {plan.highlight && (
-                <View style={styles.recommendedBadge}>
-                    <Text style={styles.recommendedText}>RECOMENDADO</Text>
-                </View>
-            )}
+            <View style={styles.badgeContainer}>
+                {currentSubscription?.planType === plan.type && (
+                    <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>TU PLAN</Text>
+                    </View>
+                )}
 
-            {plan.isCurrent && (
-                <View style={styles.currentBadge}>
-                    <Text style={styles.currentBadgeText}>TU PLAN</Text>
-                </View>
-            )}
+                {plan.highlight && (
+                    <View style={styles.recommendedBadge}>
+                        <Text style={styles.recommendedText}>RECOMENDADO</Text>
+                    </View>
+                )}
+            </View>
 
             <View style={styles.cardHeader}>
                 <Icon
                     name={plan.icon}
                     size={30}
-                    color={plan.highlight ? '#D4AF37' : plan.isCurrent ? '#4CAF50' : '#FFFFFF'}
+                    color={plan.highlight ? '#D4AF37' : currentSubscription?.planType === plan.type ? '#4CAF50' : '#d3ae37'}
                     style={styles.planIcon}
                 />
                 <Text style={[
                     styles.cardTitle,
-                    plan.isCurrent && styles.currentPlanTitle
+                    currentSubscription?.planType === plan.type && styles.currentPlanTitle
                 ]}>
                     {plan.name}
-                    {plan.isCurrent && (
-                        <Text style={styles.currentPlanIndicator}> ★</Text>
-                    )}
                 </Text>
             </View>
 
             <View style={styles.priceContainer}>
                 <Text style={[
                     styles.cardPrice,
-                    plan.isCurrent && styles.currentPlanPrice
+                    currentSubscription?.planType === plan.type && styles.currentPlanPrice
                 ]}>
                     ${plan.price}
                 </Text>
                 <Text style={[
                     styles.cardPeriod,
-                    plan.isCurrent && styles.currentPlanPeriod
+                    currentSubscription?.planType === plan.type && styles.currentPlanPeriod
                 ]}>
                     /{plan.period}
                 </Text>
@@ -309,7 +316,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
 
             <View style={[
                 styles.divider,
-                plan.isCurrent && styles.currentDivider
+                currentSubscription?.planType === plan.type && styles.currentDivider
             ]} />
 
             <View style={styles.featureList}>
@@ -318,11 +325,11 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                         <Icon
                             name="check-circle"
                             size={18}
-                            color={plan.isCurrent ? '#4CAF50' : '#D4AF37'}
+                            color={currentSubscription?.planType === plan.type ? '#4CAF50' : '#D4AF37'}
                         />
                         <Text style={[
                             styles.featureText,
-                            plan.isCurrent && styles.currentFeatureText
+                            currentSubscription?.planType === plan.type && styles.currentFeatureText
                         ]}>
                             {feature}
                         </Text>
@@ -330,7 +337,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                 ))}
             </View>
 
-            {plan.isCurrent ? (
+            {currentSubscription?.planType === plan.type ? (
                 <View style={styles.currentPlanButton}>
                     <Icon name="check-circle" size={20} color="#4CAF50" style={styles.currentPlanIcon} />
                     <Text style={styles.currentPlanText}>ACTUALMENTE ACTIVO</Text>
@@ -340,7 +347,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                     style={[
                         styles.button,
                         plan.highlight && styles.highlightButton,
-                        plan.id === 'free' && styles.freeButton
+                        plan.price === 0 && styles.freeButton
                     ]}
                     onPress={() => handleSubscribe(plan)}
                     disabled={isProcessing}
@@ -348,21 +355,25 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                     <Text style={[
                         styles.buttonText,
                         plan.highlight && styles.highlightButtonText,
-                        plan.id === 'free' && styles.freeButtonText
+                        plan.price === 0 && styles.freeButtonText
                     ]}>
-                        {isProcessing ? 'PROCESANDO...' : plan.id === 'free' ? 'ACTIVAR' : 'SUSCRIBIRME'}
+                        {isProcessing ? 'PROCESANDO...' : plan.price === 0 ? 'ACTIVAR' : 'SUSCRIBIRME'}
                     </Text>
                 </TouchableOpacity>
             )}
         </View>
     );
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#D4AF37" />
             </View>
         );
+    }
+
+    if (!user) {
+        return null; // Ya se redirige en el useEffect
     }
 
     return (
@@ -373,36 +384,66 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = ({ route }) => {
                     <Text style={styles.subtitle}>Elige el que mejor se adapte a tus necesidades</Text>
                 </View>
 
-                <View style={styles.statusContainer}>
-                    <Text style={styles.statusTitle}>TU SUSCRIPCIÓN ACTUAL:</Text>
-                    <View style={styles.statusContent}>
-                        <Icon
-                            name="badge-account"
-                            size={24}
-                            color="#D4AF37"
-                            style={styles.statusIcon}
-                        />
-                        <View>
-                            <Text style={styles.statusPlan}>
-                                {currentSubscription.plan === 'Premium' ? 'Plan Premium' : 'Plan Free'}
-                            </Text>
-                            <Text style={styles.statusText}>
-                                Estado: <Text style={styles.statusHighlight}>
-                                {currentSubscription.status === 'inactive' ? 'Inactivo' : 'Activo'}
-                            </Text>
-                            </Text>
-                            <Text style={styles.statusDate}>
-                                {currentSubscription.plan === 'Premium'
-                                    ? `Válido hasta: ${formatDate(currentSubscription.endDate)}`
-                                    : 'Acceso gratuito permanente'}
-                            </Text>
+                {currentSubscription && (
+                    <View style={[styles.statusContainer, {position: 'relative'}]}>
+                        <View style={styles.currentSubscriptionIndicator} />
+                        <Text style={styles.statusTitle}>TU SUSCRIPCIÓN ACTUAL:</Text>
+                        <View style={styles.statusContent}>
+                            <Icon
+                                name="badge-account"
+                                size={24}
+                                color="#D4AF37"
+                                style={styles.statusIcon}
+                            />
+                            <View>
+                                <Text style={styles.statusPlan}>
+                                    {currentSubscription.planType === 'CORPORATE_FREE' ? 'Plan Free Corporativo' :
+                                        currentSubscription.planType === 'CORPORATE_GOLD' ? 'Plan Gold Corporativo' :
+                                            currentSubscription.planType === 'CORPORATE_PREMIUM' ? 'Plan Premium Corporativo' :
+                                                currentSubscription.planType === 'PERSONAL_FREE' ? 'Plan Free Personal' :
+                                                        currentSubscription.planType === 'PERSONAL_PREMIUM' ? 'Plan Premium Personal' :
+                                                            'Plan Corporativo'}
+                                </Text>
+                                <Text style={styles.statusText}>
+                                    Estado: <Text style={styles.statusHighlight}>
+                                    {currentSubscription.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+                                </Text>
+                                </Text>
+                                {currentSubscription.planType?.includes('FREE') ? (
+                                    <Text style={styles.statusDate}>
+                                        Acceso gratuito permanente
+                                    </Text>
+                                ) : currentSubscription.daysRemaining && currentSubscription.daysRemaining > 0 ? (
+                                    <Text style={styles.statusDate}>
+                                        {currentSubscription.daysRemaining} días restantes (hasta {formatDate(currentSubscription.endDate)})
+                                    </Text>
+                                ) : null}
+                            </View>
                         </View>
                     </View>
-                </View>
+                )}
 
-                <View style={styles.plansContainer}>
-                    {plans.map(renderPlanCard)}
-                </View>
+                {user.role === UserRole.CORPORATE_EMPLOYEE ? (
+                    <View style={styles.employeeMessage}>
+                        <Icon name="information" size={24} color="#D4AF37" />
+                        <Text style={styles.employeeText}>
+                            Tu suscripción es gestionada por tu empresa. Contacta con el administrador corporativo para más información.
+                        </Text>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.plansContainer}>
+                            {plans.map(renderPlanCard)}
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.customPlanButton}
+                            onPress={() => Alert.alert('Solicitar plan personalizado', 'Contacta con nuestro equipo para un plan a medida')}
+                        >
+                            <Text style={styles.customPlanText}>¿Necesitas un plan personalizado?</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
 
                 <View style={styles.infoBox}>
                     <Icon name="shield-check" size={24} color="#D4AF37" />

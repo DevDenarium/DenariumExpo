@@ -1,11 +1,12 @@
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { UserRole, UserResponse } from "../auth/user.types";
 
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
-    Dashboard: { user: User };
+    Dashboard: { user: UserResponse };
     Transactions: undefined;
     Videos: undefined;
     Advisories: undefined;
@@ -14,7 +15,7 @@ export type RootStackParamList = {
 };
 
 export type DrawerParamList = {
-    MainDashboard: { user: User };
+    MainDashboard: { user: UserResponse };
     Transactions: undefined;
     Videos: undefined;
     Advisories: undefined;
@@ -26,19 +27,6 @@ export type DashboardScreenProps = {
     route: RouteProp<DrawerParamList, 'MainDashboard'>;
     navigation: DrawerNavigationProp<DrawerParamList, 'MainDashboard'>;
 };
-
-export interface User {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    country: string;
-    picture?: string;
-    role?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
 
 export interface FinancialData {
     balance: number;

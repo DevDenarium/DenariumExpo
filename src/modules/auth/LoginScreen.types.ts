@@ -1,12 +1,8 @@
+import {UserResponse} from "./user.types";
+
 export interface AuthResponse {
     access_token: string;
-    user: {
-        id: string;
-        email: string;
-        firstName?: string;
-        lastName?: string;
-        picture?: string;
-    };
+    user: UserResponse;
 }
 
 export interface LoginScreenProps {
@@ -15,5 +11,3 @@ export interface LoginScreenProps {
         goBack: () => void;
     };
 }
-
-

@@ -77,4 +77,9 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    userRoleText: {
+        color: '#888',
+        fontSize: 14,
+        marginTop: 4,
+    },
 });

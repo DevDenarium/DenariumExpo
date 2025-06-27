@@ -1,4 +1,8 @@
-import { User } from '../dashboard/DashboardScreen.types';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { UserRole } from "../auth/user.types";
+import { SubscriptionPlan } from "../subscriptions/SubscriptionsScreen.types";
+import { UserResponse } from "../auth/user.types";
 
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED' | 'REJECTED' | 'COMPLETED';
 
@@ -44,30 +48,35 @@ export type AppointmentScreenParams = {
 export type RootStackParamList = {
     Login: {
         message?: string;
-    };
-    Register: undefined;
+    } | undefined;
+    RegisterType: undefined;
+    RegisterPersonal: undefined;
+    RegisterCorporate: undefined;
+    RegisterCorporateEmployee: undefined;
     Verification: {
         email: string;
+        userRole: UserRole;
     };
     ForgotPassword: undefined;
-    Dashboard: { user: User };
-    Subscriptions: { user: User };
-    Payments: {
-        sessionId: string;
-        planName?: string;
-        amount?: number;
-        user: User;
+    Dashboard: {
+        user: UserResponse;
+    };
+    EmployeeDashboard: undefined;
+    CorporateDashboard: undefined;
+    AdminDashboard: undefined;
+    AdvisorDashboard: undefined;
+    Subscriptions: undefined;
+    PaymentsScreen: {
+        plan: SubscriptionPlan;
+        onSuccess: () => Promise<void>;
     };
     PaymentSuccess: {
         sessionId: string;
         planName?: string;
         amount?: number;
-        user: User;
     };
-    PaymentCanceled: {
-        user?: User;
-    };
-    Profile: { user: User };
+    PaymentCanceled: undefined;
+    Profile: undefined;
     Notifications: undefined;
     VideoLibrary: undefined;
     Appointments: undefined;
@@ -76,14 +85,14 @@ export type RootStackParamList = {
 };
 
 export type DrawerParamList = {
-    MainDashboard: { user: User };
+    MainDashboard: undefined;
     Transactions: undefined;
     Videos: undefined;
     Advisories: undefined;
-    Subscriptions: { user: User };
+    Subscriptions: undefined;
     Notifications: undefined;
     Finance: undefined;
-    Profile: { user: User };
+    Profile: undefined;
     VideoLibrary: undefined;
     Appointments: undefined;
     AppointmentManagement: AppointmentManagementParams;
@@ -94,17 +103,13 @@ export type PaymentsStackParamList = {
         sessionId: string;
         planName?: string;
         amount?: number;
-        user: User;
     };
     PaymentSuccess: {
         sessionId: string;
         planName?: string;
         amount?: number;
-        user: User;
     };
-    PaymentCanceled: {
-        user?: User;
-    };
+    PaymentCanceled: undefined;
 };
 
 export type AppointmentManagementScreenProps = {
@@ -117,11 +122,35 @@ export type AppointmentScreenProps = {
     route: RouteProp<RootStackParamList, 'AppointmentScreen'>;
 };
 
+export type RegisterTypeScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'RegisterType'>;
+};
+
+export type RegisterPersonalScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'RegisterPersonal'>;
+};
+
+export type RegisterCorporateScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'RegisterCorporate'>;
+};
+
+export type RegisterCorporateEmployeeScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'RegisterCorporateEmployee'>;
+};
+
 export interface ApiResponse<T> {
     data: T;
     status: number;
     message?: string;
 }
 
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
+// Tipos para las props de las pantallas que usan AuthContext
+export type DashboardScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'Dashboard'>;
+    route: RouteProp<RootStackParamList, 'Dashboard'>;
+};
+
+export type SubscriptionsScreenProps = {
+    navigation: StackNavigationProp<RootStackParamList, 'Subscriptions'>;
+    route: RouteProp<RootStackParamList, 'Subscriptions'>;
+};

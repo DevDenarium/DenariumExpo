@@ -3,16 +3,21 @@ import { View, Text, SafeAreaView, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from './PaymentsSuccessScreen.styles';
 import { PaymentSuccessScreenProps } from './PaymentsSuccessScreen.types';
+import { useAuth } from '../auth/AuthContext';
+import { CommonActions } from '@react-navigation/native';
 
 const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({ navigation, route }) => {
-    const { sessionId, amount, planName, user } = route.params;
-    const isTestMode = sessionId.includes('fake_session_');
+    const { sessionId, amount, planName } = route.params;
+    const { user } = useAuth();
+    const isTestMode = sessionId.startsWith('simulated_session_');
 
     const handleContinue = () => {
-        navigation.reset({
-            index: 0,
-            routes: [{ name: 'Dashboard', params: { user } }],
-        });
+        navigation.dispatch(
+            CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Dashboard' }],
+            })
+        );
     };
 
     return (
@@ -33,8 +38,8 @@ const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({ navigation,
 
                 <View style={styles.detailsContainer}>
                     <Text style={styles.detailText}>ID de transacción: {sessionId}</Text>
-                    {amount && <Text style={styles.detailText}>Monto: ${amount.toFixed(2)}</Text>}
-                    {planName && <Text style={styles.detailText}>Plan: {planName}</Text>}
+                    <Text style={styles.detailText}>Monto: ${amount}</Text>
+                    <Text style={styles.detailText}>Plan: {planName}</Text>
                 </View>
 
                 <TouchableOpacity

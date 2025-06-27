@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, Platform } from 'react-native';
 import { styles } from './LoginScreen.styles';
 import { login, loginWithGoogle } from '../../services/auth.service';
 import { useGoogleAuth } from '../../services/google-auth';
 import type { LoginScreenProps } from './LoginScreen.types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { UserRole } from './user.types';
+import {UserResponse} from "./user.types";
+import {useAuth} from './AuthContext'
 const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const [formData, setFormData] = useState({
         email: '',
@@ -14,7 +16,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { request, response, promptAsync } = useGoogleAuth();
-
+    const { signIn } = useAuth();
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
@@ -23,9 +25,6 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     useEffect(() => {
         if (response?.type === 'success') {
             const idToken = response.params?.id_token || response.authentication?.idToken;
-
-            console.log('Google response:', response);
-            console.log('Extracted token:', idToken);
 
             if (idToken) {
                 handleGoogleLogin(idToken);
@@ -50,7 +49,18 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
 
         try {
             const result = await loginWithGoogle(token);
-            navigation.navigate('Dashboard', { user: result.user });
+
+            if (result && result.user) {
+                // Verifica que signIn exista antes de llamarlo
+                if (signIn && typeof signIn === 'function') {
+                    await signIn(result);
+                    redirectUserBasedOnType(result.user);
+                } else {
+                    throw new Error('Auth context is not properly initialized');
+                }
+            } else {
+                throw new Error('Invalid user data received from Google login');
+            }
         } catch (err) {
             console.error('Google login error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión con Google';
@@ -59,6 +69,34 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
         } finally {
             setLoading(false);
         }
+    };
+
+
+    const redirectUserBasedOnType = (user: UserResponse) => {
+        const userRole = user.role;
+
+        let routeName = 'Dashboard';
+
+        switch(userRole) {
+            case UserRole.ADMIN:
+                routeName = 'Dashboard';
+                break;
+            case UserRole.ADVISOR:
+                routeName = 'Dashboard';
+                break;
+            case UserRole.CORPORATE:
+                routeName = 'Dashboard';
+                break;
+            case UserRole.CORPORATE_EMPLOYEE:
+                routeName = 'Dashboard';
+                break;
+            case UserRole.PERSONAL:
+            default:
+                routeName = 'Dashboard';
+                break;
+        }
+
+        navigation.navigate(routeName, { user });
     };
 
     const handleSubmit = async () => {
@@ -80,16 +118,26 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 email: formData.email,
                 password: formData.password
             });
-            navigation.navigate('Dashboard', { user: result.user });
+
+            await signIn(result);
+            redirectUserBasedOnType(result.user);
         } catch (err) {
             console.error('Login error:', err);
 
             let errorMessage = 'Error al iniciar sesión';
 
-            if (err instanceof Error && err.message.includes('401')) {
-                errorMessage = 'No existe una cuenta con este correo electrónico';
-            } else if (err instanceof Error) {
-                errorMessage = err.message;
+            if (err instanceof Error) {
+                if (err.message.includes('401')) {
+                    errorMessage = 'Credenciales incorrectas. Por favor verifica tu correo y contraseña.';
+                } else if (err.message.includes('403')) {
+                    errorMessage = 'Tu cuenta no está verificada. Por favor verifica tu correo electrónico.';
+                } else if (err.message.includes('404')) {
+                    errorMessage = 'No existe una cuenta con este correo electrónico.';
+                } else if (err.message.includes('corporate employee')) {
+                    errorMessage = 'Los empleados corporativos deben usar el dominio de correo de su empresa.';
+                } else {
+                    errorMessage = err.message;
+                }
             }
 
             setError(errorMessage);
@@ -105,6 +153,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
 
     const handleForgotPassword = () => {
         navigation.navigate('ForgotPassword');
+    };
+
+    const navigateToRegister = () => {
+        navigation.navigate('RegisterType');
     };
 
     return (
@@ -156,6 +208,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <TouchableOpacity
                 onPress={handleForgotPassword}
                 style={styles.forgotPasswordLink}
+                disabled={loading}
             >
                 <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
@@ -206,7 +259,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             </View>
 
             <TouchableOpacity
-                onPress={() => navigation.navigate('Register')}
+                onPress={navigateToRegister}
                 disabled={loading}
                 style={styles.registerLink}
                 activeOpacity={0.7}

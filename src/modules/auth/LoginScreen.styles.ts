@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 30,
         paddingTop: 50,
         paddingBottom: 20,
-        backgroundColor: '#121212',
+        backgroundColor: '#1E1E1EFF',
     },
     logoContainer: {
         alignItems: 'center',
@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
         marginBottom: 30,
         textAlign: 'center',
         color: '#D4AF37',
-            fontFamily: 'sans-serif',
+        fontFamily: 'sans-serif',
         letterSpacing: 0.8,
         textShadowColor: 'rgba(212, 175, 55, 0.4)',
         textShadowOffset: { width: 0, height: 1 },
@@ -141,9 +141,6 @@ export const styles = StyleSheet.create({
     },
     registerLink: {
         marginTop: 15,
-    },
-    iconContainer: {
-        marginRight: 8,
     },
     forgotPasswordLink: {
         alignSelf: 'flex-end',

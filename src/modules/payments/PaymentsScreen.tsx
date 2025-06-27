@@ -6,17 +6,19 @@ import {
     TextInput,
     ScrollView,
     SafeAreaView,
-    StyleSheet,
     ActivityIndicator,
-    Alert
+    Alert,
+    Image
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { PaymentsScreenProps } from './PaymentsScreen.types';
+import { SubscriptionsService } from '../../services/subscription.service';
 import { styles } from './PaymentsScreen.styles';
-import { simulatePremiumPayment, upgradeToPremium } from '../../services/subscription.service';
+import { useAuth } from '../auth/AuthContext';
 
 const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) => {
-    const { planName, amount, user } = route.params;
+    const { plan, onSuccess } = route.params;
+    const { user } = useAuth();
     const [cardNumber, setCardNumber] = useState('');
     const [cardExpiry, setCardExpiry] = useState('');
     const [cardCvc, setCardCvc] = useState('');
@@ -47,6 +49,11 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
     };
 
     const handlePayment = async () => {
+        if (!user) {
+            Alert.alert('Error', 'Usuario no autenticado');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -54,16 +61,20 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             if (__DEV__) {
-                await simulatePremiumPayment();
+                await SubscriptionsService.simulatePremiumPayment();
             } else {
-                await upgradeToPremium();
+                await SubscriptionsService.upgradeToPremium(plan.type);
+            }
+
+            // Ejecutar callback de éxito si existe
+            if (onSuccess) {
+                await onSuccess();
             }
 
             navigation.navigate('PaymentSuccess', {
                 sessionId: 'simulated_session_' + Math.random().toString(36).substring(7),
-                planName,
-                amount,
-                user
+                planName: plan.name,
+                amount: plan.price
             });
 
         } catch (error) {
@@ -81,15 +92,18 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <MaterialIcons name="arrow-back" size={24} color="#4A4A4A" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Detalles de Pago</Text>
-                    <Text style={styles.subtitle}>{planName} - ${amount}</Text>
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.title}>Detalles de Pago</Text>
+                        <Text style={styles.subtitle}>{plan.name} - ${plan.price}</Text>
+                    </View>
                 </View>
 
                 <View style={styles.cardPreview}>
-                    <MaterialCommunityIcons name="credit-card-chip" size={32} color="#FFD700" />
+                    <Image
+                        source={require('../../assets/logo.png')}
+                        style={styles.cardLogo}
+                        resizeMode="contain"
+                    />
                     <Text style={styles.cardNumberPreview}>
                         {cardNumber || '•••• •••• •••• ••••'}
                     </Text>
@@ -181,7 +195,7 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
                     {loading ? (
                         <ActivityIndicator color="#FFF" />
                     ) : (
-                        <Text style={styles.payButtonText}>Pagar ${amount}</Text>
+                        <Text style={styles.payButtonText}>Pagar ${plan.price}</Text>
                     )}
                 </TouchableOpacity>
 

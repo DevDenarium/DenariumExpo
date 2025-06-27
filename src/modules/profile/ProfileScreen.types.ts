@@ -1,10 +1,15 @@
-import { User } from '../dashboard/DashboardScreen.types';
+
+import {UserResponse} from "../auth/user.types";
 
 export interface ProfileScreenProps {
-    route: {
-        params: {
-            user: User;
-        };
-    };
-    navigation: any;
+    user: UserResponse;
+    onUpdate: (updatedData: Partial<UserResponse>) => Promise<void>;
+}
+
+export interface ProfileFormValues {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    country: string;
+    profilePicture?: string;
 }

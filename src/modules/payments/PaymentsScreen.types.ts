@@ -1,12 +1,17 @@
 import { RouteProp } from '@react-navigation/native';
-import {StackNavigationProp, StackScreenProps} from '@react-navigation/stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navegation/Navegation.types';
-import {User} from "../dashboard/DashboardScreen.types";
+import { SubscriptionPlan } from "../subscriptions/SubscriptionsScreen.types";
 
-export type PaymentsScreenProps = StackScreenProps<RootStackParamList, 'Payments'>;
+export type PaymentsScreenRouteParams = {
+    plan: SubscriptionPlan;
+    onSuccess?: () => Promise<void>;
+};
 
-
-export type PaymentStatus = 'processing' | 'succeeded' | 'failed' | 'canceled' | 'form';
+export type PaymentsScreenProps = {
+    route: RouteProp<RootStackParamList, 'PaymentsScreen'>;
+    navigation: StackNavigationProp<RootStackParamList, 'PaymentsScreen'>;
+};
 
 export type PaymentData = {
     sessionId: string;

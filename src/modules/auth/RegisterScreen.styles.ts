@@ -10,20 +10,25 @@ export const styles = StyleSheet.create({
     },
     logoContainer: {
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 20,
     },
     logo: {
         width: 120,
         height: 120,
         marginBottom: 20,
     },
+
+    titleContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
     title: {
         fontSize: 26,
         fontWeight: '600',
-        marginBottom: 25,
+        marginBottom: 15,
         textAlign: 'center',
         color: '#D4AF37',
-        fontFamily: 'Helvetica Neue',
+        fontFamily: 'sans-serif',
         letterSpacing: 0.5,
         textShadowColor: 'rgba(212, 175, 55, 0.5)',
         textShadowOffset: { width: 0, height: 1 },

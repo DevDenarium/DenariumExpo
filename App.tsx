@@ -4,16 +4,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import LoginScreen from './src/modules/auth/LoginScreen';
 import DashboardScreen from './src/modules/dashboard/DashboardScreen';
-import RegisterScreen from './src/modules/auth/RegisterScreen';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from './src/modules/dashboard/DashboardScreen.types';
 import { CommonActions } from '@react-navigation/native';
 import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen';
 import VerificationScreen from './src/modules/auth/VerificationScreen';
 import ForgotPasswordScreen from './src/modules/auth/ForgotPasswordScreen';
-
 import { RootStackParamList, DrawerParamList } from './src/modules/navegation/Navegation.types';
 import PaymentsScreen from "./src/modules/payments/PaymentsScreen";
 import PaymentSuccessScreen from "./src/modules/payments/PaymentsSuccessScreen";
@@ -22,22 +18,26 @@ import ProfileScreen from './src/modules/profile/ProfileScreen';
 import AppointmentManagement from "./src/admin/appointment/AppointmentManagement";
 import AppointmentScreen from "./src/modules/appointment/AppointmentScreen";
 import {VideoManagement} from "./src/admin/content/VideoManagement";
+import RegisterTypeScreen from "./src/modules/auth/RegisterTypeScreen";
+import RegisterPersonalScreen from "./src/modules/auth/RegisterPersonalScreen";
+import RegisterCorporateScreen from "./src/modules/auth/RegisterCorporateScreen";
+import RegisterCorporateEmployeeScreen from "./src/modules/auth/RegisterCorporateEmployeeScreen";
+import { AuthProvider, useAuth } from './src/modules/auth/AuthContext';
+import {UserRole} from "./src/modules/auth/user.types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
-const CustomHeader = ({ navigation, user, handleLogout }: {
-    navigation: any;
-    user: User;
-    handleLogout: () => void;
-}) => {
+const CustomHeader = ({ navigation }: { navigation: any }) => {
+    const { signOut } = useAuth();
+
     return (
         <View style={headerStyles.container}>
             <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
                 <Icon name="menu" size={28} color="#D4AF37" />
             </TouchableOpacity>
             <View style={{ width: 28 }} />
-            <TouchableOpacity onPress={handleLogout}>
+            <TouchableOpacity onPress={signOut}>
                 <Icon name="logout" size={24} color="#D4AF37" />
             </TouchableOpacity>
         </View>
@@ -62,8 +62,14 @@ const headerStyles = StyleSheet.create({
     },
 });
 
-const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User }) => {
-    const isAdmin = user.role === 'ADMIN';
+const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
+    const { user } = useAuth();
+
+    if (!user) {
+        return null;
+    }
+
+    const isAdmin = user.role === UserRole.ADMIN;
 
     const commonMenuItems = [
         { name: 'MainDashboard', label: 'Inicio', icon: 'view-dashboard' },
@@ -89,12 +95,31 @@ const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User
         ...(isAdmin ? adminMenuItems : clientMenuItems),
     ];
 
+    const getUserName = () => {
+        if (user.role === UserRole.PERSONAL && user.personalUser) {
+            return user.personalUser.firstName || 'Usuario';
+        }
+        if (user.role === UserRole.CORPORATE_EMPLOYEE && user.corporateEmployee) {
+            return user.corporateEmployee.firstName || 'Empleado';
+        }
+        if (user.role === UserRole.ADMIN && user.adminUser) {
+            return user.adminUser.firstName || 'Administrador';
+        }
+        if (user.role === UserRole.ADVISOR && user.advisorUser) {
+            return user.advisorUser.firstName || 'Asesor';
+        }
+        if (user.role === UserRole.CORPORATE && user.corporateUser) {
+            return user.corporateUser.companyName || 'Empresa';
+        }
+        return user.firstName || 'Usuario';
+    };
+
     return (
         <View style={drawerStyles.container}>
             <View style={drawerStyles.header}>
-                {user.picture ? (
+                {user.profilePicture ? (
                     <Image
-                        source={{ uri: user.picture }}
+                        source={{ uri: user.profilePicture }}
                         style={drawerStyles.profileImage}
                         resizeMode="cover"
                     />
@@ -102,7 +127,7 @@ const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User
                     <Icon name="account-circle" size={80} color="#D4AF37" />
                 )}
                 <Text style={drawerStyles.userName}>
-                    {user.firstName || 'Usuario'} {isAdmin && '(Admin)'}
+                    {getUserName()} {isAdmin && '(Admin)'}
                 </Text>
                 <Text style={drawerStyles.userEmail}>{user.email}</Text>
             </View>
@@ -112,7 +137,7 @@ const CustomDrawerContent = ({ navigation, user }: { navigation: any; user: User
                     <TouchableOpacity
                         key={item.name}
                         style={drawerStyles.menuItem}
-                        onPress={() => navigation.navigate(item.name, { user })}
+                        onPress={() => navigation.navigate(item.name)}
                     >
                         <Icon name={item.icon} size={24} color="#D4AF37" />
                         <Text style={drawerStyles.menuItemText}>{item.label}</Text>
@@ -136,9 +161,9 @@ const drawerStyles = StyleSheet.create({
         alignItems: 'center',
     },
     profileImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         backgroundColor: '#333',
         marginBottom: 10,
     },
@@ -169,34 +194,17 @@ const drawerStyles = StyleSheet.create({
     },
 });
 
-const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
-    const { user } = route.params;
-    const isAdmin = user.role === 'ADMIN';
-
-    const handleLogout = async (navigation: any) => {
-        await AsyncStorage.removeItem('token');
-        navigation.dispatch(
-            CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-            })
-        );
-    };
-
+const DashboardDrawer = () => {
     return (
         <Drawer.Navigator
-            drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
+            drawerContent={(props) => <CustomDrawerContent {...props} />}
             screenOptions={({ navigation }) => ({
                 drawerStyle: {
                     width: 280,
                     backgroundColor: '#1c1c1c',
                 },
                 header: () => (
-                    <CustomHeader
-                        navigation={navigation}
-                        user={user}
-                        handleLogout={() => handleLogout(navigation)}
-                    />
+                    <CustomHeader navigation={navigation} />
                 ),
                 drawerActiveTintColor: '#D4AF37',
                 drawerInactiveTintColor: '#FFFFFF',
@@ -205,8 +213,12 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
             <Drawer.Screen
                 name="MainDashboard"
                 component={DashboardScreen}
-                initialParams={{ user }}
                 options={{ title: 'Inicio' }}
+            />
+            <Drawer.Screen
+                name="Finance"
+                component={FinanceScreen}
+                options={{ title: 'Finanzas' }}
             />
             <Drawer.Screen
                 name="Transactions"
@@ -218,32 +230,24 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
                 component={AppointmentScreen}
                 options={{ title: 'Asesorías' }}
             />
-            {!isAdmin && (
-                <Drawer.Screen
-                    name="Subscriptions"
-                    component={SubscriptionsScreen}
-                    initialParams={{ user }}
-                    options={{ title: 'Suscripciones' }}
-                />
-            )}
-            {isAdmin && (
-                <>
-                    <Drawer.Screen
-                        name="VideoLibrary"
-                        component={VideoManagement}
-                        options={{ title: 'Administrar Videos' }}
-                    />
-                    <Drawer.Screen
-                        name="AppointmentManagement"
-                        component={AppointmentManagement}
-                        options={{ title: 'Citas Agendadas' }}
-                    />
-                </>
-            )}
+            <Drawer.Screen
+                name="Subscriptions"
+                component={SubscriptionsScreen}
+                options={{ title: 'Suscripciones' }}
+            />
+            <Drawer.Screen
+                name="VideoLibrary"
+                component={VideoManagement}
+                options={{ title: 'Administrar Videos' }}
+            />
+            <Drawer.Screen
+                name="AppointmentManagement"
+                component={AppointmentManagement}
+                options={{ title: 'Citas Agendadas' }}
+            />
             <Drawer.Screen
                 name="Profile"
                 component={ProfileScreen}
-                initialParams={{ user }}
                 options={{ title: 'Mi Perfil' }}
             />
         </Drawer.Navigator>
@@ -252,7 +256,7 @@ const DashboardDrawer = ({ route }: { route: { params: { user: User } } }) => {
 
 export default function App() {
     return (
-        <>
+        <AuthProvider>
             <StatusBar style="light" />
             <NavigationContainer>
                 <Stack.Navigator
@@ -264,20 +268,31 @@ export default function App() {
                         headerTintColor: '#D4AF37',
                     }}
                 >
+                    {/* Auth Flow Screens */}
                     <Stack.Screen
                         name="Login"
                         component={LoginScreen}
                         options={{ headerShown: false }}
                     />
                     <Stack.Screen
-                        name="Register"
-                        component={RegisterScreen}
-                        options={{ headerShown: false }}
+                        name="RegisterType"
+                        component={RegisterTypeScreen}
+                        options={{ title: 'Tipo de Registro' }}
                     />
                     <Stack.Screen
-                        name="ForgotPassword"
-                        component={ForgotPasswordScreen}
-                        options={{ title: 'Recuperar contraseña' }}
+                        name="RegisterPersonal"
+                        component={RegisterPersonalScreen}
+                        options={{ title: 'Registro Personal' }}
+                    />
+                    <Stack.Screen
+                        name="RegisterCorporate"
+                        component={RegisterCorporateScreen}
+                        options={{ title: 'Registro Corporativo' }}
+                    />
+                    <Stack.Screen
+                        name="RegisterCorporateEmployee"
+                        component={RegisterCorporateEmployeeScreen}
+                        options={{ title: 'Registro Empleado' }}
                     />
                     <Stack.Screen
                         name="Verification"
@@ -285,23 +300,25 @@ export default function App() {
                         options={{ title: 'Verificación' }}
                     />
                     <Stack.Screen
+                        name="ForgotPassword"
+                        component={ForgotPasswordScreen}
+                        options={{ title: 'Recuperar contraseña' }}
+                    />
+
+                    {/* Main App Screens */}
+                    <Stack.Screen
                         name="Dashboard"
                         component={DashboardDrawer}
                         options={{ headerShown: false }}
                     />
                     <Stack.Screen
-                        name="Payments"
+                        name="PaymentsScreen"
                         component={PaymentsScreen}
-                        options={{ headerShown: false }}
+                        options={{ title: 'Pago' }}
                     />
                     <Stack.Screen
                         name="PaymentSuccess"
                         component={PaymentSuccessScreen}
-                        options={{ headerShown: false }}
-                    />
-                    <Stack.Screen
-                        name="Profile"
-                        component={ProfileScreen}
                         options={{ headerShown: false }}
                     />
                     <Stack.Screen
@@ -321,6 +338,6 @@ export default function App() {
                     />
                 </Stack.Navigator>
             </NavigationContainer>
-        </>
+        </AuthProvider>
     );
 }

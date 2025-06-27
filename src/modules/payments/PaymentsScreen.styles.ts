@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#FFF',
     },
     scrollContainer: {
         flexGrow: 1,
@@ -11,13 +11,18 @@ export const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 25,
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFF',
+    },
+    headerTextContainer: {
+        flex: 1,
+        alignItems: 'center',
+        marginRight: 24, // To balance the back button space
     },
     backButton: {
-        position: 'absolute',
-        left: 0,
-        top: 5,
         padding: 10,
+        zIndex: 1,
     },
     title: {
         fontSize: 24,
@@ -41,6 +46,10 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 3,
+    },
+    cardLogo: {
+        width: 60,
+        height: 40,
     },
     cardNumberPreview: {
         color: '#FFF',
