@@ -178,7 +178,6 @@ const RegisterCorporateEmployeeScreen = ({ navigation }: RegisterCorporateEmploy
     };
 
     const handleSubmit = async () => {
-        // Validación de campos obligatorios
         if (!formData.email || !formData.password || !formData.confirmPassword ||
             !formData.firstName || !formData.lastName || !formData.phone ||
             !formData.country || !formData.corporateId) {

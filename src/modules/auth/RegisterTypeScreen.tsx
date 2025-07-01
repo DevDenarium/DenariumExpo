@@ -23,7 +23,6 @@ const RegisterTypeScreen = ({ navigation }: RegisterTypeScreenProps) => {
                     </Text>
                 </View>
 
-                {/* Personal Account Option */}
                 <TouchableOpacity
                     style={styles.optionCard}
                     onPress={() => navigation.navigate('RegisterPersonal')}
@@ -52,7 +51,6 @@ const RegisterTypeScreen = ({ navigation }: RegisterTypeScreenProps) => {
                     )}
                 </TouchableOpacity>
 
-                {/* Corporate Account Option */}
                 <TouchableOpacity
                     style={styles.optionCard}
                     onPress={() => navigation.navigate('RegisterCorporate')}
@@ -82,7 +80,6 @@ const RegisterTypeScreen = ({ navigation }: RegisterTypeScreenProps) => {
                     )}
                 </TouchableOpacity>
 
-                {/* Corporate Employee Option */}
                 <TouchableOpacity
                     style={styles.optionCard}
                     onPress={() => navigation.navigate('RegisterCorporateEmployee')}

@@ -9,28 +9,19 @@ import { UserRole } from '../modules/auth/user.types';
 
 const API_BASE_URL = 'http://localhost:3000';
 
-/**
- * Service for handling subscription-related operations
- */
 export const SubscriptionsService = {
-    /**
-     * Creates a default subscription based on user role
-     * @param userId - The user ID
-     * @param role - The user role (PERSONAL, CORPORATE, etc.)
-     * @returns Promise<SubscriptionResponse>
-     */
+
     createDefaultSubscription: async (userId: string, role: UserRole): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
 
-            // Determine default plan based on user role
             let defaultPlan: SubscriptionPlanType;
             switch(role) {
                 case UserRole.CORPORATE:
                     defaultPlan = 'CORPORATE_FREE';
                     break;
                 case UserRole.CORPORATE_EMPLOYEE:
-                    defaultPlan = 'CORPORATE_FREE'; // Employees inherit corporate plan
+                    defaultPlan = 'CORPORATE_FREE';
                     break;
                 case UserRole.PERSONAL:
                 default:
@@ -60,11 +51,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Creates a new subscription
-     * @param planType - The type of subscription plan
-     * @returns Promise<SubscriptionResponse>
-     */
     createSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
@@ -92,10 +78,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Gets the current subscription status
-     * @returns Promise<SubscriptionStatus>
-     */
     getSubscriptionStatus: async (): Promise<SubscriptionStatus> => {
         try {
             const token = await getAuthToken();
@@ -109,7 +91,6 @@ export const SubscriptionsService = {
                 }
             );
 
-            // Enhance the response with calculated fields
             return {
                 ...response.data,
                 daysRemaining: calculateDaysRemaining(response.data.endDate)
@@ -125,11 +106,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Upgrades a subscription
-     * @param planType - The new subscription plan type
-     * @returns Promise<SubscriptionResponse>
-     */
     upgradeSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
@@ -157,13 +133,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Creates a checkout session for payment
-     * @param planType - The subscription plan type
-     * @param price - The price of the subscription
-     * @param userId - The user ID
-     * @returns Promise<{ sessionId: string }>
-     */
     createCheckoutSession: async (
         planType: SubscriptionPlanType,
         price: number,
@@ -199,11 +168,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Activates a free subscription
-     * @param planType - The free subscription plan type
-     * @returns Promise<SubscriptionResponse>
-     */
     activateFreeSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
@@ -231,10 +195,6 @@ export const SubscriptionsService = {
         }
     },
 
-    /**
-     * Simulates a premium payment (for development only)
-     * @returns Promise<{ success: boolean }>
-     */
     simulatePremiumPayment: async (): Promise<{ success: boolean }> => {
         return new Promise(resolve => {
             setTimeout(() => {
@@ -243,16 +203,10 @@ export const SubscriptionsService = {
         });
     },
 
-    /**
-     * Upgrades to premium subscription
-     * @param planType - Optional plan type (defaults to PERSONAL_PREMIUM)
-     * @returns Promise<SubscriptionResponse>
-     */
     upgradeToPremium: async (planType?: SubscriptionPlanType): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
 
-            // In development, simulate the response
             if (__DEV__) {
                 return {
                     success: true,
@@ -261,7 +215,6 @@ export const SubscriptionsService = {
                 };
             }
 
-            // In production, make the real call
             const response = await axios.post<SubscriptionResponse>(
                 `${API_BASE_URL}/subscriptions/upgrade`,
                 { planType },
@@ -286,10 +239,6 @@ export const SubscriptionsService = {
     }
 };
 
-/**
- * Helper function to get authentication token
- * @returns Promise<string>
- */
 const getAuthToken = async (): Promise<string> => {
     try {
         const token = await AsyncStorage.getItem('token');
@@ -303,11 +252,6 @@ const getAuthToken = async (): Promise<string> => {
     }
 };
 
-/**
- * Calculates days remaining until subscription ends
- * @param endDate - The end date string
- * @returns number - Days remaining (Infinity if end date is '9999-12-31')
- */
 const calculateDaysRemaining = (endDate: string): number => {
     if (endDate === '9999-12-31') return Infinity;
     const end = new Date(endDate);

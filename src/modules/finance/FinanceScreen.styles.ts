@@ -10,9 +10,9 @@ export const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 20,
-        marginBottom: 20,
         borderLeftWidth: 4,
         borderLeftColor: '#D4AF37',
+        marginBottom: 15,
     },
     balanceTitle: {
         color: '#D4AF37',
@@ -49,4 +49,63 @@ export const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderRadius: 20,
     },
+    filterBadge: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        backgroundColor: '#D4AF37',
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    filterBadgeText: {
+        color: '#000',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    addEntryButton: {
+        backgroundColor: 'transparent',
+        borderRadius: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 15,
+        borderWidth: 2,
+        borderColor: '#D4AF37',
+        flexDirection: 'row',
+    },
+    addEntryButtonText: {
+        color: '#D4AF37',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginLeft: 8,
+    },
+    addEntryButtonIcon: {
+        marginRight: 8,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: '#2a2a2a',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    modalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginLeft: 15,
+    },
+    closeButton: {
+        padding: 5,
+    },
+    headerContainer: {
+        marginBottom: 20,
+    },
 });
+
+export default styles;

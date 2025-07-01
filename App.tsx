@@ -268,7 +268,6 @@ export default function App() {
                         headerTintColor: '#D4AF37',
                     }}
                 >
-                    {/* Auth Flow Screens */}
                     <Stack.Screen
                         name="Login"
                         component={LoginScreen}
@@ -305,7 +304,6 @@ export default function App() {
                         options={{ title: 'Recuperar contraseña' }}
                     />
 
-                    {/* Main App Screens */}
                     <Stack.Screen
                         name="Dashboard"
                         component={DashboardDrawer}

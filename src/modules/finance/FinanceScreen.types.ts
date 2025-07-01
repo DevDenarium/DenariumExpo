@@ -20,7 +20,6 @@ export interface FinanceCategory {
     type: FinanceEntryType;
     color?: string;
     icon?: string;
-    // Add any other properties that might be required
     description?: string;
     userId?: string;
     isDefault: boolean;
@@ -127,20 +126,17 @@ export interface FinanceScreenProps {
 }
 
 
-// Añade esto junto con tus otras interfaces
 export interface CreateCategoryDto {
     name: string;
     description?: string;
     type: FinanceEntryType;
     icon?: string;
     color?: string;
-    // No necesitas userId aquí porque el backend lo obtendrá del token
 }
 
 export interface CreateTagDto {
     name: string;
     color?: string;
-    // userId tampoco es necesario aquí por la misma razón
 }
 
 interface FinanceEntryFormProps {
@@ -148,5 +144,4 @@ interface FinanceEntryFormProps {
     categories: FinanceCategory[];
     tags: { id: string; name: string }[];
     setCategories: (categories: FinanceCategory[]) => void;
-    // possibly other props...
 }

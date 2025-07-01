@@ -1,4 +1,3 @@
-// SubscriptionsScreen.styles.ts
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
@@ -97,11 +96,11 @@ export const styles = StyleSheet.create({
     },
     badgeContainer: {
         position: 'absolute',
-        top: -10,  // Ajusta para que sobresalga
-        right: -5, // Ajusta para que sobresalga
+        top: -10,
+        right: -5,
         flexDirection: 'column',
         alignItems: 'flex-end',
-        zIndex: 1, // Asegura que esté sobre otros elementos
+        zIndex: 1,
     },
     recommendedBadge: {
         backgroundColor: '#D4AF37',
@@ -110,9 +109,9 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 5,
         borderWidth: 2,
-        borderColor: '#1c1c1c', // Mismo color que el fondo de la pantalla
-        elevation: 3, // Sombra para Android
-        shadowColor: '#000', // Sombra para iOS
+        borderColor: '#1c1c1c',
+        elevation: 3,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 2,
@@ -123,9 +122,9 @@ export const styles = StyleSheet.create({
         paddingVertical: 5,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#1c1c1c', // Mismo color que el fondo de la pantalla
-        elevation: 3, // Sombra para Android
-        shadowColor: '#000', // Sombra para iOS
+        borderColor: '#1c1c1c',
+        elevation: 3,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 2,
@@ -301,7 +300,7 @@ export const styles = StyleSheet.create({
         top: 0,
         bottom: 0,
         width: 5,
-        backgroundColor: '#FFD700', // Amarillo dorado
+        backgroundColor: '#FFD700',
         borderTopLeftRadius: 8,
         borderBottomLeftRadius: 8,
     },

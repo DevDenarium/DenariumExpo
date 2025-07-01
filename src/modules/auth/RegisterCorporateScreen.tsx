@@ -39,7 +39,6 @@ const RegisterCorporateScreen = ({ navigation }: RegisterCorporateScreenProps) =
     const [cantons, setCantons] = useState<LocationItem[]>([]);
     const [districts, setDistricts] = useState<LocationItem[]>([]);
 
-    // Estados para los selectores
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [showProvincePicker, setShowProvincePicker] = useState(false);
     const [showCantonPicker, setShowCantonPicker] = useState(false);
@@ -616,7 +615,6 @@ const RegisterCorporateScreen = ({ navigation }: RegisterCorporateScreenProps) =
                 </Text>
             </TouchableOpacity>
 
-            {/* Modals para los selectores */}
             {renderPickerModal(showCountryPicker, setShowCountryPicker, filteredCountries, 'country')}
             {renderPickerModal(showProvincePicker, setShowProvincePicker, provinces, 'province')}
             {renderPickerModal(showCantonPicker, setShowCantonPicker, cantons, 'canton')}

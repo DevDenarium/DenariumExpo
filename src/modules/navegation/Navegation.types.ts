@@ -144,7 +144,6 @@ export interface ApiResponse<T> {
     message?: string;
 }
 
-// Tipos para las props de las pantallas que usan AuthContext
 export type DashboardScreenProps = {
     navigation: StackNavigationProp<RootStackParamList, 'Dashboard'>;
     route: RouteProp<RootStackParamList, 'Dashboard'>;

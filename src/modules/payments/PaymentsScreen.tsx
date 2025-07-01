@@ -57,7 +57,6 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         setLoading(true);
 
         try {
-            // Simular procesamiento de pago
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             if (__DEV__) {
@@ -66,7 +65,6 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
                 await SubscriptionsService.upgradeToPremium(plan.type);
             }
 
-            // Ejecutar callback de éxito si existe
             if (onSuccess) {
                 await onSuccess();
             }
@@ -133,7 +131,6 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
                     </View>
 
                     <View style={styles.row}>
-                        {/* Fecha de vencimiento */}
                         <View style={styles.halfInput}>
                             <Text style={styles.label}>Vencimiento (MM/AA)</Text>
                             <View style={styles.inputContainer}>

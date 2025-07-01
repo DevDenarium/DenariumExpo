@@ -100,14 +100,14 @@ const FinanceList: React.FC<FinanceListProps> = ({
     useEffect(() => {
         const loadEntriesAndTags = async () => {
             try {
-                console.log('Cargando entradas y etiquetas...'); // Debug
+                console.log('Cargando entradas y etiquetas...');
                 const [entriesData, tagsData] = await Promise.all([
                     FinanceService.getAllEntries(userId),
                     FinanceService.getTags()
                 ]);
 
-                console.log('Datos de entradas recibidos:', entriesData); // Debug
-                console.log('Datos de etiquetas recibidos:', tagsData); // Debug
+                console.log('Datos de entradas recibidos:', entriesData);
+                console.log('Datos de etiquetas recibidos:', tagsData);
 
                 const filteredEntries = filterEntries(entriesData, filterBy);
                 const sortedEntries = sortEntries(filteredEntries, sortBy);
@@ -276,13 +276,13 @@ const FinanceList: React.FC<FinanceListProps> = ({
     };
 
     const handleEntryPress = (entry: FinanceEntry) => {
-        console.log('Entrada seleccionada:', entry); // Debug
+        console.log('Entrada seleccionada:', entry);
         const fullEntry = {
             ...entry,
             category: entry.categoryId ? categories.find(c => c.id === entry.categoryId) : undefined,
-            tags: entry.tags || [] // Asegurar que siempre haya un array
+            tags: entry.tags || []
         };
-        console.log('Entrada completa preparada:', fullEntry); // Debug
+        console.log('Entrada completa preparada:', fullEntry);
         setSelectedEntry(fullEntry);
         setShowDetailModal(true);
     };
@@ -425,7 +425,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 }
             />
 
-            {/* Modal de Detalles */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -537,7 +536,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
-            {/* Modal de Confirmación de Eliminación */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -568,7 +566,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
-            {/* Modal de Edición */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -664,7 +661,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                     return tag ? (
                                         <View key={tagId} style={[
                                             styles.selectedTag,
-                                            { backgroundColor: tag.color || '#D4AF37' }  // Usa el color de la etiqueta
+                                            { backgroundColor: tag.color || '#D4AF37' }
                                         ]}>
                                             <Text style={styles.selectedTagText}>{tag.name}</Text>
                                             <TouchableOpacity

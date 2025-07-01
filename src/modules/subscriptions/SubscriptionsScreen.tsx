@@ -124,7 +124,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
             const status = await SubscriptionsService.getSubscriptionStatus();
 
             if (status) {
-                // Si es usuario personal/corporativo y no tiene plan, asignar FREE correspondiente
                 if (user?.role === UserRole.CORPORATE && !status.planType) {
                     status.planType = 'CORPORATE_FREE';
                     status.status = 'ACTIVE';
@@ -136,7 +135,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                 }
                 setCurrentSubscription(status);
             } else if (user) {
-                // Crear una suscripción por defecto basada en el rol
                 const defaultSubscription: SubscriptionStatus = {
                     planType: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
                     status: 'ACTIVE',
@@ -172,7 +170,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                     availablePlans = [...corporatePlans];
                     break;
                 case UserRole.CORPORATE_EMPLOYEE:
-                    // No mostrar planes para empleados corporativos
                     availablePlans = [];
                     break;
                 case UserRole.PERSONAL:
@@ -199,7 +196,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                     Alert.alert('Éxito', 'Plan activado correctamente');
                     await fetchSubscriptionStatus();
 
-                    // Actualizar el usuario en el contexto
                     if (user) {
                         await updateUser({
                             ...user,
@@ -212,7 +208,6 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                     plan,
                     onSuccess: async () => {
                         await fetchSubscriptionStatus();
-                        // Actualizar el usuario en el contexto
                         if (user) {
                             await updateUser({
                                 ...user,
@@ -373,7 +368,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
     }
 
     if (!user) {
-        return null; // Ya se redirige en el useEffect
+        return null;
     }
 
     return (

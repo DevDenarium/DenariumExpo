@@ -65,7 +65,6 @@ export const registerPersonal = async (formData: {
     district?: string;
 }): Promise<RegisterResponse> => {
     try {
-        // Estructura correcta con location anidado
         const location = {
             country: formData.country,
             ...(formData.country === 'Costa Rica' && {
@@ -138,7 +137,7 @@ export const registerCorporate = async (formData: {
                 phone: formData.phone,
                 contactName: formData.contactName,
                 contactPhone: formData.contactPhone,
-                location: location, // Cambio clave: ahora location es un objeto anidado
+                location: location,
                 employeeCount: formData.employeeCount,
                 companyDomain: formData.companyDomain
             }
@@ -184,13 +183,11 @@ export const registerCorporateEmployee = async (formData: {
     corporateId: string;
 }): Promise<RegisterResponse> => {
     try {
-        // Validar ubicación si es Costa Rica
         if (formData.country === 'Costa Rica') {
             if (!formData.province || !formData.canton || !formData.district) {
                 throw new Error('Province, canton and district are required for Costa Rica');
             }
 
-            // Opcional: Validar la ubicación con el backend
             await validateCostaRicaLocation(
                 formData.province,
                 formData.canton,
@@ -198,13 +195,11 @@ export const registerCorporateEmployee = async (formData: {
             );
         }
 
-        // Validar que el correo pertenezca al dominio corporativo
         const corporate = (await getCorporates()).find(c => c.id === formData.corporateId);
         if (corporate && !formData.email.endsWith(`@${corporate.domain}`)) {
             throw new Error(`Email must belong to company domain: @${corporate.domain}`);
         }
 
-        // Estructura correcta con location anidado
         const location = {
             country: formData.country,
             ...(formData.country === 'Costa Rica' && {

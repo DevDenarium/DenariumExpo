@@ -51,7 +51,6 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             const result = await loginWithGoogle(token);
 
             if (result && result.user) {
-                // Verifica que signIn exista antes de llamarlo
                 if (signIn && typeof signIn === 'function') {
                     await signIn(result);
                     redirectUserBasedOnType(result.user);

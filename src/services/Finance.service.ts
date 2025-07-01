@@ -12,7 +12,7 @@ const API_BASE_URL = 'http://localhost:3000';
 
 export const FinanceService = {
     async getToken(): Promise<string> {
-        const token = await AsyncStorage.getItem('@Auth:token'); // Cambiado para coincidir con tu AuthContext
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) throw new Error('No authentication token found');
         return token;
     },
@@ -20,19 +20,19 @@ export const FinanceService = {
     async createEntry(entryData: any): Promise<any> {
         const token = await this.getToken();
         try {
-            console.log('Datos enviados al crear entrada:', entryData); // Debug
+            console.log('Datos enviados al crear entrada:', entryData);
             const response = await axios.post(`${API_BASE_URL}/finance`, {
                 ...entryData,
                 amount: Number(entryData.amount),
                 date: entryData.date.toISOString(),
-                tagIds: entryData.tagIds || [] // Asegurar que se envíen las etiquetas
+                tagIds: entryData.tagIds || []
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Respuesta del backend:', response.data); // Debug
+            console.log('Respuesta del backend:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating finance entry:', error);
@@ -47,10 +47,9 @@ export const FinanceService = {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                // Asegurarse de que las tags estén presentes en cada entrada
                 return response.data.map((entry: FinanceEntry) => ({
                     ...entry,
-                    tags: entry.tags || [] // Si no hay tags, usar array vacío
+                    tags: entry.tags || []
                 }));
             } catch (error) {
                 console.error('Error fetching finance entries:', error);
@@ -64,14 +63,14 @@ export const FinanceService = {
             console.log('Datos enviados al actualizar:', updateData); // Debug
             const response = await axios.put(`${API_BASE_URL}/finance/${id}`, {
                 ...updateData,
-                tagIds: updateData.tagIds || [] // Asegurar que se envíen las etiquetas
+                tagIds: updateData.tagIds || []
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Respuesta de actualización:', response.data); // Debug
+            console.log('Respuesta de actualización:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error updating entry:', error);
@@ -92,9 +91,9 @@ export const FinanceService = {
         }
     },
 
-    async calculateBalance() {  // Elimina el parámetro userId
+    async calculateBalance() {
         const token = await this.getToken();
-        console.log("Token:", token); // Verifica que el token sea válido
+        console.log("Token:", token);
 
         try {
             const response = await axios.get(`${API_BASE_URL}/finance/balance`, {
@@ -117,10 +116,9 @@ export const FinanceService = {
         }
     },
 
-    // En FinanceService.ts (frontend)
     async getCategories() {
         const token = await this.getToken();
-        console.log('Token being sent:', token); // Verifica el token
+        console.log('Token being sent:', token);
 
         try {
             console.log('Making request to:', `${API_BASE_URL}/finance/categories`);
@@ -152,7 +150,7 @@ export const FinanceService = {
     },
 
 
-    async getTags() {  // Elimina el parámetro userId
+    async getTags() {
         const token = await this.getToken();
         try {
             const response = await axios.get(`${API_BASE_URL}/finance/tags`, {
@@ -193,7 +191,7 @@ export const FinanceService = {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Tag creado:', response.data); // Debug
+            console.log('Tag creado:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating tag:', error);

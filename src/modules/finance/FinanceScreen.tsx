@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, RefreshControl, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, RefreshControl, Text, TouchableOpacity, Modal } from 'react-native';
 import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
@@ -12,7 +12,7 @@ import {
     FilterOption,
     CURRENCIES,
     MonthYear,
-    FinanceEntryType, FinanceCategory
+    FinanceEntryType, FinanceCategory, FinanceTag
 } from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -41,21 +41,8 @@ const FinanceScreen: React.FC = () => {
         year: new Date().getFullYear()
     });
     const [categories, setCategories] = useState<FinanceCategory[]>([]);
-    const [tags, setTags] = useState<{id: string, name: string}[]>([]);
-
-    const loadCategoriesAndTags = async () => {
-        try {
-            const [cats, tgs] = await Promise.all([
-                FinanceService.getCategories(),
-                FinanceService.getTags()
-            ]);
-            setCategories(cats || []);
-            setTags(tgs || []);
-        } catch (error) {
-            console.error('Error loading categories/tags:', error);
-            // Opcional: mostrar mensaje al usuario
-        }
-    };
+    const [tags, setTags] = useState<FinanceTag[]>([]);
+    const [showEntryForm, setShowEntryForm] = useState(false);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -95,6 +82,38 @@ const FinanceScreen: React.FC = () => {
         }
     }, [user, refreshTrigger]);
 
+    const getActiveFiltersCount = () => {
+        let count = 0;
+
+        if (settings.filterBy !== 'all') {
+            count++;
+        }
+
+        if (settings.filterBy === 'specificMonth') {
+            count++;
+        }
+
+        if (settings.sortBy !== 'recent') {
+            count++;
+        }
+
+        return count;
+    };
+
+    const activeFiltersCount = getActiveFiltersCount();
+
+    const loadCategoriesAndTags = async () => {
+        try {
+            const [cats, tgs] = await Promise.all([
+                FinanceService.getCategories(),
+                FinanceService.getTags()
+            ]);
+            setCategories(cats || []);
+            setTags(tgs || []);
+        } catch (error) {
+            console.error('Error loading categories/tags:', error);
+        }
+    };
     const loadBalance = async () => {
         try {
             const data = await FinanceService.calculateBalance();
@@ -127,8 +146,9 @@ const FinanceScreen: React.FC = () => {
     const handleEntryAdded = async () => {
         try {
             await loadBalance();
-            await loadCategoriesAndTags(); // Añade esta línea
+            await loadCategoriesAndTags();
             setRefreshTrigger(prev => !prev);
+            setShowEntryForm(false);
         } catch (error) {
             console.error('Error updating balance:', error);
         }
@@ -145,7 +165,7 @@ const FinanceScreen: React.FC = () => {
     }, [user, refreshTrigger]);
 
     const formatAmount = (amount: number): string => {
-        const formattedAmount = amount.toLocaleString('en-US', {
+        const formattedAmount = amount.toLocaleString('de-DE', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
@@ -167,6 +187,11 @@ const FinanceScreen: React.FC = () => {
                 onPress={() => setShowConfig(true)}
             >
                 <Icon name="cog" size={24} color="#D4AF37" />
+                {activeFiltersCount > 0 && (
+                    <View style={styles.filterBadge}>
+                        <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+                    </View>
+                )}
             </TouchableOpacity>
 
             <ScrollView
@@ -179,36 +204,43 @@ const FinanceScreen: React.FC = () => {
                     />
                 }
             >
-                <View style={styles.balanceContainer}>
-                    <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
-                    {settings.filterBy === 'specificMonth' && (
-                        <Text style={{ color: '#D4AF37', fontSize: 14, marginBottom: 5 }}>
-                            {getMonthName(selectedMonthYear.month)} {selectedMonthYear.year}
+                <View style={styles.headerContainer}>
+                    <View style={styles.balanceContainer}>
+                        <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
+                        {settings.filterBy === 'specificMonth' && (
+                            <Text style={{ color: '#D4AF37', fontSize: 14, marginBottom: 5 }}>
+                                {getMonthName(selectedMonthYear.month)} {selectedMonthYear.year}
+                            </Text>
+                        )}
+                        <Text style={[
+                            styles.balanceAmount,
+                            balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
+                        ]}>
+                            {formatAmount(balance.balance)}
                         </Text>
-                    )}
-                    <Text style={[
-                        styles.balanceAmount,
-                        balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
-                    ]}>
-                        {formatAmount(balance.balance)}
-                    </Text>
-                    <View style={styles.balanceDetails}>
-                        <Text style={styles.balanceDetail}>
-                            Ingresos: {formatAmount(balance.incomes)}
-                        </Text>
-                        <Text style={styles.balanceDetail}>
-                            Gastos: {formatAmount(balance.expenses)}
-                        </Text>
+                        <View style={styles.balanceDetails}>
+                            <Text style={styles.balanceDetail}>
+                                Ingresos: {formatAmount(balance.incomes)}
+                            </Text>
+                            <Text style={styles.balanceDetail}>
+                                Gastos: {formatAmount(balance.expenses)}
+                            </Text>
+                        </View>
                     </View>
-                </View>
 
-                <FinanceEntryForm
-                    onEntryAdded={handleEntryAdded}
-                    categories={categories}
-                    setCategories={setCategories}
-                    tags={tags}
-                    setTags={setTags} // If this is also required
-                />
+                    <TouchableOpacity
+                        style={styles.addEntryButton}
+                        onPress={() => setShowEntryForm(true)}
+                    >
+                        <Icon
+                            name="plus-circle"
+                            size={24}
+                            color="#D4AF37"
+                            style={styles.addEntryButtonIcon}
+                        />
+                        <Text style={styles.addEntryButtonText}>Ingresar movimiento</Text>
+                    </TouchableOpacity>
+                </View>
 
                 <FinanceList
                     refreshTrigger={refreshTrigger}
@@ -221,6 +253,33 @@ const FinanceScreen: React.FC = () => {
                     userId={user?.id || ''}
                 />
             </ScrollView>
+
+            <Modal
+                animationType="slide"
+                transparent={false}
+                visible={showEntryForm}
+                onRequestClose={() => setShowEntryForm(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: '#1c1c1c' }}>
+                    <View style={styles.modalHeader}>
+                        <TouchableOpacity
+                            onPress={() => setShowEntryForm(false)}
+                            style={styles.closeButton}
+                        >
+                            <Icon name="close" size={24} color="#D4AF37" />
+                        </TouchableOpacity>
+                        <Text style={styles.modalTitle}>Nuevo Movimiento</Text>
+                    </View>
+
+                    <FinanceEntryForm
+                        onEntryAdded={handleEntryAdded}
+                        categories={categories}
+                        setCategories={setCategories}
+                        tags={tags}
+                        setTags={setTags}
+                    />
+                </View>
+            </Modal>
 
             <ConfigModal
                 visible={showConfig}

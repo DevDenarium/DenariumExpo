@@ -53,8 +53,8 @@ if (Platform.OS === 'web') {
 
 interface FinanceEntryFormProps {
     onEntryAdded: () => void;
-    categories: FinanceCategory[]; // Usa la interfaz completa
-    tags: FinanceTag[]; // Usa la interfaz completa
+    categories: FinanceCategory[];
+    tags: FinanceTag[];
     setCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
     setTags: React.Dispatch<React.SetStateAction<FinanceTag[]>>;
 }
@@ -94,9 +94,12 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const [newTagColor, setNewTagColor] = useState('#D4AF37');
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [colorPickerFor, setColorPickerFor] = useState<'category' | 'tag'>('category');
+    const [rawAmount, setRawAmount] = useState('');
 
     const handleSubmit = async () => {
-        if (!formData.title || formData.amount <= 0) {
+        const amount = parseAmountInput(formatAmountInput(rawAmount));
+
+        if (!formData.title || amount <= 0) {
             Alert.alert('Error', 'Por favor completa todos los campos');
             return;
         }
@@ -105,8 +108,10 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         try {
             await FinanceService.createEntry({
                 ...formData,
+                amount: amount,
                 tagIds: selectedTags
             });
+
             setFormData({
                 title: '',
                 amount: 0,
@@ -116,6 +121,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 categoryId: undefined,
                 tagIds: []
             });
+            setRawAmount('');
             setSelectedTags([]);
             onEntryAdded();
         } catch (error) {
@@ -124,6 +130,38 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         } finally {
             setLoading(false);
         }
+    };
+
+    const formatAmountInput = (value: string): string => {
+        let numericValue = value.replace(/[^0-9]/g, '');
+
+        if (numericValue === '') return '';
+
+        numericValue = numericValue.replace(/^0+/, '');
+        if (numericValue === '') numericValue = '0';
+
+        while (numericValue.length < 3) {
+            numericValue = '0' + numericValue;
+        }
+
+        const integerPart = numericValue.slice(0, -2);
+        const decimalPart = numericValue.slice(-2);
+
+        const formattedInteger = integerPart.length > 0
+            ? parseInt(integerPart).toLocaleString('es-ES')
+            : '0';
+
+        return `${formattedInteger},${decimalPart}`;
+    };
+
+    const parseAmountInput = (formattedValue: string): number => {
+        if (!formattedValue) return 0;
+
+        const numericString = formattedValue
+            .replace(/\./g, '')
+            .replace(/,/g, '.');
+
+        return parseFloat(numericString) || 0;
     };
 
     const formatDate = (date: Date) => {
@@ -154,7 +192,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 name: newCategoryName,
                 type: formData.type,
                 color: newCategoryColor,
-                icon: 'tag' // Icono por defecto
+                icon: 'tag'
             });
 
             setCategories([...categories, newCategory]);
@@ -176,7 +214,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 color: newTagColor
             });
 
-            // Actualizar el estado de tags y selectedTags
             setTags(prevTags => [...prevTags, newTag]);
             setSelectedTags(prev => [...prev, newTag.id]);
             setShowNewTagModal(false);
@@ -335,9 +372,12 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 style={styles.input}
                 placeholder="Monto"
                 keyboardType="numeric"
-                value={formData.amount > 0 ? formData.amount.toString() : ''}
+                value={formatAmountInput(rawAmount)}
                 onChangeText={(text) => {
-                    const amount = parseFloat(text) || 0;
+                    const numericValue = text.replace(/[^0-9]/g, '');
+                    setRawAmount(numericValue);
+
+                    const amount = parseAmountInput(formatAmountInput(numericValue));
                     setFormData({ ...formData, amount });
                 }}
             />

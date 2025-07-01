@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment, AppointmentStatus } from '../modules/navegation/Navegation.types';
 
-const API_BASE_URL = 'http://localhost:3000'; // Asegúrate de que esta URL sea correcta para tu entorno
+const API_BASE_URL = 'http://localhost:3000';
 
 interface ApiResponse<T> {
     data: T;
@@ -27,7 +27,6 @@ class AppointmentService {
         };
     }
 
-    // Crear una nueva cita
     async createAppointment(dto: {
         title: string;
         description?: string;
@@ -47,7 +46,6 @@ class AppointmentService {
         }
     }
 
-    // Obtener citas del usuario actual
     async getUserAppointments(): Promise<ApiResponse<Appointment[]>> {
         try {
             const headers = await this.getHeaders();
@@ -62,7 +60,6 @@ class AppointmentService {
         }
     }
 
-    // Obtener disponibilidad
     async getAvailability(date: Date): Promise<ApiResponse<Array<{ start: Date; end: Date }>>> {
         try {
             const headers = await this.getHeaders();
@@ -80,8 +77,6 @@ class AppointmentService {
         }
     }
 
-    // Cancelar una cita
-    // En appointment.service.ts
     async cancelAppointment(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
@@ -107,7 +102,6 @@ class AppointmentService {
         }
     }
 
-    // Actualizar una cita existente
     async updateAppointment(
         id: string,
         dto: {
@@ -118,7 +112,6 @@ class AppointmentService {
         }
     ): Promise<ApiResponse<Appointment>> {
         try {
-            // Primero obtener la cita actual para verificar su estado
             const headers = await this.getHeaders();
             const currentAppointment = await axios.get(`${API_BASE_URL}/appointments/${id}`, { headers });
 
@@ -141,8 +134,8 @@ class AppointmentService {
         try {
             const headers = await this.getHeaders();
             const response = await axios.put(
-                `${API_BASE_URL}/appointments/${id}/reschedule`,  // Cambiado de propose-reschedule a reschedule
-                { date: suggestedDate },  // Cambiado de suggestedDate a date para coincidir con el backend
+                `${API_BASE_URL}/appointments/${id}/reschedule`,
+                { date: suggestedDate },
                 { headers }
             );
             return {
@@ -155,7 +148,6 @@ class AppointmentService {
         }
     }
 
-    // Aceptar reagendamiento (cliente)
     async acceptReschedule(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
@@ -174,7 +166,6 @@ class AppointmentService {
         }
     }
 
-    // Rechazar reagendamiento (cliente)
     async rejectReschedule(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();

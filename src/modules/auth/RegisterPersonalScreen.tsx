@@ -553,7 +553,6 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
                 </Text>
             </TouchableOpacity>
 
-            {/* Modals para los selectores */}
             {renderPickerModal(showCountryPicker, setShowCountryPicker, filteredCountries, 'country')}
             {renderPickerModal(showProvincePicker, setShowProvincePicker, provinces, 'province')}
             {renderPickerModal(showCantonPicker, setShowCantonPicker, cantons, 'canton')}
