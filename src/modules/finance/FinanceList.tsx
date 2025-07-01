@@ -13,9 +13,9 @@ import {
     StyleSheet
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { styles } from './FinanceScreen.styles';
+import { styles } from './FinanceList.styles';
 import { FinanceService } from '../../services/Finance.service';
-import {FinanceEntry, SortOption, FilterOption, MonthYear} from './FinanceScreen.types';
+import {FinanceEntry, SortOption, FilterOption, MonthYear, FinanceEntryType, FinanceCategory} from './FinanceScreen.types';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';
 
@@ -26,6 +26,8 @@ interface FinanceListProps {
     filterBy: FilterOption;
     onRefresh: () => void;
     selectedMonthYear?: MonthYear;
+    categories: FinanceCategory[];
+    userId: string;
 }
 
 type DateTimePickerProps = {
@@ -76,7 +78,9 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                                      sortBy,
                                                      filterBy,
                                                      onRefresh,
-                                                     selectedMonthYear
+                                                     selectedMonthYear,
+                                                     categories,
+                                                     userId
                                                  }) => {
     const [entries, setEntries] = useState<FinanceEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,12 +92,37 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [editLoading, setEditLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [editDate, setEditDate] = useState<Date>(new Date());
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<{id: string, name: string}[]>([]);
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [showTagPicker, setShowTagPicker] = useState(false);
 
     useEffect(() => {
-        if (showEditModal && selectedEntry) {
-            setEditDate(new Date(selectedEntry.date));
-        }
-    }, [showEditModal, selectedEntry]);
+        const loadEntriesAndTags = async () => {
+            try {
+                console.log('Cargando entradas y etiquetas...'); // Debug
+                const [entriesData, tagsData] = await Promise.all([
+                    FinanceService.getAllEntries(userId),
+                    FinanceService.getTags()
+                ]);
+
+                console.log('Datos de entradas recibidos:', entriesData); // Debug
+                console.log('Datos de etiquetas recibidos:', tagsData); // Debug
+
+                const filteredEntries = filterEntries(entriesData, filterBy);
+                const sortedEntries = sortEntries(filteredEntries, sortBy);
+
+                setEntries(sortedEntries);
+                setAllTags(tagsData);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadEntriesAndTags();
+    }, [refreshTrigger, sortBy, filterBy, selectedMonthYear, userId]);
 
     const formatDate = (date: Date | string): string => {
         const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -103,6 +132,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
             year: 'numeric'
         });
     };
+
     const handleDateChange = (event: any, selectedDate?: Date) => {
         if (Platform.OS === 'web') return;
 
@@ -127,7 +157,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 <View style={[styles.dateInputContainer, { marginBottom: 0 }]}>
                     <TextInput
                         style={[styles.input, styles.dateInput]}
-                        value={formatDate(editDate)}
+                        value={editDate ? formatDate(editDate) : ''}
                         placeholder="Seleccionar fecha"
                         editable={false}
                     />
@@ -196,28 +226,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
         );
     };
 
-
-    useEffect(() => {
-        const loadEntries = async () => {
-            try {
-                let data = await FinanceService.getAllEntries();
-
-                console.log('selectedMonthYear:', selectedMonthYear);
-
-                data = filterEntries(data, filterBy);
-                data = sortEntries(data, sortBy);
-
-                setEntries(data);
-            } catch (error) {
-                console.error('Error loading entries:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadEntries();
-    }, [refreshTrigger, sortBy, filterBy, selectedMonthYear]);
-
     const filterEntries = (entries: FinanceEntry[], filter: FilterOption): FinanceEntry[] => {
         const now = new Date();
         const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
@@ -225,9 +233,9 @@ const FinanceList: React.FC<FinanceListProps> = ({
 
         switch(filter) {
             case 'income':
-                return entries.filter(e => e.type === 'income');
+                return entries.filter(e => e.type === 'INCOME');
             case 'expense':
-                return entries.filter(e => e.type === 'expense');
+                return entries.filter(e => e.type === 'EXPENSE');
             case 'lastMonth':
                 return entries.filter(e => new Date(e.date) >= oneMonthAgo);
             case 'last3Months':
@@ -267,9 +275,15 @@ const FinanceList: React.FC<FinanceListProps> = ({
         }
     };
 
-
     const handleEntryPress = (entry: FinanceEntry) => {
-        setSelectedEntry(entry);
+        console.log('Entrada seleccionada:', entry); // Debug
+        const fullEntry = {
+            ...entry,
+            category: entry.categoryId ? categories.find(c => c.id === entry.categoryId) : undefined,
+            tags: entry.tags || [] // Asegurar que siempre haya un array
+        };
+        console.log('Entrada completa preparada:', fullEntry); // Debug
+        setSelectedEntry(fullEntry);
         setShowDetailModal(true);
     };
 
@@ -288,6 +302,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
         }
     };
 
+    // En el método handleEdit del componente FinanceList
     const handleEdit = async () => {
         if (!selectedEntry || !editData) return;
 
@@ -298,7 +313,9 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 description: editData.description,
                 amount: Number(editData.amount),
                 type: editData.type,
-                date: editDate.toISOString()
+                categoryId: editData.categoryId,
+                date: editDate.toISOString(),
+                tagIds: selectedTags // Asegurarse de enviar los tags seleccionados
             };
 
             await FinanceService.updateEntry(selectedEntry.id, formattedData);
@@ -314,6 +331,12 @@ const FinanceList: React.FC<FinanceListProps> = ({
         }
     };
 
+    const getCategoryName = (categoryId?: string) => {
+        if (!categoryId) return 'Sin categoría';
+        const category = categories.find(c => c.id === categoryId);
+        return category ? category.name : 'Sin categoría';
+    };
+
     const openEditModal = () => {
         if (!selectedEntry) return;
         setEditData({
@@ -321,8 +344,11 @@ const FinanceList: React.FC<FinanceListProps> = ({
             description: selectedEntry.description,
             amount: selectedEntry.amount,
             type: selectedEntry.type,
-            date: selectedEntry.date
+            date: selectedEntry.date,
+            categoryId: selectedEntry.categoryId
         });
+        setEditDate(new Date(selectedEntry.date));
+        setSelectedTags(selectedEntry.tags?.map(tag => tag.id) || []);
         setShowEditModal(true);
     };
 
@@ -332,28 +358,47 @@ const FinanceList: React.FC<FinanceListProps> = ({
             maximumFractionDigits: 2
         }).format(amount);
     };
+
     const renderItem = ({ item }: { item: FinanceEntry }) => (
         <TouchableOpacity
             style={styles.entryItem}
             onPress={() => handleEntryPress(item)}
         >
-            <View style={styles.entryIcon}>
+            <View style={[
+                styles.entryIcon,
+                { backgroundColor: item.category?.color || '#333333' }
+            ]}>
                 <Icon
-                    name={item.type === 'income' ? 'arrow-down' : 'arrow-up'}
+                    name={item.category?.icon || (item.type === 'INCOME' ? 'arrow-down' : 'arrow-up')}
                     size={20}
-                    color={item.type === 'income' ? '#4CAF50' : '#F44336'}
+                    color="#FFFFFF"
                 />
             </View>
             <View style={styles.entryInfo}>
                 <Text style={styles.entryTitle}>{item.title}</Text>
                 <Text style={styles.entryDate}>{formatDate(new Date(item.date))}</Text>
+                <Text style={styles.entryCategory}>
+                    {getCategoryName(item.categoryId)}
+                </Text>
                 {item.description && (
                     <Text style={styles.entryDescription}>{item.description}</Text>
+                )}
+                {item.tags && item.tags.length > 0 && (
+                    <View style={styles.tagsContainer}>
+                        {item.tags.map(tag => (
+                            <View key={tag.id} style={[
+                                styles.tagPill,
+                                { backgroundColor: tag.color || '#D4AF37' }
+                            ]}>
+                                <Text style={styles.tagText}>{tag.name}</Text>
+                            </View>
+                        ))}
+                    </View>
                 )}
             </View>
             <Text style={[
                 styles.entryAmount,
-                item.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+                item.type === 'INCOME' ? styles.incomeAmount : styles.expenseAmount
             ]}>
                 {currency}{formatAmount(item.amount)}
             </Text>
@@ -369,7 +414,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
     }
 
     return (
-        <>
+        <View style={{ flex: 1 }}>
             <FlatList
                 data={entries}
                 renderItem={renderItem}
@@ -381,6 +426,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 }
             />
 
+            {/* Modal de Detalles */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -395,11 +441,12 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             <Text style={styles.detailLabel}>Monto:</Text>
                             <Text style={[
                                 styles.detailValue,
-                                selectedEntry?.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+                                selectedEntry?.type === 'INCOME' ? styles.incomeAmount : styles.expenseAmount
                             ]}>
                                 {selectedEntry && `${currency}${formatAmount(selectedEntry.amount)}`}
                             </Text>
                         </View>
+
 
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Fecha:</Text>
@@ -408,12 +455,59 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             </Text>
                         </View>
 
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Categoría:</Text>
+                            <View style={styles.categoryContainer}>
+                                {selectedEntry?.category && (
+                                    <>
+                                        <View style={[
+                                            styles.entryIcon,
+                                            {
+                                                width: 20,
+                                                height: 20,
+                                                backgroundColor: selectedEntry.category.color || '#333333'
+                                            }
+                                        ]}>
+                                            <Icon
+                                                name={selectedEntry.category.icon || 'tag'}
+                                                size={12}
+                                                color="#FFFFFF"
+                                            />
+                                        </View>
+                                        <Text style={styles.categoryText}>
+                                            {selectedEntry.category.name}
+                                        </Text>
+                                    </>
+                                )}
+                            </View>
+                        </View>
+
                         {selectedEntry?.description && (
-                            <View style={styles.detailRow}>
+                            <View style={styles.detailDescriptionContainer}>
                                 <Text style={styles.detailLabel}>Descripción:</Text>
-                                <Text style={styles.detailValue}>
-                                    {selectedEntry.description}
-                                </Text>
+                                <View style={styles.descriptionTextContainer}>
+                                    <Text style={styles.detailValue}>
+                                        {selectedEntry.description}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                        {selectedEntry?.tags && selectedEntry.tags.length > 0 && (
+                            <View style={styles.detailTagsContainer}>
+                                <Text style={styles.detailLabel}>Etiquetas:</Text>
+                                <View style={styles.tagsContainerModal}>
+                                    {selectedEntry.tags.map(tag => (
+                                        <View
+                                            key={tag.id}
+                                            style={[
+                                                styles.tagPillModal,
+                                                { backgroundColor: tag.color || '#D4AF37' }
+                                            ]}
+                                        >
+                                            <Text style={styles.tagTextModal}>{tag.name}</Text>
+                                        </View>
+                                    ))}
+                                </View>
                             </View>
                         )}
 
@@ -489,19 +583,19 @@ const FinanceList: React.FC<FinanceListProps> = ({
 
                         <View style={styles.typeSelector}>
                             <TouchableOpacity
-                                style={[styles.typeButton, editData.type === 'income' && styles.typeButtonActive]}
-                                onPress={() => setEditData({ ...editData, type: 'income' })}
+                                style={[styles.typeButton, editData.type === 'INCOME' && styles.typeButtonActive]}
+                                onPress={() => setEditData({ ...editData, type: 'INCOME' as FinanceEntryType })}
                             >
-                                <Text style={[styles.typeButtonText, editData.type === 'income' && styles.typeButtonTextActive]}>
+                                <Text style={[styles.typeButtonText, editData.type === 'INCOME' && styles.typeButtonTextActive]}>
                                     Ingreso
                                 </Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.typeButton, editData.type === 'expense' && styles.typeButtonActive]}
-                                onPress={() => setEditData({ ...editData, type: 'expense' })}
+                                style={[styles.typeButton, editData.type === 'EXPENSE' && styles.typeButtonActive]}
+                                onPress={() => setEditData({ ...editData, type: 'EXPENSE' as FinanceEntryType })}
                             >
-                                <Text style={[styles.typeButtonText, editData.type === 'expense' && styles.typeButtonTextActive]}>
+                                <Text style={[styles.typeButtonText, editData.type === 'EXPENSE' && styles.typeButtonTextActive]}>
                                     Gasto
                                 </Text>
                             </TouchableOpacity>
@@ -526,7 +620,46 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             }}
                         />
 
-                        {/* Reemplazar el TextInput de fecha por el DatePicker */}
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Categoría</Text>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={() => setShowCategoryPicker(true)}
+                            >
+                                <Text style={styles.dropdownText}>
+                                    {editData.categoryId ?
+                                        categories.find(c => c.id === editData.categoryId)?.name :
+                                        'Seleccionar categoría'}
+                                </Text>
+                                <Icon name="chevron-down" size={20} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Etiquetas</Text>
+                            <View style={styles.tagsInputContainer}>
+                                {selectedTags.map(tagId => {
+                                    const tag = allTags.find(t => t.id === tagId);
+                                    return tag ? (
+                                        <View key={tagId} style={styles.selectedTag}>
+                                            <Text style={styles.selectedTagText}>{tag.name}</Text>
+                                            <TouchableOpacity
+                                                onPress={() => setSelectedTags(selectedTags.filter(id => id !== tagId))}
+                                            >
+                                                <Icon name="close" size={16} color="#FFFFFF" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : null;
+                                })}
+                                <TouchableOpacity
+                                    style={styles.addTagButton}
+                                    onPress={() => setShowTagPicker(true)}
+                                >
+                                    <Icon name="plus" size={20} color="#D4AF37" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
                         {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
                         <TextInput
@@ -551,7 +684,9 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                 disabled={editLoading}
                             >
                                 {editLoading ? (
-                                    <ActivityIndicator color="#000" />
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator color="#000" />
+                                    </View>
                                 ) : (
                                     <Text style={styles.modalButtonText}>Guardar</Text>
                                 )}
@@ -560,7 +695,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                     </View>
                 </View>
             </Modal>
-        </>
+        </View>
     );
 };
 

@@ -1,11 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {FinanceCategory, FinanceEntry} from "../modules/finance/FinanceScreen.types";
 
 const API_BASE_URL = 'http://localhost:3000';
 
 export const FinanceService = {
     async getToken(): Promise<string> {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token'); // Cambiado para coincidir con tu AuthContext
         if (!token) throw new Error('No authentication token found');
         return token;
     },
@@ -13,12 +14,19 @@ export const FinanceService = {
     async createEntry(entryData: any): Promise<any> {
         const token = await this.getToken();
         try {
-            const response = await axios.post(`${API_BASE_URL}/finance`, entryData, {
+            console.log('Datos enviados al crear entrada:', entryData); // Debug
+            const response = await axios.post(`${API_BASE_URL}/finance`, {
+                ...entryData,
+                amount: Number(entryData.amount),
+                date: entryData.date.toISOString(),
+                tagIds: entryData.tagIds || [] // Asegurar que se envíen las etiquetas
+            }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
+            console.log('Respuesta del backend:', response.data); // Debug
             return response.data;
         } catch (error) {
             console.error('Error creating finance entry:', error);
@@ -26,48 +34,42 @@ export const FinanceService = {
         }
     },
 
-    async getAllEntries(): Promise<any[]> {
-        const token = await this.getToken();
-        try {
-            const response = await axios.get(`${API_BASE_URL}/finance`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching finance entries:', error);
-            throw error;
-        }
-    },
+        async getAllEntries(userId: string): Promise<FinanceEntry[]> {
+            const token = await this.getToken();
+            try {
+                const response = await axios.get(`${API_BASE_URL}/finance`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                // Asegurarse de que las tags estén presentes en cada entrada
+                return response.data.map((entry: FinanceEntry) => ({
+                    ...entry,
+                    tags: entry.tags || [] // Si no hay tags, usar array vacío
+                }));
+            } catch (error) {
+                console.error('Error fetching finance entries:', error);
+                throw error;
+            }
+        },
 
     async updateEntry(id: string, updateData: any): Promise<any> {
         const token = await this.getToken();
         try {
-            const response = await axios.put(`${API_BASE_URL}/finance/${id}`, updateData, {
+            console.log('Datos enviados al actualizar:', updateData); // Debug
+            const response = await axios.put(`${API_BASE_URL}/finance/${id}`, {
+                ...updateData,
+                tagIds: updateData.tagIds || [] // Asegurar que se envíen las etiquetas
+            }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
+            console.log('Respuesta de actualización:', response.data); // Debug
             return response.data;
-        } catch (error: unknown) {
-            let errorMessage = 'Unknown error occurred';
-            let statusCode = 500;
-
-            if (axios.isAxiosError(error)) {
-                errorMessage = error.response?.data?.message || error.message;
-                statusCode = error.response?.status || 500;
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-
-            console.error('Error updating finance entry:', {
-                url: `${API_BASE_URL}/finance/${id}`,
-                error: errorMessage,
-                status: statusCode,
-                data: axios.isAxiosError(error) ? error.response?.data : undefined
-            });
-
-            throw new Error(errorMessage);
+        } catch (error) {
+            console.error('Error updating entry:', error);
+            throw error;
         }
     },
 
@@ -84,23 +86,78 @@ export const FinanceService = {
         }
     },
 
-    async calculateBalance(): Promise<{ balance: number; incomes: number; expenses: number }> {
-        const entries = await this.getAllEntries();
-        let incomes = 0;
-        let expenses = 0;
+    async calculateBalance() {  // Elimina el parámetro userId
+        const token = await this.getToken();
+        console.log("Token:", token); // Verifica que el token sea válido
 
-        entries.forEach(entry => {
-            if (entry.type === 'income') {
-                incomes += entry.amount;
-            } else {
-                expenses += entry.amount;
+        try {
+            const response = await axios.get(`${API_BASE_URL}/finance/balance`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log("Balance response:", response.data);
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error("Error detallado:", {
+                    status: error.response?.status,
+                    data: error.response?.data,
+                    config: error.config
+                });
             }
-        });
+            throw error;
+        }
+    },
 
-        return {
-            balance: incomes - expenses,
-            incomes,
-            expenses
-        };
+    // En FinanceService.ts (frontend)
+    async getCategories() {
+        const token = await this.getToken();
+        console.log('Token being sent:', token); // Verifica el token
+
+        try {
+            console.log('Making request to:', `${API_BASE_URL}/finance/categories`);
+            const response = await axios.get(`${API_BASE_URL}/finance/categories`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log('Categories response:', response.data);
+            return response.data;
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Full error fetching categories:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+
+            if (axios.isAxiosError(error)) {
+                console.error('Axios error details:', {
+                    response: error.response?.data,
+                    status: error.response?.status
+                });
+            }
+
+            throw error;
+        }
+    },
+
+    async getTags() {  // Elimina el parámetro userId
+        const token = await this.getToken();
+        try {
+            const response = await axios.get(`${API_BASE_URL}/finance/tags`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+            throw error;
+        }
     }
 };

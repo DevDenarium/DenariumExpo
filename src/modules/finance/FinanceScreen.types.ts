@@ -1,11 +1,61 @@
 export interface FinanceEntry {
     id: string;
+    userId: string;
     title: string;
     description?: string;
     amount: number;
-    type: 'income' | 'expense';
-    category?: string;
+    type: FinanceEntryType;
+    categoryId?: string;
+    category?: FinanceCategory;
     date: string;
+    createdAt: string;
+    updatedAt: string;
+    recurringId?: string;
+    tags?: FinanceTag[];
+}
+
+export interface FinanceCategory {
+    id: string;
+    name: string;
+    description?: string;
+    type: FinanceEntryType;
+    userId?: string;
+    isDefault: boolean;
+    icon?: string;
+    color?: string;
+}
+
+export interface FinanceTag {
+    id: string;
+    name: string;
+    userId: string;
+    color?: string;
+}
+
+export interface RecurringEntry {
+    id: string;
+    userId: string;
+    title: string;
+    description?: string;
+    amount: number;
+    type: FinanceEntryType;
+    categoryId?: string;
+    startDate: string;
+    endDate?: string;
+    frequency: RecurringFrequency;
+    active: boolean;
+}
+
+export enum RecurringFrequency {
+    DAILY = 'DAILY',
+    WEEKLY = 'WEEKLY',
+    MONTHLY = 'MONTHLY',
+    YEARLY = 'YEARLY'
+}
+
+export enum FinanceEntryType {
+    INCOME = 'INCOME',
+    EXPENSE = 'EXPENSE'
 }
 
 export interface MonthYear {
@@ -17,9 +67,20 @@ export interface CreateEntryDto {
     title: string;
     description?: string;
     amount: number;
-    type: 'income' | 'expense';
-    category?: string;
+    type: FinanceEntryType;
+    categoryId?: string;
     date: Date;
+    tagIds?: string[];
+}
+
+export interface UpdateEntryDto {
+    title?: string;
+    description?: string;
+    amount?: number;
+    type?: FinanceEntryType;
+    categoryId?: string | null;
+    date?: Date;
+    tagIds?: string[];
 }
 
 export interface BalanceSummary {
@@ -43,16 +104,10 @@ export const CURRENCIES: Currency[] = [
 export type SortOption = 'recent' | 'oldest' | 'highest' | 'lowest' | 'type';
 export type FilterOption = 'all' | 'income' | 'expense' | 'lastMonth' | 'last3Months' | 'specificMonth';
 
-export interface MonthFilter {
-    year: number;
-    month: number;
-}
-
 export interface FinanceSettings {
     currency: Currency;
     sortBy: SortOption;
     filterBy: FilterOption;
-    monthFilter?: MonthFilter;
 }
 
 export interface FinanceScreenProps {
@@ -68,5 +123,3 @@ export interface FinanceScreenProps {
         };
     };
 }
-
-export type CurrencyCode = 'USD' | 'CRC';

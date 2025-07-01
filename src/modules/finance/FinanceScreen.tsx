@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, RefreshControl, Text, TouchableOpacity } from 'react-native';
 import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
@@ -11,11 +11,13 @@ import {
     SortOption,
     FilterOption,
     CURRENCIES,
-    MonthYear
+    MonthYear,
+    FinanceEntryType, FinanceCategory
 } from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../auth/AuthContext';
 
 const DEFAULT_SETTINGS: FinanceSettings = {
     currency: CURRENCIES.find(c => c.code === 'CRC') || CURRENCIES[0],
@@ -24,6 +26,7 @@ const DEFAULT_SETTINGS: FinanceSettings = {
 };
 
 const FinanceScreen: React.FC = () => {
+    const { user } = useAuth();
     const [balance, setBalance] = useState<BalanceSummary>({
         balance: 0,
         incomes: 0,
@@ -37,6 +40,21 @@ const FinanceScreen: React.FC = () => {
         month: new Date().getMonth(),
         year: new Date().getFullYear()
     });
+    const [categories, setCategories] = useState<FinanceCategory[]>([]);
+    const [tags, setTags] = useState<{id: string, name: string}[]>([]);
+
+    const loadCategoriesAndTags = async () => {
+        try {
+            const [cats, tgs] = await Promise.all([
+                FinanceService.getCategories().catch(() => []),
+                FinanceService.getTags().catch(() => [])
+            ]);
+            setCategories(cats);
+            setTags(tgs);
+        } catch (error) {
+            console.error('Error loading categories/tags:', error);
+        }
+    };
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -44,11 +62,11 @@ const FinanceScreen: React.FC = () => {
                 const savedSettings = await AsyncStorage.getItem('financeSettings');
                 if (savedSettings) {
                     const parsedSettings = JSON.parse(savedSettings);
-                    const currency = CURRENCIES.find(c => c.code === parsedSettings.currency) || DEFAULT_SETTINGS.currency;
+                    const currency = CURRENCIES.find(c => c.code === parsedSettings.currency.code) || DEFAULT_SETTINGS.currency;
                     setSettings({
+                        ...parsedSettings,
                         currency,
-                        sortBy: parsedSettings.sortBy || DEFAULT_SETTINGS.sortBy,
-                        filterBy: 'all' // <--- Fuerza que siempre empiece en 'all'
+                        filterBy: parsedSettings.filterBy || DEFAULT_SETTINGS.filterBy
                     });
                 }
             } catch (error) {
@@ -66,9 +84,15 @@ const FinanceScreen: React.FC = () => {
                 console.error('Error saving settings:', error);
             }
         };
-
         saveSettings();
     }, [settings]);
+
+    useEffect(() => {
+        if (user?.id) {
+            loadBalance();
+            loadCategoriesAndTags();
+        }
+    }, [user, refreshTrigger]);
 
     const loadBalance = async () => {
         try {
@@ -76,27 +100,53 @@ const FinanceScreen: React.FC = () => {
             setBalance(data);
         } catch (error) {
             console.error('Error loading balance:', error);
+            setBalance({
+                balance: 0,
+                incomes: 0,
+                expenses: 0
+            });
         }
     };
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadBalance();
-        setRefreshTrigger(prev => !prev);
-        setRefreshing(false);
+        try {
+            await Promise.all([
+                loadBalance(),
+                loadCategoriesAndTags()
+            ]);
+            setRefreshTrigger(prev => !prev);
+        } catch (error) {
+            console.error('Error during refresh:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const handleEntryAdded = async () => {
+        try {
+            await loadBalance();
+            setRefreshTrigger(prev => !prev);
+        } catch (error) {
+            console.error('Error updating balance:', error);
+        }
     };
 
     useEffect(() => {
-        loadBalance();
-    }, []);
+        const loadData = async () => {
+            await Promise.all([
+                loadBalance(),
+                loadCategoriesAndTags()
+            ]);
+        };
+        loadData();
+    }, [user, refreshTrigger]);
 
     const formatAmount = (amount: number): string => {
-        // Usamos 'en-US' para ambos casos para asegurar comas como separadores de miles
         const formattedAmount = amount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
-
         return `${settings.currency.symbol}${formattedAmount}`;
     };
 
@@ -150,7 +200,11 @@ const FinanceScreen: React.FC = () => {
                     </View>
                 </View>
 
-                <FinanceEntryForm onEntryAdded={onRefresh} />
+                <FinanceEntryForm
+                    onEntryAdded={handleEntryAdded}
+                    categories={categories}
+                    tags={tags}
+                />
 
                 <FinanceList
                     refreshTrigger={refreshTrigger}
@@ -159,6 +213,8 @@ const FinanceScreen: React.FC = () => {
                     filterBy={settings.filterBy}
                     onRefresh={onRefresh}
                     selectedMonthYear={selectedMonthYear}
+                    categories={categories}
+                    userId={user?.id || ''}
                 />
             </ScrollView>
 

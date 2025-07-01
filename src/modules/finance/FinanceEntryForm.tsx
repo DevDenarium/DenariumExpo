@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Platform, StyleSheet } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Alert, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { FinanceService } from '../../services/Finance.service';
-import { CreateEntryDto } from './FinanceScreen.types';
-import { styles } from './FinanceScreen.styles';
-import { registerLocale, setDefaultLocale } from "react-datepicker";
-import { es } from 'date-fns/locale';
+import {FinanceService} from '../../services/Finance.service';
+import {CreateEntryDto, FinanceEntryType} from './FinanceScreen.types';
+import { styles } from './FinanceEntryForm.styles';
+import {registerLocale, setDefaultLocale} from "react-datepicker";
+import {es} from 'date-fns/locale';
+
 registerLocale('es', es);
 setDefaultLocale('es');
 
@@ -30,6 +31,7 @@ type ReactDatePickerProps = {
     locale?: string;
 };
 
+
 let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
 let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
 
@@ -50,19 +52,31 @@ if (Platform.OS === 'web') {
 
 interface FinanceEntryFormProps {
     onEntryAdded: () => void;
+    categories: {id: string, name: string, type: FinanceEntryType, color?: string, icon?: string;}[];
+    tags: {id: string, name: string, color?: string}[];
 }
 
-const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => {
+const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
+                                                               onEntryAdded,
+                                                               categories,
+                                                               tags
+                                                           }) => {
     const [formData, setFormData] = useState<CreateEntryDto>({
         title: '',
         amount: 0,
-        type: 'expense',
+        type: FinanceEntryType.EXPENSE,
         date: new Date(),
-        description: ''
+        description: '',
+        categoryId: undefined,
+        tagIds: []
     });
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [showTagPicker, setShowTagPicker] = useState(false);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
+    // En el método handleSubmit del componente FinanceEntryForm
     const handleSubmit = async () => {
         if (!formData.title || formData.amount <= 0) {
             Alert.alert('Error', 'Por favor completa todos los campos');
@@ -71,15 +85,20 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
 
         setLoading(true);
         try {
-            await FinanceService.createEntry(formData);
+            await FinanceService.createEntry({
+                ...formData,
+                tagIds: selectedTags // Asegurarse de enviar los tags seleccionados
+            });
             setFormData({
                 title: '',
                 amount: 0,
-                type: 'expense',
+                type: FinanceEntryType.EXPENSE,
                 date: new Date(),
-                description: ''
+                description: '',
+                categoryId: undefined,
+                tagIds: []
             });
-            setShowDatePicker(false);
+            setSelectedTags([]); // Limpiar los tags seleccionados
             onEntryAdded();
         } catch (error) {
             console.error('Error creating entry:', error);
@@ -113,15 +132,21 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
         setShowDatePicker(!showDatePicker);
     };
 
+    const filteredCategories = categories.filter(
+        cat => cat.type === formData.type
+    );
+
     const WebDatePicker = () => {
         if (!ReactDatePicker) {
             return (
-                <TextInput
-                    style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
-                    value={formatDate(formData.date)}
-                    placeholder="Seleccionar fecha"
-                    editable={false}
-                />
+                <View style={styles.dateInputContainer}>
+                    <TextInput
+                        style={[styles.input, styles.dateInput]}
+                        value={formatDate(formData.date)}
+                        placeholder="Seleccionar fecha"
+                        editable={false}
+                    />
+                </View>
             );
         }
 
@@ -134,7 +159,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
                     locale="es"
                     customInput={
                         <TextInput
-                            style={[styles.input, styles.dateInput, { marginBottom: 0 }]}
+                            style={[styles.input, styles.dateInput]}
                             value={formatDate(formData.date)}
                             placeholder="Seleccionar fecha"
                         />
@@ -209,19 +234,19 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
 
             <View style={styles.typeSelector}>
                 <TouchableOpacity
-                    style={[styles.typeButton, formData.type === 'income' && styles.typeButtonActive]}
-                    onPress={() => setFormData({ ...formData, type: 'income' })}
+                    style={[styles.typeButton, formData.type === 'INCOME' && styles.typeButtonActive]}
+                    onPress={() => setFormData({ ...formData, type: 'INCOME' as FinanceEntryType})}
                 >
-                    <Text style={[styles.typeButtonText, formData.type === 'income' && styles.typeButtonTextActive]}>
+                    <Text style={[styles.typeButtonText, formData.type === 'INCOME' && styles.typeButtonTextActive]}>
                         Ingreso
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.typeButton, formData.type === 'expense' && styles.typeButtonActive]}
-                    onPress={() => setFormData({ ...formData, type: 'expense' })}
+                    style={[styles.typeButton, formData.type === 'EXPENSE' && styles.typeButtonActive]}
+                    onPress={() => setFormData({ ...formData, type: 'EXPENSE' as FinanceEntryType })}
                 >
-                    <Text style={[styles.typeButtonText, formData.type === 'expense' && styles.typeButtonTextActive]}>
+                    <Text style={[styles.typeButtonText, formData.type === 'EXPENSE' && styles.typeButtonTextActive]}>
                         Gasto
                     </Text>
                 </TouchableOpacity>
@@ -245,6 +270,121 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
                 }}
             />
 
+            {/* Selector de categoría */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Categoría</Text>
+                <TouchableOpacity
+                    style={styles.dropdown}
+                    onPress={() => setShowCategoryPicker(true)}
+                >
+                    <Text style={styles.dropdownText}>
+                        {formData.categoryId ?
+                            categories.find(c => c.id === formData.categoryId)?.name :
+                            'Seleccionar categoría'}
+                    </Text>
+                    <Icon name="chevron-down" size={20} color="#D4AF37" />
+                </TouchableOpacity>
+
+                <Modal
+                    visible={showCategoryPicker}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowCategoryPicker(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowCategoryPicker(false)}
+                    >
+                        <View style={styles.modalPickerContainer}>
+                            <ScrollView style={styles.pickerScrollView}>
+                                {filteredCategories.map(category => (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            setFormData({ ...formData, categoryId: category.id });
+                                            setShowCategoryPicker(false);
+                                        }}
+                                    >
+                                        <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
+                                            <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
+                                        </View>
+                                        <Text style={styles.pickerItemText}>{category.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                                <TouchableOpacity
+                                    style={styles.pickerItem}
+                                    onPress={() => {
+                                        setFormData({ ...formData, categoryId: undefined });
+                                        setShowCategoryPicker(false);
+                                    }}
+                                >
+                                    <Text style={styles.pickerItemText}>Sin categoría</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            </View>
+
+            {/* Selector de etiquetas */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Etiquetas</Text>
+                <View style={styles.tagsInputContainer}>
+                    {selectedTags.map(tagId => {
+                        const tag = tags.find(t => t.id === tagId);
+                        return tag ? (
+                            <View key={tagId} style={styles.selectedTag}>
+                                <Text style={styles.selectedTagText}>{tag.name}</Text>
+                                <TouchableOpacity
+                                    onPress={() => setSelectedTags(selectedTags.filter(id => id !== tagId))}
+                                >
+                                    <Icon name="close" size={16} color="#FFFFFF" />
+                                </TouchableOpacity>
+                            </View>
+                        ) : null;
+                    })}
+                    <TouchableOpacity
+                        style={styles.addTagButton}
+                        onPress={() => setShowTagPicker(true)}
+                    >
+                        <Icon name="plus" size={20} color="#D4AF37" />
+                    </TouchableOpacity>
+                </View>
+
+                <Modal
+                    visible={showTagPicker}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setShowTagPicker(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowTagPicker(false)}
+                    >
+                        <View style={styles.modalPickerContainer}>
+                            <ScrollView style={styles.pickerScrollView}>
+                                {tags.filter(tag => !selectedTags.includes(tag.id)).map(tag => (
+                                    <TouchableOpacity
+                                        key={tag.id}
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            setSelectedTags([...selectedTags, tag.id]);
+                                            setShowTagPicker(false);
+                                        }}
+                                    >
+                                        <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                        <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            </View>
+
             {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
             <TextInput
@@ -252,6 +392,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
                 placeholder="Descripción (opcional)"
                 value={formData.description}
                 onChangeText={(description) => setFormData({ ...formData, description })}
+                multiline
             />
 
             <TouchableOpacity
@@ -265,52 +406,54 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({ onEntryAdded }) => 
             </TouchableOpacity>
 
             {Platform.OS === 'web' && (
-                <style>
-                    {`
-                        .react-datepicker-wrapper {
-                            width: 100%;
-                            display: block !important;
-                        }
-                        .react-datepicker__input-container {
-                            width: 100%;
-                            display: block !important;
-                        }
-                        .react-datepicker {
-                            font-family: inherit;
-                            background-color: #2a2a2a;
-                            border: 1px solid #444;
-                            position: absolute;
-                            top: 100% !important;
-                            left: 0 !important;
-                            z-index: 10000 !important;
-                        }
-                        .react-datepicker-popper {
-                            z-index: 10000 !important;
-                        }
-                        .react-datepicker__triangle {
-                            display: none;
-                        }
-                        .react-datepicker__header {
-                            background-color: #333;
-                            border-bottom: 1px solid #444;
-                        }
-                        .react-datepicker__current-month,
-                        .react-datepicker__day-name,
-                        .react-datepicker__day {
-                            color: white;
-                        }
-                        .react-datepicker__day:hover {
-                            background-color: #444;
-                        }
-                        .react-datepicker__day--selected {
-                            background-color: #D4AF37;
-                            color: black;
-                        }
-                        .react-datepicker__navigation-icon::before {
-                            border-color: white;
-                        }
-                    `}
-                </style>
+                <View>
+                    <style>
+                        {`
+                            .react-datepicker-wrapper {
+                                width: 100%;
+                                display: block !important;
+                            }
+                            .react-datepicker__input-container {
+                                width: 100%;
+                                display: block !important;
+                            }
+                            .react-datepicker {
+                                font-family: inherit;
+                                background-color: #2a2a2a;
+                                border: 1px solid #444;
+                                position: absolute;
+                                top: 100% !important;
+                                left: 0 !important;
+                                z-index: 10000 !important;
+                            }
+                            .react-datepicker-popper {
+                                z-index: 10000 !important;
+                            }
+                            .react-datepicker__triangle {
+                                display: none;
+                            }
+                            .react-datepicker__header {
+                                background-color: #333;
+                                border-bottom: 1px solid #444;
+                            }
+                            .react-datepicker__current-month,
+                            .react-datepicker__day-name,
+                            .react-datepicker__day {
+                                color: white;
+                            }
+                            .react-datepicker__day:hover {
+                                background-color: #444;
+                            }
+                            .react-datepicker__day--selected {
+                                background-color: #D4AF37;
+                                color: black;
+                            }
+                            .react-datepicker__navigation-icon::before {
+                                border-color: white;
+                            }
+                        `}
+                    </style>
+                </View>
             )}
         </View>
     );
