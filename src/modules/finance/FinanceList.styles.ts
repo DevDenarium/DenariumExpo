@@ -269,6 +269,7 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#333333',
         maxHeight: 200,
+        overflow: 'scroll',
     },
     pickerItem: {
         paddingVertical: 10,
@@ -341,7 +342,6 @@ export const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 5,
     },
-
     tagsContainerModal: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -372,11 +372,11 @@ export const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 5,
     },
-
     detailTagsContainer: {
         marginBottom: 10,
         paddingVertical: 5,
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
     },
+
 });

@@ -93,7 +93,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [editDate, setEditDate] = useState<Date>(new Date());
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [allTags, setAllTags] = useState<{id: string, name: string}[]>([]);
+    const [allTags, setAllTags] = useState<{id: string, color: string, name: string}[]>([]);
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [showTagPicker, setShowTagPicker] = useState(false);
 
@@ -302,7 +302,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
         }
     };
 
-    // En el método handleEdit del componente FinanceList
     const handleEdit = async () => {
         if (!selectedEntry || !editData) return;
 
@@ -315,7 +314,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 type: editData.type,
                 categoryId: editData.categoryId,
                 date: editDate.toISOString(),
-                tagIds: selectedTags // Asegurarse de enviar los tags seleccionados
+                tagIds: selectedTags
             };
 
             await FinanceService.updateEntry(selectedEntry.id, formattedData);
@@ -446,7 +445,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                 {selectedEntry && `${currency}${formatAmount(selectedEntry.amount)}`}
                             </Text>
                         </View>
-
 
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Fecha:</Text>
@@ -635,13 +633,39 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             </TouchableOpacity>
                         </View>
 
+                        {showCategoryPicker && (
+                            <View style={styles.pickerContainer}>
+                                {categories.map(category => (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            setEditData({ ...editData, categoryId: category.id });
+                                            setShowCategoryPicker(false);
+                                        }}
+                                    >
+                                        <View style={[
+                                            styles.categoryIcon,
+                                            { backgroundColor: category.color || '#333333' }
+                                        ]}>
+                                            <Icon name={category.icon || 'tag'} size={14} color="#FFFFFF" />
+                                        </View>
+                                        <Text style={styles.pickerItemText}>{category.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Etiquetas</Text>
                             <View style={styles.tagsInputContainer}>
                                 {selectedTags.map(tagId => {
                                     const tag = allTags.find(t => t.id === tagId);
                                     return tag ? (
-                                        <View key={tagId} style={styles.selectedTag}>
+                                        <View key={tagId} style={[
+                                            styles.selectedTag,
+                                            { backgroundColor: tag.color || '#D4AF37' }  // Usa el color de la etiqueta
+                                        ]}>
                                             <Text style={styles.selectedTagText}>{tag.name}</Text>
                                             <TouchableOpacity
                                                 onPress={() => setSelectedTags(selectedTags.filter(id => id !== tagId))}
@@ -659,6 +683,26 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                 </TouchableOpacity>
                             </View>
                         </View>
+
+                        {showTagPicker && (
+                            <View style={styles.pickerContainer}>
+                                {allTags.map(tag => (
+                                    <TouchableOpacity
+                                        key={tag.id}
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            if (!selectedTags.includes(tag.id)) {
+                                                setSelectedTags([...selectedTags, tag.id]);
+                                            }
+                                            setShowTagPicker(false);
+                                        }}
+                                    >
+                                        <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                        <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
 
                         {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
