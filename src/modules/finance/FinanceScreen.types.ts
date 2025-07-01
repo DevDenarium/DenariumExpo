@@ -23,7 +23,7 @@ export interface FinanceCategory {
     // Add any other properties that might be required
     description?: string;
     userId?: string;
-    isDefault?: boolean;
+    isDefault: boolean;
 }
 
 export interface FinanceTag {
@@ -31,6 +31,7 @@ export interface FinanceTag {
     name: string;
     userId: string;
     color?: string;
+    isDefault: boolean;
 }
 
 export interface RecurringEntry {

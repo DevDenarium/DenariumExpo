@@ -252,6 +252,56 @@ export const styles = StyleSheet.create({
     modalButtonText: {
         fontWeight: 'bold',
     },
+    tabContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+        marginBottom: 10,
+    },
+    tabButton: {
+        flex: 1,
+        padding: 12,
+        alignItems: 'center',
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: {
+        borderBottomColor: '#D4AF37',
+    },
+    tabText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    colorPickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    colorPreview: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        marginLeft: 10,
+        borderWidth: 1,
+        borderColor: '#FFFFFF',
+    },
+    colorPickerModal: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    colorPickerDoneButton: {
+        backgroundColor: '#D4AF37',
+        padding: 10,
+        borderRadius: 5,
+        marginTop: 15,
+        alignSelf: 'center',
+    },
+    colorPickerDoneButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
 });
 
 export default styles;
