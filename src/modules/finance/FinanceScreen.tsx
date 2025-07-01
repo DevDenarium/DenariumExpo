@@ -46,13 +46,14 @@ const FinanceScreen: React.FC = () => {
     const loadCategoriesAndTags = async () => {
         try {
             const [cats, tgs] = await Promise.all([
-                FinanceService.getCategories().catch(() => []),
-                FinanceService.getTags().catch(() => [])
+                FinanceService.getCategories(),
+                FinanceService.getTags()
             ]);
-            setCategories(cats);
-            setTags(tgs);
+            setCategories(cats || []);
+            setTags(tgs || []);
         } catch (error) {
             console.error('Error loading categories/tags:', error);
+            // Opcional: mostrar mensaje al usuario
         }
     };
 
@@ -126,6 +127,7 @@ const FinanceScreen: React.FC = () => {
     const handleEntryAdded = async () => {
         try {
             await loadBalance();
+            await loadCategoriesAndTags(); // Añade esta línea
             setRefreshTrigger(prev => !prev);
         } catch (error) {
             console.error('Error updating balance:', error);
@@ -203,7 +205,9 @@ const FinanceScreen: React.FC = () => {
                 <FinanceEntryForm
                     onEntryAdded={handleEntryAdded}
                     categories={categories}
+                    setCategories={setCategories}
                     tags={tags}
+                    setTags={setTags} // If this is also required
                 />
 
                 <FinanceList

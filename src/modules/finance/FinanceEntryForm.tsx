@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {FinanceService} from '../../services/Finance.service';
 import {CreateEntryDto, FinanceEntryType} from './FinanceScreen.types';
@@ -54,12 +54,16 @@ interface FinanceEntryFormProps {
     onEntryAdded: () => void;
     categories: {id: string, name: string, type: FinanceEntryType, color?: string, icon?: string;}[];
     tags: {id: string, name: string, color?: string}[];
+    setCategories: React.Dispatch<React.SetStateAction<{id: string, name: string, type: FinanceEntryType, color?: string, icon?: string;}[]>>;
+    setTags: React.Dispatch<React.SetStateAction<{id: string, name: string, color?: string}[]>>;
 }
 
 const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                                                onEntryAdded,
                                                                categories,
-                                                               tags
+                                                               tags,
+                                                               setCategories,
+                                                               setTags
                                                            }) => {
     const [formData, setFormData] = useState<CreateEntryDto>({
         title: '',
@@ -75,8 +79,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [showTagPicker, setShowTagPicker] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+    const [newTagName, setNewTagName] = useState('');
+    const [showNewTagModal, setShowNewTagModal] = useState(false);
 
-    // En el método handleSubmit del componente FinanceEntryForm
     const handleSubmit = async () => {
         if (!formData.title || formData.amount <= 0) {
             Alert.alert('Error', 'Por favor completa todos los campos');
@@ -87,7 +94,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         try {
             await FinanceService.createEntry({
                 ...formData,
-                tagIds: selectedTags // Asegurarse de enviar los tags seleccionados
+                tagIds: selectedTags
             });
             setFormData({
                 title: '',
@@ -98,7 +105,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 categoryId: undefined,
                 tagIds: []
             });
-            setSelectedTags([]); // Limpiar los tags seleccionados
+            setSelectedTags([]);
             onEntryAdded();
         } catch (error) {
             console.error('Error creating entry:', error);
@@ -126,6 +133,45 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
 
     const handleWebDateChange = (date: Date) => {
         setFormData({ ...formData, date });
+    };
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName) return;
+
+        try {
+            const newCategory = await FinanceService.createCategory({
+                name: newCategoryName,
+                type: formData.type,
+                color: '#D4AF37', // Color por defecto
+                icon: 'tag' // Icono por defecto
+            });
+
+            setCategories([...categories, newCategory]);
+            setFormData({...formData, categoryId: newCategory.id});
+            setShowNewCategoryModal(false);
+            setNewCategoryName('');
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo crear la categoría');
+        }
+    };
+
+    const handleCreateTag = async () => {
+        if (!newTagName) return;
+
+        try {
+            const newTag = await FinanceService.createTag({
+                name: newTagName,
+                color: '#D4AF37'
+            });
+
+            // Actualizar el estado de tags y selectedTags
+            setTags(prevTags => [...prevTags, newTag]);
+            setSelectedTags(prev => [...prev, newTag.id]);
+            setShowNewTagModal(false);
+            setNewTagName('');
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo crear la etiqueta');
+        }
     };
 
     const toggleDatePicker = () => {
@@ -270,7 +316,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 }}
             />
 
-            {/* Selector de categoría */}
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Categoría</Text>
                 <TouchableOpacity
@@ -316,6 +361,16 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                 <TouchableOpacity
                                     style={styles.pickerItem}
                                     onPress={() => {
+                                        setShowCategoryPicker(false);
+                                        setShowNewCategoryModal(true);
+                                    }}
+                                >
+                                    <Icon name="plus" size={16} color="#D4AF37" />
+                                    <Text style={[styles.pickerItemText, {color: '#D4AF37'}]}>Crear nueva categoría</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.pickerItem}
+                                    onPress={() => {
                                         setFormData({ ...formData, categoryId: undefined });
                                         setShowCategoryPicker(false);
                                     }}
@@ -328,7 +383,39 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                 </Modal>
             </View>
 
-            {/* Selector de etiquetas */}
+            <Modal
+                visible={showNewCategoryModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowNewCategoryModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Nueva Categoría</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nombre de la categoría"
+                            value={newCategoryName}
+                            onChangeText={setNewCategoryName}
+                        />
+                        <View style={styles.modalButtonContainer}>
+                            <Pressable
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setShowNewCategoryModal(false)}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalButton, styles.confirmButton]}
+                                onPress={handleCreateCategory}
+                            >
+                                <Text style={styles.modalButtonText}>Crear</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Etiquetas</Text>
                 <View style={styles.tagsInputContainer}>
@@ -379,11 +466,54 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                         <Text style={styles.pickerItemText}>{tag.name}</Text>
                                     </TouchableOpacity>
                                 ))}
+                                <TouchableOpacity
+                                    style={styles.pickerItem}
+                                    onPress={() => {
+                                        setShowTagPicker(false);
+                                        setShowNewTagModal(true);
+                                    }}
+                                >
+                                    <Icon name="plus" size={16} color="#D4AF37" />
+                                    <Text style={[styles.pickerItemText, {color: '#D4AF37'}]}>Crear nueva etiqueta</Text>
+                                </TouchableOpacity>
                             </ScrollView>
                         </View>
                     </TouchableOpacity>
                 </Modal>
             </View>
+
+            <Modal
+                visible={showNewTagModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowNewTagModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Nueva Etiqueta</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nombre de la etiqueta"
+                            value={newTagName}
+                            onChangeText={setNewTagName}
+                        />
+                        <View style={styles.modalButtonContainer}>
+                            <Pressable
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setShowNewTagModal(false)}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalButton, styles.confirmButton]}
+                                onPress={handleCreateTag}
+                            >
+                                <Text style={styles.modalButtonText}>Crear</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
@@ -458,4 +588,5 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         </View>
     );
 };
+
 export default FinanceEntryForm;

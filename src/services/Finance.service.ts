@@ -1,6 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {FinanceCategory, FinanceEntry} from "../modules/finance/FinanceScreen.types";
+import {
+    CreateCategoryDto,
+    CreateTagDto,
+    FinanceCategory,
+    FinanceEntry,
+    FinanceTag
+} from "../modules/finance/FinanceScreen.types";
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -145,6 +151,7 @@ export const FinanceService = {
         }
     },
 
+
     async getTags() {  // Elimina el parámetro userId
         const token = await this.getToken();
         try {
@@ -157,6 +164,42 @@ export const FinanceService = {
             return response.data;
         } catch (error) {
             console.error('Error fetching tags:', error);
+            throw error;
+        }
+    },
+
+    async createCategory(dto: CreateCategoryDto): Promise<FinanceCategory> {
+        const token = await this.getToken();
+        try {
+            const response = await axios.post(`${API_BASE_URL}/finance/categories`, dto, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error creating category:', error);
+            throw error;
+        }
+    },
+
+    async createTag(dto: CreateTagDto): Promise<FinanceTag> {
+        const token = await this.getToken();
+        try {
+            const response = await axios.post(`${API_BASE_URL}/finance/tags`, dto, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log('Tag creado:', response.data); // Debug
+            return response.data;
+        } catch (error) {
+            console.error('Error creating tag:', error);
+            if (axios.isAxiosError(error)) {
+                console.error('Detalles del error:', error.response?.data);
+            }
             throw error;
         }
     }

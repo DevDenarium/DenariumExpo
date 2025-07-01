@@ -180,12 +180,12 @@ export const styles = StyleSheet.create({
         borderColor: '#333333',
         maxHeight: 200,
         position: 'absolute',
-        top: '100%', // Posición debajo del dropdown
+        top: '100%',
         left: 0,
         right: 0,
-        zIndex: 1000, // Alto z-index para asegurar que esté por encima
-        elevation: 5, // Para Android
-        shadowColor: '#000', // Para iOS
+        zIndex: 1000,
+        elevation: 5,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.8,
         shadowRadius: 2,
@@ -196,7 +196,7 @@ export const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 999, // Just below the picker
+        zIndex: 999,
     },
     datePickerWrapper: {
         position: 'absolute',
@@ -219,4 +219,39 @@ export const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
     },
+    modalContainer: {
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        padding: 20,
+        width: '80%',
+    },
+    modalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    modalButton: {
+        borderRadius: 5,
+        padding: 10,
+        width: '48%',
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#333333',
+    },
+    confirmButton: {
+        backgroundColor: '#D4AF37',
+    },
+    modalButtonText: {
+        fontWeight: 'bold',
+    },
 });
+
+export default styles;
