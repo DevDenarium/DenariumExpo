@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { styles } from './AppointmentManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Appointment, AppointmentManagementProps, AppointmentStatus} from './AppointmentManagement.types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO } from 'date-fns';
@@ -23,6 +22,9 @@ import { es } from 'date-fns/locale';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {appointmentService} from "../../services/appointment.service";
+import { useAuth } from '../../modules/auth/AuthContext';
+import { Appointment, AppointmentStatus } from '../../modules/navegation/Navegation.types';
+import {AppointmentManagementProps} from "./AppointmentManagement.types";
 
 registerLocale('es', es);
 setDefaultLocale('es');
@@ -90,6 +92,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [showCalendar, setShowCalendar] = useState(false);
     const [showTimeSlots, setShowTimeSlots] = useState(false);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const { user } = useAuth();
 
     const generateTimeSlots = () => {
         const slots = [];
@@ -216,37 +219,36 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                navigation.navigate('Login', { message: undefined });
-                return;
+            let result;
+
+            if (user?.role === 'ADMIN') {
+                const pendingRes = await appointmentService.getPendingAppointments();
+                result = pendingRes.data;
+            } else {
+                const userRes = await appointmentService.getUserAppointments();
+                result = userRes.data;
             }
 
-            const response = await axios.get(`${API_BASE_URL}/appointments`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            setAppointments(response.data);
+            setAppointments(result);
         } catch (error) {
-            console.error('Error fetching appointments:', error);
+            console.error('Error al obtener citas:', error);
             Alert.alert('Error', 'No se pudieron cargar las citas');
         } finally {
             setLoading(false);
         }
     };
 
+
     const applyFilters = () => {
         let result = [...appointments];
         const now = new Date();
 
-        // Apply date filter
+        // Filtro por fecha (día o mes)
         if (filterType !== 'none' && filterDate) {
             if (filterType === 'day') {
                 result = result.filter(appointment =>
                     isSameDay(parseISO(appointment.requestedDate), filterDate)
-                    );
+                );
             } else if (filterType === 'month') {
                 result = result.filter(appointment =>
                     isSameMonth(parseISO(appointment.requestedDate), filterDate) &&
@@ -255,73 +257,79 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
             }
         }
 
+        // Filtro por estado
         switch (statusFilter) {
             case 'upcoming':
                 result = result.filter(appointment =>
-                    (appointment.status === 'CONFIRMED' || appointment.status === 'RESCHEDULED') &&
+                    ['CONFIRMED', 'RESCHEDULED'].includes(appointment.status) &&
                     isBefore(now, new Date(appointment.confirmedDate || appointment.requestedDate))
                 ).sort((a, b) =>
                     new Date(a.confirmedDate || a.requestedDate).getTime() -
                     new Date(b.confirmedDate || b.requestedDate).getTime()
                 );
                 break;
+
             case 'pending':
                 result = result.filter(appointment =>
-                    appointment.status === 'PENDING'
+                    ['PENDING_ADMIN_REVIEW', 'CONFIRMED', 'RESCHEDULED'].includes(appointment.status)
                 ).sort((a, b) =>
                     new Date(a.requestedDate).getTime() -
                     new Date(b.requestedDate).getTime()
                 );
                 break;
+
             case 'cancelled':
                 result = result.filter(appointment =>
-                    appointment.status === 'CANCELLED' ||
-                    appointment.status === 'REJECTED'
+                    ['CANCELLED', 'REJECTED'].includes(appointment.status)
                 ).sort((a, b) =>
                     new Date(b.requestedDate).getTime() -
                     new Date(a.requestedDate).getTime()
                 );
                 break;
+
             case 'past':
                 result = result.filter(appointment =>
-                    (appointment.status === 'CONFIRMED' || appointment.status === 'RESCHEDULED') &&
+                    ['CONFIRMED', 'RESCHEDULED'].includes(appointment.status) &&
                     isBefore(new Date(appointment.confirmedDate || appointment.requestedDate), now)
                 ).sort((a, b) =>
                     new Date(b.confirmedDate || b.requestedDate).getTime() -
                     new Date(a.confirmedDate || a.requestedDate).getTime()
                 );
                 break;
+
             case 'all':
             default:
+                // No filtro adicional
                 break;
         }
 
         setFilteredAppointments(result);
     };
 
+
+    const handleProposeReschedule = async (appointmentId: string, newDate: string) => {
+        try {
+            await appointmentService.proposeReschedule(appointmentId, newDate);
+            fetchAppointments();
+            Alert.alert('Éxito', 'Se ha enviado la propuesta de reagendamiento');
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo reagendar la cita');
+        }
+    };
+
     const handleConfirmAppointment = async () => {
         if (!selectedAppointment) return;
 
         try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                navigation.navigate('Login', { message: undefined });
-                return;
-            }
-
-            await axios.put(
-                `${API_BASE_URL}/appointments/${selectedAppointment.id}/confirm`,
-                { date: selectedDate.toISOString() },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
+            await appointmentService.confirmAppointment(
+                selectedAppointment.id,
+                selectedDate.toISOString()
             );
 
             setShowModal(false);
             fetchAppointments();
             resetForm();
+            Alert.alert('Éxito', 'Cita confirmada exitosamente');
         } catch (error) {
             console.error('Error confirming appointment:', error);
             Alert.alert('Error', 'No se pudo confirmar la cita');
@@ -335,12 +343,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         }
 
         try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                navigation.navigate('Login', { message: undefined });
-                return;
-            }
-
             await appointmentService.proposeReschedule(
                 selectedAppointment.id,
                 selectedDate.toISOString()
@@ -360,25 +362,17 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         if (!selectedAppointment) return;
 
         try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                navigation.navigate('Login', { message: undefined });
-                return;
-            }
+            await appointmentService.cancelAppointment(selectedAppointment.id);
 
-            await axios.put(
-                `${API_BASE_URL}/appointments/${selectedAppointment.id}/cancel`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            // If the appointment was paid, process refund
+            if (selectedAppointment.paymentStatus === 'PAID') {
+                await appointmentService.processRefund(selectedAppointment.id);
+            }
 
             setShowModal(false);
             fetchAppointments();
             resetForm();
+            Alert.alert('Éxito', 'Cita cancelada y reembolso procesado si aplica');
         } catch (error) {
             console.error('Error canceling appointment:', error);
             Alert.alert('Error', 'No se pudo cancelar la cita');
@@ -404,7 +398,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
     const getStatusStyle = (status: AppointmentStatus): [{ backgroundColor: string }, { color: string }] => {
         switch (status) {
-            case 'PENDING':
+            case 'PENDING_ADMIN_REVIEW':
                 return [styles.statusPending, styles.statusTextPending];
             case 'CONFIRMED':
                 return [styles.statusConfirmed, styles.statusTextConfirmed];
@@ -423,7 +417,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
     const getStatusText = (status: AppointmentStatus) => {
         switch (status) {
-            case 'PENDING': return 'PENDIENTE';
+            case 'PENDING_ADMIN_REVIEW': return 'PENDIENTE';
             case 'CONFIRMED': return 'CONFIRMADA';
             case 'CANCELLED': return 'CANCELADA';
             case 'RESCHEDULED': return 'REAGENDADA';
@@ -484,7 +478,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
                 {!isPastAppointment && item.status !== 'CANCELLED' && item.status !== 'REJECTED' && (
                     <View style={styles.cardFooter}>
-                        {item.status === 'PENDING' && (
+                        {item.status === 'PENDING_ADMIN_REVIEW' && (
                             <>
                                 <TouchableOpacity
                                     style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
@@ -510,7 +504,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 </TouchableOpacity>
                             </>
                         )}
-                        {(item.status === 'PENDING' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
+                        {(item.status === 'PENDING_ADMIN_REVIEW' || item.status === 'CONFIRMED' || item.status === 'RESCHEDULED') && (
                             <TouchableOpacity
                                 style={[styles.actionButton, { backgroundColor: '#F44336' }]}
                                 onPress={() => {

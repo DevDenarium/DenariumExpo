@@ -12,17 +12,24 @@ import {
     ScrollView,
     ViewStyle,
     Platform,
+    Button
 } from 'react-native';
 import {styles} from './AppointmentScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {AppointmentScreenProps} from './AppointmentScreen.types';
 import {appointmentService} from '../../services/appointment.service';
 import {format, isBefore, parse, setHours, setMinutes, addDays, isAfter} from 'date-fns';
 import {es} from 'date-fns/locale';
-import {Appointment, AppointmentStatus} from '../../modules/navegation/Navegation.types';
+import {Appointment, AppointmentScreenProps, AppointmentStatus} from '../../modules/navegation/Navegation.types';
+import {SubscriptionPlan} from "../subscriptions/SubscriptionsScreen.types";
 import {registerLocale, setDefaultLocale} from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import {PaymentsStackParamList, RootStackParamList} from '../navegation/Navegation.types';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {SubscriptionsService} from '../../services/subscription.service';
+import {useAuth} from '../auth/AuthContext';
+import {CommonActions, useNavigation} from "@react-navigation/native";
 
+type PaymentsNavigationProp = StackNavigationProp<RootStackParamList, 'PaymentsScreen'>;
 registerLocale('es', es);
 setDefaultLocale('es');
 
@@ -83,6 +90,8 @@ interface TimeSlot {
 type FilterType = 'upcoming' | 'pending' | 'past' | 'cancelled';
 
 const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
+    const {user} = useAuth();
+    const paymentsNavigation = useNavigation<PaymentsNavigationProp>();
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -94,6 +103,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         title: '',
         description: '',
         duration: '60',
+        isVirtual: false
     });
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [actionType, setActionType] = useState<'create' | 'edit' | 'cancel'>('create');
@@ -115,7 +125,21 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         try {
             setLoading(true);
             const response = await appointmentService.getUserAppointments();
-            setAppointments(response.data);
+            let appointmentsData = response.data;
+
+            if (user?.role === 'ADMIN') {
+                const pendingResponse = await appointmentService.getPendingAppointments();
+                const combined = [...appointmentsData, ...pendingResponse.data];
+
+                const appointmentMap = new Map();
+                combined.forEach(appt => {
+                    appointmentMap.set(appt.id, appt);
+                });
+
+                appointmentsData = Array.from(appointmentMap.values());
+            }
+
+            setAppointments(appointmentsData);
         } catch (error: any) {
             console.error('Error fetching appointments:', error);
             Alert.alert('Error', error.message || 'No se pudieron cargar las citas');
@@ -123,6 +147,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             setLoading(false);
         }
     };
+
 
     const filterAppointments = () => {
         const now = new Date();
@@ -132,29 +157,34 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             case 'upcoming':
                 filtered = filtered.filter(appt =>
                     appt.status === 'CONFIRMED' &&
-                    isAfter(new Date(appt.requestedDate), now)
+                    isAfter(new Date(appt.confirmedDate || appt.requestedDate), now)
                 );
                 break;
             case 'pending':
                 filtered = filtered.filter(appt =>
-                    (appt.status === 'PENDING' || appt.status === 'RESCHEDULED') &&
-                    isAfter(new Date(appt.requestedDate), now)
+                    ['PENDING_ADMIN_REVIEW', 'RESCHEDULED'].includes(appt.status)
                 );
                 break;
             case 'past':
                 filtered = filtered.filter(appt =>
-                    (appt.status === 'CONFIRMED' || appt.status === 'PENDING' || appt.status === 'RESCHEDULED') &&
-                    isBefore(new Date(appt.requestedDate), now)
+                    (appt.status === 'CONFIRMED' || appt.status === 'COMPLETED') &&
+                    isBefore(new Date(appt.confirmedDate || appt.requestedDate), now)
                 );
                 break;
             case 'cancelled':
                 filtered = filtered.filter(appt =>
-                    appt.status === 'CANCELLED' || appt.status === 'REJECTED'
+                    ['CANCELLED', 'REJECTED'].includes(appt.status)
                 );
                 break;
             default:
                 break;
         }
+
+        filtered.sort((a, b) => {
+            const dateA = new Date(a.confirmedDate || a.requestedDate);
+            const dateB = new Date(b.confirmedDate || b.requestedDate);
+            return dateA.getTime() - dateB.getTime();
+        });
 
         setFilteredAppointments(filtered);
     };
@@ -208,53 +238,57 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     };
 
     const handleCreateAppointment = async () => {
-        try {
-            if (!formData.title || !selectedDate || !selectedTime) {
-                Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
-                return;
-            }
-
-            const duration = parseInt(formData.duration) || 60;
-
-            if (duration < 15) {
-                Alert.alert('Error', 'La duración mínima es de 15 minutos');
-                return;
-            }
-
-            const finalDate = new Date(selectedDate);
-            finalDate.setHours(selectedTime.getHours());
-            finalDate.setMinutes(selectedTime.getMinutes());
-
-            if (isBefore(finalDate, new Date())) {
-                Alert.alert('Error', 'No se pueden agendar citas en el pasado');
-                return;
-            }
-
-            if (actionType === 'create') {
-                await appointmentService.createAppointment({
-                    title: formData.title,
-                    description: formData.description,
-                    requestedDate: finalDate.toISOString(),
-                    duration,
-                });
-                Alert.alert('Éxito', 'Cita creada correctamente');
-            } else if (actionType === 'edit' && selectedAppointment) {
-                await appointmentService.updateAppointment(selectedAppointment.id, {
-                    title: formData.title,
-                    description: formData.description,
-                    requestedDate: finalDate.toISOString(),
-                    duration,
-                });
-                Alert.alert('Éxito', 'Cita actualizada correctamente');
-            }
-
-            setShowModal(false);
-            fetchAppointments();
-            resetForm();
-        } catch (error: any) {
-            console.error('Error creating/updating appointment:', error);
-            Alert.alert('Error', error.message || 'No se pudo procesar la solicitud');
+        if (!formData.title || !selectedDate || !selectedTime) {
+            Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
+            return;
         }
+
+        const duration = parseInt(formData.duration) || 60;
+        const finalDate = new Date(selectedDate);
+        finalDate.setHours(selectedTime.getHours());
+        finalDate.setMinutes(selectedTime.getMinutes());
+
+        const appointmentData = {
+            title: formData.title,
+            description: formData.description,
+            requestedDate: finalDate.toISOString(),
+            duration,
+            isVirtual: formData.isVirtual
+        };
+
+        const advisoryPlan: SubscriptionPlan = {
+            id: 'single_advisory_' + Date.now(),
+            name: 'Asesoría única',
+            price: 10,
+            period: 'una vez',
+            features: [
+                '1 sesión de asesoría financiera',
+                `Duración de ${duration} minutos`,
+                formData.isVirtual ? 'Virtual' : 'Presencial'
+            ],
+            type: 'CUSTOM',
+            icon: 'account-cash'
+        };
+
+        resetForm();
+        setShowModal(false);
+
+        paymentsNavigation.navigate('PaymentsScreen', {
+            plan: advisoryPlan,
+            metadata: {
+                appointmentData: JSON.stringify(appointmentData)
+            },
+            onSuccess: async (paymentResult?: any) => {
+                try {
+                    await fetchAppointments();
+                    Alert.alert('Éxito', 'Cita creada y pagada exitosamente. Está pendiente de confirmación.');
+                } catch (error) {
+                    console.error('Error:', error);
+                    Alert.alert('Error', 'Hubo un problema al cargar las citas después del pago');
+                }
+            }
+
+        });
     };
 
     const handleCancelAppointment = async () => {
@@ -278,6 +312,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             title: '',
             description: '',
             duration: '60',
+            isVirtual: false
         });
         setSelectedDate(null);
         setSelectedTime(null);
@@ -311,7 +346,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const getStatusStyle = (status: AppointmentStatus): [ViewStyle, ViewStyle] => {
         switch (status) {
-            case 'PENDING':
+            case 'PENDING_ADMIN_REVIEW':
                 return [styles.statusPending, styles.statusTextPending];
             case 'CONFIRMED':
                 return [styles.statusConfirmed, styles.statusTextConfirmed];
@@ -330,7 +365,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const getStatusText = (status: AppointmentStatus) => {
         switch (status) {
-            case 'PENDING':
+            case 'PENDING_ADMIN_REVIEW':
                 return 'PENDIENTE';
             case 'CONFIRMED':
                 return 'CONFIRMADA';
@@ -453,6 +488,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             title: appointment.title,
             description: appointment.description || '',
             duration: appointment.duration.toString(),
+            isVirtual: appointment.isVirtual
         });
 
         fetchAvailability(appointmentDate);
@@ -461,7 +497,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const renderAppointmentCard = ({item}: { item: Appointment }) => {
         const [statusContainerStyle, statusTextStyle] = getStatusStyle(item.status);
-        const isPastAppointment = isBefore(new Date(item.requestedDate), new Date());
+        const isPastAppointment = isBefore(new Date(item.confirmedDate || item.requestedDate), new Date());
 
         return (
             <View style={styles.appointmentCard}>
@@ -500,10 +536,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     </Text>
                 </View>
 
-                {/* Solo mostrar botones si la cita no es pasada */}
                 {!isPastAppointment && (
                     <View style={styles.cardFooter}>
-                        {/* Botones para citas reagendadas */}
                         {item.status === 'RESCHEDULED' && (
                             <>
                                 <TouchableOpacity
@@ -521,8 +555,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             </>
                         )}
 
-                        {/* Botones para otros estados */}
-                        {(item.status === 'PENDING') && (
+                        {(item.status === 'PENDING_ADMIN_REVIEW' || item.status === 'RESCHEDULED') && (
                             <TouchableOpacity
                                 style={[styles.actionButton, styles.editButton]}
                                 onPress={() => handleEditAppointment(item)}
@@ -531,7 +564,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             </TouchableOpacity>
                         )}
 
-                        {(item.status === 'PENDING' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
+                        {(item.status === 'PENDING_ADMIN_REVIEW' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
                             <TouchableOpacity
                                 style={[styles.actionButton, styles.deleteButton]}
                                 onPress={() => {
@@ -574,7 +607,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Filter Buttons */}
             <View style={styles.filterContainer}>
                 <TouchableOpacity
                     style={[

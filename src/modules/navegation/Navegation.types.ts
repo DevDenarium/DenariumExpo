@@ -4,8 +4,14 @@ import { UserRole } from "../auth/user.types";
 import { SubscriptionPlan } from "../subscriptions/SubscriptionsScreen.types";
 import { UserResponse } from "../auth/user.types";
 
-export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED' | 'REJECTED' | 'COMPLETED';
-
+export type AppointmentStatus =
+    'PENDING_PAYMENT' |
+    'PENDING_ADMIN_REVIEW' |
+    'CONFIRMED' |
+    'CANCELLED' |
+    'RESCHEDULED' |
+    'REJECTED' |
+    'COMPLETED';
 export interface Appointment {
     id: string;
     title: string;
@@ -17,11 +23,16 @@ export interface Appointment {
     duration: number;
     userId: string;
     adminId?: string;
+    advisorId?: string;
+    isVirtual: boolean;
+    meetingLink?: string;
+    paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED';
     user?: {
         id: string;
         firstName: string;
         lastName: string;
         email: string;
+        role: 'PERSONAL' | 'CORPORATE' | 'CORPORATE_EMPLOYEE';
     };
     admin?: {
         id: string;
@@ -29,9 +40,13 @@ export interface Appointment {
         lastName: string;
         email: string;
     };
-    createdAt?: string;
-    updatedAt?: string;
-};
+    advisor?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+}
 
 export type AppointmentManagementParams = {
     refresh?: boolean;
@@ -68,7 +83,10 @@ export type RootStackParamList = {
     Subscriptions: undefined;
     PaymentsScreen: {
         plan: SubscriptionPlan;
-        onSuccess: () => Promise<void>;
+        onSuccess: (paymentResult?: any) => Promise<void>;
+        metadata?: {
+            [key: string]: string;
+        };
     };
     PaymentSuccess: {
         sessionId: string;
@@ -99,10 +117,12 @@ export type DrawerParamList = {
 };
 
 export type PaymentsStackParamList = {
-    Payments: {
-        sessionId: string;
-        planName?: string;
-        amount?: number;
+    PaymentsScreen: {
+        plan: SubscriptionPlan;
+        onSuccess: (paymentResult?: any) => Promise<void>;
+        metadata?: {
+            [key: string]: string;
+        };
     };
     PaymentSuccess: {
         sessionId: string;

@@ -10,6 +10,12 @@ interface ApiResponse<T> {
     message?: string;
 }
 
+export interface AppointmentCreationResponse {
+    appointment: Appointment;
+    paymentRequired: boolean;
+    amount: number;
+}
+
 class AppointmentService {
     private async getAuthToken(): Promise<string> {
         const token = await AsyncStorage.getItem('token');
@@ -32,12 +38,20 @@ class AppointmentService {
         description?: string;
         requestedDate: string;
         duration?: number;
-    }): Promise<ApiResponse<Appointment>> {
+        isVirtual?: boolean;
+    }): Promise<ApiResponse<AppointmentCreationResponse>> {
+        const headers = await this.getHeaders();
         try {
-            const headers = await this.getHeaders();
             const response = await axios.post(`${API_BASE_URL}/appointments`, dto, { headers });
+
+            const appointmentData = response.data?.data?.appointment;
+
+            if (!appointmentData?.id) {
+                throw new Error('La respuesta del servidor no incluye un ID de cita válido');
+            }
+
             return {
-                data: response.data,
+                data: response.data.data,
                 status: response.status
             };
         } catch (error: any) {
@@ -46,10 +60,41 @@ class AppointmentService {
         }
     }
 
+
+    async confirmPayment(appointmentId: string): Promise<ApiResponse<Appointment>> {
+        if (!appointmentId) {
+            throw new Error('Se requiere un ID de cita válido para confirmar el pago');
+        }
+
+        const headers = await this.getHeaders();
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/appointments/${appointmentId}/confirm-payment`,
+                {},
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error confirming payment:', {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                config: error.config
+            });
+            throw new Error(error.response?.data?.message || 'Error al confirmar el pago');
+        }
+    }
+
     async getUserAppointments(): Promise<ApiResponse<Appointment[]>> {
         try {
             const headers = await this.getHeaders();
-            const response = await axios.get(`${API_BASE_URL}/appointments/user`, { headers });
+            const response = await axios.get(`${API_BASE_URL}/appointments`, {
+                headers,
+                params: { filter: 'mine' }
+            });
             return {
                 data: response.data,
                 status: response.status
@@ -148,6 +193,41 @@ class AppointmentService {
         }
     }
 
+    async confirmAppointment(id: string, confirmedDate: string): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.put(
+                `${API_BASE_URL}/appointments/${id}/confirm`,
+                { date: confirmedDate },
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error confirming appointment:', error);
+            throw new Error(error.response?.data?.message || 'Error al confirmar la cita');
+        }
+    }
+    async processRefund(appointmentId: string): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.post(
+                `${API_BASE_URL}/appointments/${appointmentId}/refund`,
+                {},
+                { headers }
+            );
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error processing refund:', error);
+            throw new Error(error.response?.data?.message || 'Error al procesar el reembolso');
+        }
+    }
+
     async acceptReschedule(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
@@ -163,6 +243,22 @@ class AppointmentService {
         } catch (error: any) {
             console.error('Error accepting reschedule:', error);
             throw new Error(error.response?.data?.message || 'Error al aceptar el reagendamiento');
+        }
+    }
+
+    async getPendingAppointments(): Promise<ApiResponse<Appointment[]>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.get(`${API_BASE_URL}/appointments/pending`, {
+                headers
+            });
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error fetching pending appointments:', error);
+            throw new Error(error.response?.data?.message || 'Error al obtener las citas pendientes');
         }
     }
 

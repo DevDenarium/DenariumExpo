@@ -11,13 +11,14 @@ import {
     Image
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { PaymentsScreenProps } from './PaymentsScreen.types';
+import {PaymentsScreenProps, PaymentSuccessData} from './PaymentsScreen.types';
 import { SubscriptionsService } from '../../services/subscription.service';
 import { styles } from './PaymentsScreen.styles';
 import { useAuth } from '../auth/AuthContext';
+import { appointmentService } from '../../services/appointment.service';
 
 const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) => {
-    const { plan, onSuccess } = route.params;
+    const { plan, onSuccess, metadata } = route.params;
     const { user } = useAuth();
     const [cardNumber, setCardNumber] = useState('');
     const [cardExpiry, setCardExpiry] = useState('');
@@ -59,20 +60,48 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            if (__DEV__) {
-                await SubscriptionsService.simulatePremiumPayment();
+            let resultData: PaymentSuccessData = { paymentType: 'subscription' };
+
+            if (metadata?.appointmentData) {
+                const appointmentData = JSON.parse(metadata.appointmentData);
+
+                const createResponse = await appointmentService.createAppointment(appointmentData);
+
+                const appointment = createResponse.data?.appointment;
+
+                if (!appointment?.id) {
+                    throw new Error('No se recibió un ID de cita válido');
+                }
+
+                const confirmResponse = await appointmentService.confirmPayment(appointment.id);
+
+                resultData = {
+                    paymentType: 'appointment',
+                    appointment: confirmResponse.data
+                };
             } else {
-                await SubscriptionsService.upgradeToPremium(plan.type);
+                if (__DEV__) {
+                    await SubscriptionsService.simulatePremiumPayment();
+                } else {
+                    await SubscriptionsService.upgradeToPremium(plan.type);
+                }
+
+                resultData = {
+                    paymentType: 'subscription',
+                    subscription: plan
+                };
             }
 
             if (onSuccess) {
-                await onSuccess();
+                await onSuccess(resultData);
             }
 
             navigation.navigate('PaymentSuccess', {
                 sessionId: 'simulated_session_' + Math.random().toString(36).substring(7),
                 planName: plan.name,
-                amount: plan.price
+                amount: plan.price,
+                paymentType: resultData.paymentType,
+                appointmentId: resultData.appointment?.id
             });
 
         } catch (error) {
@@ -86,13 +115,21 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         }
     };
 
+    const getPaymentDescription = () => {
+        if (metadata?.appointmentData) {
+            const appointmentData = JSON.parse(metadata.appointmentData);
+            return `Asesoría: ${appointmentData.title}`;
+        }
+        return `Suscripción: ${plan.name}`;
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
                     <View style={styles.headerTextContainer}>
                         <Text style={styles.title}>Detalles de Pago</Text>
-                        <Text style={styles.subtitle}>{plan.name} - ${plan.price}</Text>
+                        <Text style={styles.subtitle}>{getPaymentDescription()} - ${plan.price}</Text>
                     </View>
                 </View>
 

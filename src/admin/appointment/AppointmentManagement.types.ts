@@ -1,30 +1,13 @@
-export type AppointmentStatus =
-    'PENDING' |
-    'CONFIRMED' |
-    'CANCELLED' |
-    'RESCHEDULED' |
-    'REJECTED' |
-    'COMPLETED';
+// src/admin/appointment/AppointmentManagement.types.ts
 
-export interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-}
+export {
+    Appointment,
+    AppointmentStatus,
+    AppointmentManagementScreenProps
+} from '../../modules/navegation/Navegation.types';
 
-export interface Appointment {
-    id: string;
-    title: string;
-    description?: string;
-    requestedDate: string;
-    suggestedDate?: string;
-    confirmedDate?: string;
-    duration: number;
-    status: AppointmentStatus;
-    user: User;
-}
-
-export interface AppointmentManagementProps {
+// Puedes añadir más props específicas si lo necesitas:
+export type AppointmentManagementProps = {
+    // Props específicas si hay navegación distinta en el admin
     navigation: any;
-}
+};
