@@ -154,25 +154,44 @@ class AppointmentService {
             description?: string;
             requestedDate: string;
             duration?: number;
+            isVirtual?: boolean;
         }
     ): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
-            const currentAppointment = await axios.get(`${API_BASE_URL}/appointments/${id}`, { headers });
 
-            if (currentAppointment.data.status === 'CONFIRMED') {
-                throw new Error('No se puede editar una cita confirmada');
+            // Verificar si la cita existe y puede ser editada
+            const currentAppointment = await this.getAppointmentDetails(id);
+
+            if (currentAppointment.data.status !== 'PENDING_ADMIN_REVIEW' &&
+                currentAppointment.data.status !== 'RESCHEDULED') {
+                throw new Error('Solo citas pendientes o reagendadas pueden ser editadas');
             }
 
             const response = await axios.put(`${API_BASE_URL}/appointments/${id}`, dto, { headers });
+
             return {
                 data: response.data,
                 status: response.status
             };
         } catch (error: any) {
-            console.error('Error updating appointment:', error);
+            console.error('Error updating appointment:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                config: error.config
+            });
             throw new Error(error.response?.data?.message || 'No se pudo actualizar la cita');
         }
+    }
+
+    private async getAppointmentDetails(id: string): Promise<ApiResponse<Appointment>> {
+        const headers = await this.getHeaders();
+        const response = await axios.get(`${API_BASE_URL}/appointments/${id}`, { headers });
+        return {
+            data: response.data,
+            status: response.status
+        };
     }
 
     async proposeReschedule(id: string, suggestedDate: string): Promise<ApiResponse<Appointment>> {

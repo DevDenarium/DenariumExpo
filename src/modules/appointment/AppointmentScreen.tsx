@@ -148,7 +148,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         }
     };
 
-
     const filterAppointments = () => {
         const now = new Date();
         let filtered = [...appointments];
@@ -256,6 +255,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             isVirtual: formData.isVirtual
         };
 
+        if (actionType === 'edit' && selectedAppointment) {
+            try {
+                await appointmentService.updateAppointment(selectedAppointment.id, appointmentData);
+                Alert.alert('Éxito', 'Cita actualizada exitosamente');
+                setShowModal(false);
+                resetForm();
+                fetchAppointments();
+            } catch (error: any) {
+                console.error('Error updating appointment:', error);
+                Alert.alert('Error', error.message || 'No se pudo actualizar la cita');
+            }
+            return;
+        }
+
         const advisoryPlan: SubscriptionPlan = {
             id: 'single_advisory_' + Date.now(),
             name: 'Asesoría única',
@@ -287,7 +300,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     Alert.alert('Error', 'Hubo un problema al cargar las citas después del pago');
                 }
             }
-
         });
     };
 
