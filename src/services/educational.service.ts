@@ -110,6 +110,25 @@ export const EducationalService = {
         }
     },
 
+    checkContentAccess: async (contentId: string): Promise<boolean> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.get<{ hasAccess: boolean }>(
+                `${API_BASE_URL}/educational/content/${contentId}/check-access`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data.hasAccess;
+        } catch (error) {
+            handleApiError(error, 'Error al verificar el acceso al contenido');
+            return false;
+        }
+    },
+
     createDefaultCategories: async (): Promise<{ message: string; created: number; total: number }> => {
         try {
             const token = await getAuthToken();
@@ -129,7 +148,6 @@ export const EducationalService = {
             throw error;
         }
     },
-
 
     deleteContent: async (id: string): Promise<void> => {
         try {
