@@ -223,11 +223,21 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
             if (user?.role === 'ADMIN') {
                 const pendingRes = await appointmentService.getPendingAppointments();
-                result = pendingRes.data;
+                const userRes = await appointmentService.getUserAppointments();
+
+                result = [...pendingRes.data, ...userRes.data];
+
+                // Elimina duplicados por id, si los hay
+                const uniqueAppointmentsMap = new Map();
+                result.forEach(appt => {
+                    uniqueAppointmentsMap.set(appt.id, appt);
+                });
+                result = Array.from(uniqueAppointmentsMap.values());
             } else {
                 const userRes = await appointmentService.getUserAppointments();
                 result = userRes.data;
             }
+
 
             setAppointments(result);
         } catch (error) {
@@ -261,7 +271,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         switch (statusFilter) {
             case 'upcoming':
                 result = result.filter(appointment =>
-                    ['CONFIRMED', 'RESCHEDULED'].includes(appointment.status) &&
+                    ['CONFIRMED'].includes(appointment.status) &&
                     isBefore(now, new Date(appointment.confirmedDate || appointment.requestedDate))
                 ).sort((a, b) =>
                     new Date(a.confirmedDate || a.requestedDate).getTime() -
@@ -271,7 +281,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
             case 'pending':
                 result = result.filter(appointment =>
-                    ['PENDING_ADMIN_REVIEW', 'CONFIRMED', 'RESCHEDULED'].includes(appointment.status)
+                    ['PENDING_ADMIN_REVIEW', 'RESCHEDULED'].includes(appointment.status)
                 ).sort((a, b) =>
                     new Date(a.requestedDate).getTime() -
                     new Date(b.requestedDate).getTime()
@@ -337,15 +347,25 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     };
 
     const handleRescheduleAppointment = async () => {
-        if (!selectedAppointment || !selectedTime) {
-            Alert.alert('Error', 'Por favor selecciona un horario');
+        if (!selectedAppointment) {
+            Alert.alert('Error', 'No hay cita seleccionada');
             return;
         }
+
+        if (!selectedTime) {
+            Alert.alert('Error', 'Debes seleccionar un horario');
+            return;
+        }
+
+        // ✅ Agregado: combinar fecha seleccionada con la hora seleccionada
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const newDate = new Date(selectedDate);
+        newDate.setHours(hours, minutes, 0, 0);
 
         try {
             await appointmentService.proposeReschedule(
                 selectedAppointment.id,
-                selectedDate.toISOString()
+                newDate.toISOString() // usar la nueva fecha con hora combinada
             );
 
             setShowModal(false);
@@ -357,6 +377,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
             Alert.alert('Error', 'No se pudo reagendar la cita');
         }
     };
+
 
     const handleCancelAppointment = async () => {
         if (!selectedAppointment) return;

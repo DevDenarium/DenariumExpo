@@ -22,6 +22,7 @@ import RegisterTypeScreen from "./src/modules/auth/RegisterTypeScreen";
 import RegisterPersonalScreen from "./src/modules/auth/RegisterPersonalScreen";
 import RegisterCorporateScreen from "./src/modules/auth/RegisterCorporateScreen";
 import RegisterCorporateEmployeeScreen from "./src/modules/auth/RegisterCorporateEmployeeScreen";
+import EducationalScreen from './src/modules/educational/EducationalScreen';
 import { AuthProvider, useAuth } from './src/modules/auth/AuthContext';
 import {UserRole} from "./src/modules/auth/user.types";
 
@@ -250,6 +251,12 @@ const DashboardDrawer = () => {
                 component={ProfileScreen}
                 options={{ title: 'Mi Perfil' }}
             />
+            <Drawer.Screen
+                name="Videos"
+                component={EducationalScreen}
+                options={{ title: 'Contenido Educativo' }}
+            />
+
         </Drawer.Navigator>
     );
 };
@@ -334,6 +341,12 @@ export default function App() {
                         component={AppointmentManagement}
                         options={{ title: 'Citas Agendadas' }}
                     />
+                    <Stack.Screen
+                        name="EducationalScreen"
+                        component={EducationalScreen}
+                        options={{ title: 'Contenido Educativo' }}
+                    />
+
                 </Stack.Navigator>
             </NavigationContainer>
         </AuthProvider>

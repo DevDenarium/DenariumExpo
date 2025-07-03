@@ -7,6 +7,7 @@ export type AppointmentStatus =
     'REJECTED' |
     'COMPLETED';
 
+
 export interface Appointment {
     id: string;
     title: string;

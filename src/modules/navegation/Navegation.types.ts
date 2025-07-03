@@ -97,7 +97,8 @@ export type RootStackParamList = {
     Profile: undefined;
     Notifications: undefined;
     VideoLibrary: undefined;
-    Appointments: undefined;
+    EducationalScreen: undefined;
+    Appointments: AppointmentScreenParams;
     AppointmentManagement: AppointmentManagementParams;
     AppointmentScreen: AppointmentScreenParams;
 };
@@ -112,7 +113,7 @@ export type DrawerParamList = {
     Finance: undefined;
     Profile: undefined;
     VideoLibrary: undefined;
-    Appointments: undefined;
+    Appointments: AppointmentScreenParams;
     AppointmentManagement: AppointmentManagementParams;
 };
 
@@ -138,8 +139,8 @@ export type AppointmentManagementScreenProps = {
 };
 
 export type AppointmentScreenProps = {
-    navigation: StackNavigationProp<RootStackParamList, 'AppointmentScreen'>;
-    route: RouteProp<RootStackParamList, 'AppointmentScreen'>;
+    navigation: StackNavigationProp<RootStackParamList & DrawerParamList, 'Appointments'>;
+    route: RouteProp<DrawerParamList, 'Appointments'>;
 };
 
 export type RegisterTypeScreenProps = {
