@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
     // Contenedores principales
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#1c1c1c',
     },
     contentContainer: {
         paddingBottom: 20,
@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         padding: 20,
-        color: '#333',
+        color: '#D4AF37',
     },
 
     // Categorías
@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#2a2a2a',
         marginRight: 10,
         flexDirection: 'row',
         alignItems: 'center',
@@ -49,12 +49,12 @@ export const styles = StyleSheet.create({
     categoryText: {
         marginLeft: 8,
         fontSize: 14,
-        color: '#333',
+        color: '#ffffff',
     },
 
     // Tarjetas de contenido
     card: {
-        backgroundColor: '#FFF',
+        backgroundColor: '#1c1c1c',
         borderRadius: 10,
         padding: 15,
         marginHorizontal: 20,
@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 5,
-        color: '#333',
+        color: '#D4AF37',
     },
     description: {
         fontSize: 14,
@@ -85,7 +85,7 @@ export const styles = StyleSheet.create({
         height: 200,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F0F0F0',
+        backgroundColor: '#2a2a2a',
         borderRadius: 8,
     },
     accessText: {
@@ -140,7 +140,7 @@ export const styles = StyleSheet.create({
     // Modal de historia
     storyModal: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: 'rgba(0,0,0,0.89)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -162,7 +162,7 @@ export const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         right: 20,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgb(211,174,55)',
         borderRadius: 20,
         width: 40,
         height: 40,
