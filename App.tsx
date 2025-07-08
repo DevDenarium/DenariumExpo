@@ -2,11 +2,11 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import LoginScreen from './src/modules/auth/LoginScreen';
-import DashboardScreen from './src/modules/dashboard/DashboardScreen';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CommonActions } from '@react-navigation/native';
+import LoginScreen from './src/modules/auth/LoginScreen';
+import DashboardScreen from './src/modules/dashboard/DashboardScreen';
 import SubscriptionsScreen from './src/modules/subscriptions/SubscriptionsScreen';
 import VerificationScreen from './src/modules/auth/VerificationScreen';
 import ForgotPasswordScreen from './src/modules/auth/ForgotPasswordScreen';
@@ -33,28 +33,48 @@ const CustomHeader = ({ navigation }: { navigation: any }) => {
     const { signOut } = useAuth();
 
     return (
-        <View style={headerStyles.container}>
-            <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
-                <Icon name="menu" size={28} color="#D4AF37" />
-            </TouchableOpacity>
-            <View style={{ width: 28 }} />
-            <TouchableOpacity onPress={signOut}>
-                <Icon name="logout" size={24} color="#D4AF37" />
-            </TouchableOpacity>
-        </View>
+        <SafeAreaView style={headerStyles.safeArea}>
+            <View style={headerStyles.container}>
+                <TouchableOpacity
+                    onPress={() => navigation.toggleDrawer()}
+                    style={headerStyles.iconButton}
+                >
+                    <Icon name="menu" size={28} color="#D4AF37" />
+                </TouchableOpacity>
+                <View style={headerStyles.spacer} />
+                <TouchableOpacity
+                    onPress={signOut}
+                    style={headerStyles.iconButton}
+                >
+                    <Icon name="logout" size={24} color="#D4AF37" />
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
     );
 };
 
 const headerStyles = StyleSheet.create({
+    safeArea: {
+        backgroundColor: '#1c1c1c',
+    },
     container: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 15,
-        paddingVertical: 10,
+        paddingVertical: Platform.select({
+            ios: 10,
+            android: 15,
+        }),
         backgroundColor: '#1c1c1c',
         borderBottomWidth: 1,
         borderBottomColor: '#D4AF37',
+    },
+    iconButton: {
+        padding: 8,
+    },
+    spacer: {
+        flex: 1,
     },
     title: {
         color: '#D4AF37',
@@ -116,44 +136,53 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
     };
 
     return (
-        <View style={drawerStyles.container}>
-            <View style={drawerStyles.header}>
-                {user.profilePicture ? (
-                    <Image
-                        source={{ uri: user.profilePicture }}
-                        style={drawerStyles.profileImage}
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <Icon name="account-circle" size={80} color="#D4AF37" />
-                )}
-                <Text style={drawerStyles.userName}>
-                    {getUserName()} {isAdmin && '(Admin)'}
-                </Text>
-                <Text style={drawerStyles.userEmail}>{user.email}</Text>
-            </View>
+        <SafeAreaView style={drawerStyles.safeArea}>
+            <View style={drawerStyles.container}>
+                <View style={drawerStyles.header}>
+                    {user.profilePicture ? (
+                        <Image
+                            source={{ uri: user.profilePicture }}
+                            style={drawerStyles.profileImage}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <Icon name="account-circle" size={80} color="#D4AF37" />
+                    )}
+                    <Text style={drawerStyles.userName}>
+                        {getUserName()} {isAdmin && '(Admin)'}
+                    </Text>
+                    <Text style={drawerStyles.userEmail}>{user.email}</Text>
+                </View>
 
-            <View style={drawerStyles.menuItems}>
-                {menuItems.map((item) => (
-                    <TouchableOpacity
-                        key={item.name}
-                        style={drawerStyles.menuItem}
-                        onPress={() => navigation.navigate(item.name)}
-                    >
-                        <Icon name={item.icon} size={24} color="#D4AF37" />
-                        <Text style={drawerStyles.menuItemText}>{item.label}</Text>
-                    </TouchableOpacity>
-                ))}
+                <View style={drawerStyles.menuItems}>
+                    {menuItems.map((item) => (
+                        <TouchableOpacity
+                            key={item.name}
+                            style={drawerStyles.menuItem}
+                            onPress={() => navigation.navigate(item.name)}
+                        >
+                            <Icon name={item.icon} size={24} color="#D4AF37" />
+                            <Text style={drawerStyles.menuItemText}>{item.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const drawerStyles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#1c1c1c',
+    },
     container: {
         flex: 1,
         backgroundColor: '#1c1c1c',
-        paddingTop: 40,
+        paddingTop: Platform.select({
+            ios: 20,
+            android: 40,
+        }),
     },
     header: {
         padding: 20,
@@ -256,7 +285,6 @@ const DashboardDrawer = () => {
                 component={EducationalScreen}
                 options={{ title: 'Contenido Educativo' }}
             />
-
         </Drawer.Navigator>
     );
 };
@@ -346,7 +374,6 @@ export default function App() {
                         component={EducationalScreen}
                         options={{ title: 'Contenido Educativo' }}
                     />
-
                 </Stack.Navigator>
             </NavigationContainer>
         </AuthProvider>

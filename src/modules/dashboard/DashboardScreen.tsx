@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { styles } from './DashboardScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
@@ -11,8 +11,6 @@ import { useAuth } from '../auth/AuthContext';
 
 const DashboardScreen = ({ navigation }: { navigation: any }) => {
     const { user, signOut } = useAuth();
-    const [financialData, setFinancialData] = useState(null);
-    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [imageError, setImageError] = useState(false);
@@ -61,8 +59,6 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     default:
                         setSubscriptionPlan('Free');
                 }
-            } else {
-                setSubscriptionPlan('Free');
             }
         } catch (error) {
             console.error('Error fetching subscription:', error);
@@ -71,7 +67,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
     };
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchUserProfile = async () => {
             try {
                 const token = await AsyncStorage.getItem('token');
                 if (!token) return;
@@ -80,7 +76,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     headers: { Authorization: `Bearer ${token}` }
                 };
 
-                const profileResponse = await axios.get('http://localhost:3000/auth/me', config);
+                const profileResponse = await axios.get('http://192.168.100.4:3000/auth/me', config);
                 const updatedUser = profileResponse.data;
 
                 if (updatedUser.profilePicture) {
@@ -89,34 +85,16 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     setProfileImage(user.profilePicture);
                 }
 
-                const [financeRes, transactionsRes] = await Promise.all([
-                    axios.get('http://localhost:3000/dashboard', config),
-                    axios.get('http://localhost:3000/transactions', config)
-                ]);
-
-                setFinancialData(financeRes.data.data);
-                setTransactions(transactionsRes.data.data);
-
                 await fetchSubscriptionData();
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error fetching profile data:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        fetchUserProfile();
     }, [user]);
-
-    const handleLogout = async () => {
-        await AsyncStorage.removeItem('token');
-        navigation.dispatch(
-            CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-            })
-        );
-    };
 
     const getAccountType = () => {
         switch(user.role) {
@@ -142,15 +120,19 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
 
     if (loading) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#D4AF37" />
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={{ flex: 1 }}>
-            <ScrollView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+
+            <ScrollView
+                style={styles.scrollContainer}
+                contentContainerStyle={styles.container}
+            >
                 <View style={styles.profileSection}>
                     {profileImage && !imageError ? (
                         <Image
@@ -181,18 +163,16 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     </View>
                 </View>
 
-                {financialData && (
-                    <View style={styles.financeSection}>
-                        <Text style={styles.sectionTitle}>Resumen Financiero</Text>
-                        <View style={styles.financeCard}>
-                            <View style={styles.financeRow}>
-                                <Text style={styles.financeLabel}>Balance Total:</Text>
-                            </View>
-                        </View>
+                <View style={styles.financeSection}>
+                    <Text style={styles.sectionTitle}>Resumen</Text>
+                    <View style={styles.financeCard}>
+                        <Text style={styles.financeLabel}>
+                            Bienvenido a tu panel de control
+                        </Text>
                     </View>
-                )}
+                </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
 

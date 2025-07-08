@@ -99,7 +99,7 @@ const personalPlans: SubscriptionPlan[] = [
 ];
 
 const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
-    const { user, loading: authLoading, updateUser } = useAuth();
+    const { user, loading: authLoading, updateUser, refreshUser } = useAuth();
     const navigation = useTypedNavigation();
 
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -199,7 +199,8 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                     if (user) {
                         await updateUser({
                             ...user,
-                            subscriptionType: plan.type
+                            subscriptionType: plan.type,
+                            isPremium: plan.type.includes('PREMIUM') // Actualiza isPremium
                         });
                     }
                 }
@@ -208,13 +209,9 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                     plan,
                     onSuccess: async () => {
                         await fetchSubscriptionStatus();
-                        if (user) {
-                            await updateUser({
-                                ...user,
-                                subscriptionType: plan.type
-                            });
-                        }
+                        await refreshUser();
                     }
+
                 });
             }
         } catch (error) {

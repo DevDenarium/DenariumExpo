@@ -1,10 +1,25 @@
-import { StyleSheet } from 'react-native';
+import {Platform, StatusBar, StyleSheet} from 'react-native';
 
 export const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
         backgroundColor: '#1c1c1c',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
+    scrollContainer: {
+        flex: 1,
+    },
+    container: {
+        flexGrow: 1,
         padding: 20,
+        paddingBottom: 40, // Espacio adicional al final
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#1c1c1c',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     profileSection: {
         flexDirection: 'row',

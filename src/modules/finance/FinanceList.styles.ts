@@ -1,6 +1,11 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#1c1c1c',
+        paddingHorizontal: 20,
+    },
     entryItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -49,12 +54,14 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#1c1c1c',
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        backgroundColor: '#1c1c1c',
     },
     emptyText: {
         color: '#AAAAAA',
@@ -378,5 +385,6 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
     },
+
 
 });

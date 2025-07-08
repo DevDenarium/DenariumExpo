@@ -7,7 +7,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserRole } from '../modules/auth/user.types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.100.4:3000';
 
 export const SubscriptionsService = {
 
@@ -241,7 +241,7 @@ export const SubscriptionsService = {
 
 const getAuthToken = async (): Promise<string> => {
     try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) {
             throw new Error('No se encontró token de autenticación en AsyncStorage');
         }

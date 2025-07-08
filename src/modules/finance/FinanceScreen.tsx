@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, RefreshControl, Text, TouchableOpacity, Modal } from 'react-native';
+import { View, RefreshControl, Text, TouchableOpacity, Modal } from 'react-native';
 import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
@@ -114,6 +114,7 @@ const FinanceScreen: React.FC = () => {
             console.error('Error loading categories/tags:', error);
         }
     };
+
     const loadBalance = async () => {
         try {
             const data = await FinanceService.calculateBalance();
@@ -181,7 +182,7 @@ const FinanceScreen: React.FC = () => {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: '#1c1c1c' }}>
             <TouchableOpacity
                 style={styles.configButton}
                 onPress={() => setShowConfig(true)}
@@ -194,74 +195,75 @@ const FinanceScreen: React.FC = () => {
                 )}
             </TouchableOpacity>
 
-            <ScrollView
-                style={styles.container}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tintColor="#D4AF37"
-                    />
-                }
-            >
-                <View style={styles.headerContainer}>
-                    <View style={styles.balanceContainer}>
-                        <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
-                        {settings.filterBy === 'specificMonth' && (
-                            <Text style={{ color: '#D4AF37', fontSize: 14, marginBottom: 5 }}>
-                                {getMonthName(selectedMonthYear.month)} {selectedMonthYear.year}
+            <FinanceList
+                refreshTrigger={refreshTrigger}
+                currency={settings.currency.symbol}
+                sortBy={settings.sortBy}
+                filterBy={settings.filterBy}
+                onRefresh={onRefresh}
+                selectedMonthYear={selectedMonthYear}
+                categories={categories}
+                userId={user?.id || ''}
+                refreshing={refreshing}
+                onRefreshTrigger={onRefresh}
+                headerComponent={
+                    <View style={styles.headerContainer}>
+                        <View style={styles.balanceContainer}>
+                            <Text style={styles.balanceTitle}>Balance Actual ({settings.currency.code})</Text>
+                            {settings.filterBy === 'specificMonth' && (
+                                <Text style={{ color: '#D4AF37', fontSize: 14, marginBottom: 5 }}>
+                                    {getMonthName(selectedMonthYear.month)} {selectedMonthYear.year}
+                                </Text>
+                            )}
+                            <Text style={[
+                                styles.balanceAmount,
+                                balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
+                            ]}>
+                                {formatAmount(balance.balance)}
                             </Text>
-                        )}
-                        <Text style={[
-                            styles.balanceAmount,
-                            balance.balance >= 0 ? styles.balancePositive : styles.balanceNegative
-                        ]}>
-                            {formatAmount(balance.balance)}
-                        </Text>
-                        <View style={styles.balanceDetails}>
-                            <Text style={styles.balanceDetail}>
-                                Ingresos: {formatAmount(balance.incomes)}
-                            </Text>
-                            <Text style={styles.balanceDetail}>
-                                Gastos: {formatAmount(balance.expenses)}
-                            </Text>
+                            <View style={styles.balanceDetails}>
+                                <Text style={styles.balanceDetail}>
+                                    Ingresos: {formatAmount(balance.incomes)}
+                                </Text>
+                                <Text style={styles.balanceDetail}>
+                                    Gastos: {formatAmount(balance.expenses)}
+                                </Text>
+                            </View>
                         </View>
+
+                        <TouchableOpacity
+                            style={styles.addEntryButton}
+                            onPress={() => {
+                                console.log('Botón presionado, showEntryForm:', !showEntryForm);
+                                setShowEntryForm(true);
+                            }}
+                        >
+                            <Icon
+                                name="plus-circle"
+                                size={24}
+                                color="#D4AF37"
+                                style={styles.addEntryButtonIcon}
+                            />
+                            <Text style={styles.addEntryButtonText}>Ingresar movimiento</Text>
+                        </TouchableOpacity>
                     </View>
-
-                    <TouchableOpacity
-                        style={styles.addEntryButton}
-                        onPress={() => setShowEntryForm(true)}
-                    >
-                        <Icon
-                            name="plus-circle"
-                            size={24}
-                            color="#D4AF37"
-                            style={styles.addEntryButtonIcon}
-                        />
-                        <Text style={styles.addEntryButtonText}>Ingresar movimiento</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <FinanceList
-                    refreshTrigger={refreshTrigger}
-                    currency={settings.currency.symbol}
-                    sortBy={settings.sortBy}
-                    filterBy={settings.filterBy}
-                    onRefresh={onRefresh}
-                    selectedMonthYear={selectedMonthYear}
-                    categories={categories}
-                    userId={user?.id || ''}
-                />
-            </ScrollView>
+                }
+            />
 
             <Modal
                 animationType="slide"
-                transparent={false}
+                transparent={true}
                 visible={showEntryForm}
                 onRequestClose={() => setShowEntryForm(false)}
             >
-                <View style={{ flex: 1, backgroundColor: '#1c1c1c' }}>
-                    <View style={styles.modalHeader}>
+                <View style={[styles.modalContainer, { justifyContent: 'flex-end' }]}>
+                    <View style={[styles.modalContent, {
+                        borderTopLeftRadius: 20,
+                        borderTopRightRadius: 20,
+                        maxHeight: '90%', // Limita la altura máxima
+                        minHeight: '90%',
+                        width: '100%'
+                    }]}>
                         <TouchableOpacity
                             onPress={() => setShowEntryForm(false)}
                             style={styles.closeButton}
@@ -269,15 +271,15 @@ const FinanceScreen: React.FC = () => {
                             <Icon name="close" size={24} color="#D4AF37" />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Nuevo Movimiento</Text>
-                    </View>
 
-                    <FinanceEntryForm
-                        onEntryAdded={handleEntryAdded}
-                        categories={categories}
-                        setCategories={setCategories}
-                        tags={tags}
-                        setTags={setTags}
-                    />
+                        <FinanceEntryForm
+                            onEntryAdded={handleEntryAdded}
+                            categories={categories}
+                            setCategories={setCategories}
+                            tags={tags}
+                            setTags={setTags}
+                        />
+                    </View>
                 </View>
             </Modal>
 

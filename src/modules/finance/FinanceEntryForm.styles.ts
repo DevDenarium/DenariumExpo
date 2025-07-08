@@ -5,26 +5,38 @@ export const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 20,
+        marginHorizontal: 0.5,
+        marginBottom: 15,
+        flex: 1,
+    },
+    header: {
         marginBottom: 20,
     },
-    sectionTitle: {
+    title: {
         color: '#D4AF37',
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 15,
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#333333',
+        marginTop: 10,
     },
     typeSelector: {
         flexDirection: 'row',
-        marginBottom: 15,
+        marginBottom: 20,
         justifyContent: 'space-between',
     },
     typeButton: {
         flex: 1,
-        padding: 10,
-        borderRadius: 5,
+        padding: 12,
+        borderRadius: 8,
         backgroundColor: '#333333',
         marginHorizontal: 5,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
     },
     typeButtonActive: {
         backgroundColor: '#D4AF37',
@@ -32,17 +44,38 @@ export const styles = StyleSheet.create({
     typeButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+        marginLeft: 8,
     },
     typeButtonTextActive: {
         color: '#000000',
     },
-    input: {
+    typeIcon: {
+        marginRight: 5,
+    },
+    inputGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#333333',
-        borderRadius: 5,
-        padding: 15,
+        borderRadius: 8,
+        paddingHorizontal: 10,
         marginBottom: 15,
-        color: '#FFFFFF',
         width: '100%',
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        paddingVertical: 15,
+        color: '#FFFFFF',
+        fontSize: 16,
+        minWidth: '90%',
+    },
+    sectionTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 15,
     },
     inputContainer: {
         marginBottom: 15,
@@ -164,13 +197,20 @@ export const styles = StyleSheet.create({
     },
     submitButton: {
         backgroundColor: '#D4AF37',
-        borderRadius: 5,
+        borderRadius: 8,
         padding: 15,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10,
     },
     submitButtonText: {
         color: '#000000',
         fontWeight: 'bold',
+        fontSize: 16,
+    },
+    submitIcon: {
+        marginRight: 10,
     },
     pickerContainer: {
         backgroundColor: '#2a2a2a',
@@ -301,6 +341,11 @@ export const styles = StyleSheet.create({
     colorPickerDoneButtonText: {
         color: '#000000',
         fontWeight: 'bold',
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        paddingVertical: 15,
+        paddingHorizontal: 15,
     },
 });
 

@@ -4,7 +4,11 @@ export const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#1c1c1c',
-        padding: 20,
+    },
+    headerContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        backgroundColor: '#1c1c1c',
     },
     balanceContainer: {
         backgroundColor: '#2a2a2a',
@@ -76,6 +80,7 @@ export const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#D4AF37',
         flexDirection: 'row',
+        marginBottom: 25,
     },
     addEntryButtonText: {
         color: '#D4AF37',
@@ -103,8 +108,20 @@ export const styles = StyleSheet.create({
     closeButton: {
         padding: 5,
     },
-    headerContainer: {
-        marginBottom: 20,
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#1c1c1c',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingBottom: 20,
+        maxHeight: '90%',
+        minHeight: '90%',
+        width: '100%',
+        paddingHorizontal: 5,
     },
 });
 

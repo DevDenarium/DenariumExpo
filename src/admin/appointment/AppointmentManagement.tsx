@@ -69,7 +69,7 @@ if (Platform.OS === 'web') {
     }
 }
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.100.4:3000';
 
 type FilterType = 'day' | 'month' | 'none';
 type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all' | 'past';

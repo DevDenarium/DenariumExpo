@@ -90,8 +90,10 @@ export type RootStackParamList = {
     };
     PaymentSuccess: {
         sessionId: string;
-        planName?: string;
         amount?: number;
+        planName?: string;
+        paymentType: 'subscription' | 'appointment';
+        appointmentId?: string;
     };
     PaymentCanceled: undefined;
     Profile: undefined;

@@ -10,7 +10,8 @@ import {
     TextInput,
     Alert,
     Platform,
-    StyleSheet
+    StyleSheet,
+    RefreshControl
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './FinanceList.styles';
@@ -28,6 +29,9 @@ interface FinanceListProps {
     selectedMonthYear?: MonthYear;
     categories: FinanceCategory[];
     userId: string;
+    refreshing?: boolean;
+    onRefreshTrigger?: () => void;
+    headerComponent?: React.ReactElement | React.ComponentType<any> | null;
 }
 
 type DateTimePickerProps = {
@@ -80,8 +84,11 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                                      onRefresh,
                                                      selectedMonthYear,
                                                      categories,
-                                                     userId
-                                                 }) => {
+                                                     userId,
+                                                     refreshing = false,
+                                                     onRefreshTrigger = () => {},
+                                                     headerComponent = null
+                                                    }) => {
     const [entries, setEntries] = useState<FinanceEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEntry, setSelectedEntry] = useState<FinanceEntry | null>(null);
@@ -413,7 +420,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.container}>
             <FlatList
                 data={entries}
                 renderItem={renderItem}
@@ -422,6 +429,14 @@ const FinanceList: React.FC<FinanceListProps> = ({
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No hay movimientos registrados</Text>
                     </View>
+                }
+                ListHeaderComponent={headerComponent || undefined}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefreshTrigger}
+                        tintColor="#D4AF37"
+                    />
                 }
             />
 

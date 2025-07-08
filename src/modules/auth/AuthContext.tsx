@@ -10,6 +10,7 @@ export interface AuthContextData {
     signOut: () => Promise<void>;
     updateUser: (userData: Partial<UserResponse>) => Promise<void>;
     checkAuth: () => Promise<boolean>;
+    refreshUser: () => Promise<void>;
 }
 
 type AuthProviderProps = {
@@ -70,12 +71,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+
+    const refreshUser = async () => {
+        try {
+            const token = await AsyncStorage.getItem('@Auth:token');
+            if (!token) throw new Error('Token no encontrado');
+
+            const response = await axios.get<UserResponse>('http://192.168.100.4:3000/auth/me', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setUser(response.data);
+            await AsyncStorage.setItem('@Auth:user', JSON.stringify(response.data));
+        } catch (error) {
+            console.error('Error actualizando el usuario desde el backend:', error);
+        }
+    };
+
     const checkAuth = async () => {
         try {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) return false;
 
-            const response = await axios.get('http://localhost:3000/auth/me', {
+            const response = await axios.get('http://192.168.100.4:3000/auth/me', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -95,7 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             signIn,
             signOut,
             updateUser,
-            checkAuth
+            checkAuth,
+            refreshUser
         }}>
             {children}
         </AuthContext.Provider>

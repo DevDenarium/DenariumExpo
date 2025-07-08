@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { View, Text, SafeAreaView, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from './PaymentsSuccessScreen.styles';
@@ -7,9 +7,27 @@ import { useAuth } from '../auth/AuthContext';
 import { CommonActions } from '@react-navigation/native';
 
 const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({ navigation, route }) => {
-    const { sessionId, amount, planName } = route.params;
-    const { user } = useAuth();
+    const { sessionId, amount, planName, paymentType } = route.params;
+    const { user, updateUser } = useAuth();
     const isTestMode = sessionId.startsWith('simulated_session_');
+
+    useEffect(() => {
+        // Actualizar el estado del usuario a premium cuando se monta la pantalla
+        const updateUserPremiumStatus = async () => {
+            if (paymentType === 'subscription' && user && !user.isPremium) {
+                try {
+                    await updateUser({
+                        ...user,
+                        isPremium: true
+                    });
+                } catch (error) {
+                    console.error('Error updating user premium status:', error);
+                }
+            }
+        };
+
+        updateUserPremiumStatus();
+    }, [user, updateUser, paymentType]);
 
     const handleContinue = () => {
         navigation.dispatch(
