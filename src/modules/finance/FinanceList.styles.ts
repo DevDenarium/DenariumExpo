@@ -80,6 +80,7 @@ export const styles = StyleSheet.create({
         padding: 20,
         borderWidth: 1,
         borderColor: '#D4AF37',
+        zIndex: 9999,
     },
     modalTitle: {
         color: '#D4AF37',
@@ -385,6 +386,93 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
     },
-
-
+    formContainer: {
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        padding: 20,
+        marginHorizontal: 0.5,
+        marginBottom: 15,
+    },
+    inputGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#333333',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        marginBottom: 15,
+        width: '100%',
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    typeIcon: {
+        marginRight: 5,
+    },
+    modalPickerContainer: {
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        width: '80%',
+        maxHeight: '60%',
+        borderWidth: 1,
+        borderColor: '#333333',
+    },
+    pickerScrollView: {
+        padding: 10,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+        marginBottom: 10,
+    },
+    tabButton: {
+        flex: 1,
+        padding: 12,
+        alignItems: 'center',
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: {
+        borderBottomColor: '#D4AF37',
+    },
+    tabText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    colorPickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    colorPreview: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        marginLeft: 10,
+        borderWidth: 1,
+        borderColor: '#FFFFFF',
+    },
+    colorPickerModal: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    colorPickerDoneButton: {
+        backgroundColor: '#D4AF37',
+        padding: 10,
+        borderRadius: 5,
+        marginTop: 15,
+        alignSelf: 'center',
+    },
+    colorPickerDoneButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        paddingVertical: 15,
+        paddingHorizontal: 15,
+    },
 });
+

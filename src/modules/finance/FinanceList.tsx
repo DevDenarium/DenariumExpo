@@ -1,38 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
-    View,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    TextInput,
     Alert,
+    Keyboard,
+    Modal,
     Platform,
-    StyleSheet,
-    RefreshControl
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+    KeyboardAvoidingView,
+    ActivityIndicator,
+    RefreshControl,
+    FlatList,
+    StyleSheet
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { styles } from './FinanceList.styles';
 import { FinanceService } from '../../services/Finance.service';
-import {FinanceEntry, SortOption, FilterOption, MonthYear, FinanceEntryType, FinanceCategory} from './FinanceScreen.types';
+import { CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag, FinanceEntry, SortOption, FilterOption, MonthYear } from './FinanceScreen.types';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';
+import ColorPicker from 'react-native-wheel-color-picker';
+import { styles } from './FinanceList.styles';
 
-interface FinanceListProps {
-    refreshTrigger: boolean;
-    currency: string;
-    sortBy: SortOption;
-    filterBy: FilterOption;
-    onRefresh: () => void;
-    selectedMonthYear?: MonthYear;
-    categories: FinanceCategory[];
-    userId: string;
-    refreshing?: boolean;
-    onRefreshTrigger?: () => void;
-    headerComponent?: React.ReactElement | React.ComponentType<any> | null;
-}
+registerLocale('es', es);
+setDefaultLocale('es');
 
 type DateTimePickerProps = {
     value: Date;
@@ -55,9 +49,6 @@ type ReactDatePickerProps = {
     locale?: string;
 };
 
-registerLocale('es', es);
-setDefaultLocale('es');
-
 let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
 let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
 
@@ -76,6 +67,21 @@ if (Platform.OS === 'web') {
     }
 }
 
+interface FinanceListProps {
+    refreshTrigger: boolean;
+    currency: string;
+    sortBy: SortOption;
+    filterBy: FilterOption;
+    onRefresh: () => void;
+    selectedMonthYear?: MonthYear;
+    categories: FinanceCategory[];
+    userId: string;
+    setCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
+    refreshing?: boolean;
+    onRefreshTrigger?: () => void;
+    headerComponent?: React.ReactElement | React.ComponentType<any> | null;
+}
+
 const FinanceList: React.FC<FinanceListProps> = ({
                                                      refreshTrigger,
                                                      currency,
@@ -86,9 +92,9 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                                      categories,
                                                      userId,
                                                      refreshing = false,
-                                                     onRefreshTrigger = () => {},
+                                                     onRefreshTrigger = () => { },
                                                      headerComponent = null
-                                                    }) => {
+                                                 }) => {
     const [entries, setEntries] = useState<FinanceEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEntry, setSelectedEntry] = useState<FinanceEntry | null>(null);
@@ -100,21 +106,35 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [editDate, setEditDate] = useState<Date>(new Date());
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [allTags, setAllTags] = useState<{id: string, color: string, name: string}[]>([]);
+    const [allTags, setAllTags] = useState<FinanceTag[]>([]);
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [showTagPicker, setShowTagPicker] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+    const [newTagName, setNewTagName] = useState('');
+    const [showNewTagModal, setShowNewTagModal] = useState(false);
+    const [newCategoryColor, setNewCategoryColor] = useState('#D4AF37');
+    const [newTagColor, setNewTagColor] = useState('#D4AF37');
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [colorPickerFor, setColorPickerFor] = useState<'category' | 'tag'>('category');
+    const [rawAmount, setRawAmount] = useState('');
+    const [activeCategoryTab, setActiveCategoryTab] = useState<'default' | 'user'>('default');
+    const [activeTagTab, setActiveTagTab] = useState<'default' | 'user'>('default');
+    const scrollViewRef = useRef<ScrollView>(null);
+    const descriptionInputRef = useRef<TextInput>(null);
+    const [localCategories, setLocalCategories] = useState<FinanceCategory[]>(categories);
 
+    const defaultCategories = categories.filter(cat => cat.isDefault);
+    const userCategories = categories.filter(cat => !cat.isDefault);
+    const defaultTags = allTags.filter(tag => tag.isDefault);
+    const userTags = allTags.filter(tag => !tag.isDefault);
     useEffect(() => {
         const loadEntriesAndTags = async () => {
             try {
-                console.log('Cargando entradas y etiquetas...');
                 const [entriesData, tagsData] = await Promise.all([
                     FinanceService.getAllEntries(userId),
                     FinanceService.getTags()
                 ]);
-
-                console.log('Datos de entradas recibidos:', entriesData);
-                console.log('Datos de etiquetas recibidos:', tagsData);
 
                 const filteredEntries = filterEntries(entriesData, filterBy);
                 const sortedEntries = sortEntries(filteredEntries, sortBy);
@@ -238,7 +258,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
         const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
         const threeMonthsAgo = new Date(now.setMonth(now.getMonth() - 3));
 
-        switch(filter) {
+        switch (filter) {
             case 'income':
                 return entries.filter(e => e.type === 'INCOME');
             case 'expense':
@@ -266,7 +286,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const sortEntries = (entries: FinanceEntry[], sort: SortOption): FinanceEntry[] => {
         const sorted = [...entries];
 
-        switch(sort) {
+        switch (sort) {
             case 'recent':
                 return sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
             case 'oldest':
@@ -283,13 +303,11 @@ const FinanceList: React.FC<FinanceListProps> = ({
     };
 
     const handleEntryPress = (entry: FinanceEntry) => {
-        console.log('Entrada seleccionada:', entry);
         const fullEntry = {
             ...entry,
             category: entry.categoryId ? categories.find(c => c.id === entry.categoryId) : undefined,
             tags: entry.tags || []
         };
-        console.log('Entrada completa preparada:', fullEntry);
         setSelectedEntry(fullEntry);
         setShowDetailModal(true);
     };
@@ -343,6 +361,45 @@ const FinanceList: React.FC<FinanceListProps> = ({
         return category ? category.name : 'Sin categoría';
     };
 
+    const formatAmount = (amount: number): string => {
+        return new Intl.NumberFormat('de-DE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    };
+
+    const formatAmountInput = (value: string): string => {
+        let numericValue = value.replace(/[^0-9]/g, '');
+
+        if (numericValue === '') return '';
+
+        numericValue = numericValue.replace(/^0+/, '');
+        if (numericValue === '') numericValue = '0';
+
+        while (numericValue.length < 3) {
+            numericValue = '0' + numericValue;
+        }
+
+        const integerPart = numericValue.slice(0, -2);
+        const decimalPart = numericValue.slice(-2);
+
+        const formattedInteger = integerPart.length > 0
+            ? parseInt(integerPart).toLocaleString('es-ES')
+            : '0';
+
+        return `${formattedInteger},${decimalPart}`;
+    };
+
+    const parseAmountInput = (formattedValue: string): number => {
+        if (!formattedValue) return 0;
+
+        const numericString = formattedValue
+            .replace(/\./g, '')
+            .replace(/,/g, '.');
+
+        return parseFloat(numericString) || 0;
+    };
+
     const openEditModal = () => {
         if (!selectedEntry) return;
         setEditData({
@@ -355,14 +412,78 @@ const FinanceList: React.FC<FinanceListProps> = ({
         });
         setEditDate(new Date(selectedEntry.date));
         setSelectedTags(selectedEntry.tags?.map(tag => tag.id) || []);
+        setRawAmount(selectedEntry.amount.toString().replace('.', '').replace(',', ''));
         setShowEditModal(true);
     };
 
-    const formatAmount = (amount: number): string => {
-        return new Intl.NumberFormat('de-DE', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
+    useEffect(() => {
+        setLocalCategories(categories);
+    }, [categories]);
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName) return;
+
+        try {
+            const newCategory = await FinanceService.createCategory({
+                name: newCategoryName,
+                type: editData.type as FinanceEntryType,
+                color: newCategoryColor,
+                icon: 'tag'
+            });
+
+            setLocalCategories([...localCategories, newCategory]);
+            setEditData({ ...editData, categoryId: newCategory.id });
+            setShowNewCategoryModal(false);
+            setNewCategoryName('');
+            setNewCategoryColor('#D4AF37');
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo crear la categoría');
+        }
+    };
+
+    const handleCreateTag = async () => {
+        if (!newTagName) return;
+
+        try {
+            const newTag = await FinanceService.createTag({
+                name: newTagName,
+                color: newTagColor
+            });
+
+            setAllTags(prevTags => [...prevTags, newTag]);
+            setSelectedTags(prev => [...prev, newTag.id]);
+            setShowNewTagModal(false);
+            setNewTagName('');
+            setNewTagColor('#D4AF37');
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo crear la etiqueta');
+        }
+    };
+
+    const openColorPicker = (forWhat: 'category' | 'tag') => {
+        Keyboard.dismiss();
+        setColorPickerFor(forWhat);
+        setShowColorPicker(true);
+    };
+
+    const handleColorChange = (color: string) => {
+        if (colorPickerFor === 'category') {
+            setNewCategoryColor(color);
+        } else {
+            setNewTagColor(color);
+        }
+    };
+
+    const handleFocus = (ref: React.RefObject<TextInput | View>) => {
+        if (Platform.OS !== 'web' && ref.current) {
+            setTimeout(() => {
+                if ('measure' in ref.current) {
+                    ref.current.measure((x, y, width, height, pageX, pageY) => {
+                        scrollViewRef.current?.scrollTo({ y: pageY - 100, animated: true });
+                    });
+                }
+            }, 100);
+        }
     };
 
     const renderItem = ({ item }: { item: FinanceEntry }) => (
@@ -526,7 +647,10 @@ const FinanceList: React.FC<FinanceListProps> = ({
                         <View style={styles.modalButtonContainer}>
                             <Pressable
                                 style={[styles.modalButton, styles.editButton]}
-                                onPress={openEditModal}
+                                onPress={() => {
+                                    setShowDetailModal(false); // Cierra primero el modal de detalle
+                                    setTimeout(() => openEditModal(), 100); // Abre el modal de edición con un pequeño retraso
+                                }}
                             >
                                 <Icon name="pencil" size={18} color="#000" />
                                 <Text style={styles.modalButtonText}>Editar</Text>
@@ -582,174 +706,457 @@ const FinanceList: React.FC<FinanceListProps> = ({
             </Modal>
 
             <Modal
-                animationType="fade"
-                transparent={true}
                 visible={showEditModal}
+                animationType="slide" // Prueba con "fade" o "none"
+                transparent={true}
                 onRequestClose={() => setShowEditModal(false)}
+                hardwareAccelerated={true} // Solo Android
+                statusBarTranslucent={true}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContainer, { width: '90%' }]}>
-                        <Text style={styles.modalTitle}>Editar Movimiento</Text>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.select({ ios: 60, android: 20 })}
+                >
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                        <ScrollView
+                            contentContainerStyle={styles.scrollContainer}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={[styles.formContainer, { width: '90%' }]}>
+                                    <Text style={styles.modalTitle}>Editar Movimiento</Text>
 
-                        <View style={styles.typeSelector}>
-                            <TouchableOpacity
-                                style={[styles.typeButton, editData.type === 'INCOME' && styles.typeButtonActive]}
-                                onPress={() => setEditData({ ...editData, type: 'INCOME' as FinanceEntryType })}
-                            >
-                                <Text style={[styles.typeButtonText, editData.type === 'INCOME' && styles.typeButtonTextActive]}>
-                                    Ingreso
-                                </Text>
-                            </TouchableOpacity>
+                                    <View style={styles.typeSelector}>
+                                        <TouchableOpacity
+                                            style={[styles.typeButton, editData.type === 'INCOME' && styles.typeButtonActive]}
+                                            onPress={() => setEditData({ ...editData, type: 'INCOME' as FinanceEntryType })}
+                                        >
+                                            <Icon
+                                                name="arrow-down"
+                                                size={20}
+                                                color={editData.type === 'INCOME' ? '#000' : '#4CAF50'}
+                                                style={styles.typeIcon}
+                                            />
+                                            <Text style={[styles.typeButtonText, editData.type === 'INCOME' && styles.typeButtonTextActive]}>
+                                                Ingreso
+                                            </Text>
+                                        </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.typeButton, editData.type === 'EXPENSE' && styles.typeButtonActive]}
-                                onPress={() => setEditData({ ...editData, type: 'EXPENSE' as FinanceEntryType })}
-                            >
-                                <Text style={[styles.typeButtonText, editData.type === 'EXPENSE' && styles.typeButtonTextActive]}>
-                                    Gasto
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.typeButton, editData.type === 'EXPENSE' && styles.typeButtonActive]}
+                                            onPress={() => setEditData({ ...editData, type: 'EXPENSE' as FinanceEntryType })}
+                                        >
+                                            <Icon
+                                                name="arrow-up"
+                                                size={20}
+                                                color={editData.type === 'EXPENSE' ? '#000' : '#F44336'}
+                                                style={styles.typeIcon}
+                                            />
+                                            <Text style={[styles.typeButtonText, editData.type === 'EXPENSE' && styles.typeButtonTextActive]}>
+                                                Gasto
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Título"
-                            value={editData.title}
-                            onChangeText={(title) => setEditData({ ...editData, title })}
-                        />
+                                    <View style={styles.inputGroup}>
+                                        <Icon name="format-title" size={20} color="#D4AF37" style={styles.inputIcon} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Título del movimiento"
+                                            placeholderTextColor="#AAAAAA"
+                                            value={editData.title}
+                                            onChangeText={(title) => setEditData({ ...editData, title })}
+                                            returnKeyType="next"
+                                            onFocus={() => {
+                                                if (descriptionInputRef.current) {
+                                                    handleFocus(descriptionInputRef as React.RefObject<View>);
+                                                }
+                                            }} />
+                                    </View>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Monto"
-                            keyboardType="numeric"
-                            value={editData.amount ? formatAmount(editData.amount) : ''}
-                            onChangeText={(text) => {
-                                const cleanValue = text.replace(/[^0-9.]/g, '');
-                                const amount = parseFloat(cleanValue) || 0;
-                                setEditData({ ...editData, amount });
-                            }}
-                        />
+                                    <View style={styles.inputGroup}>
+                                        <Icon name="cash" size={20} color="#D4AF37" style={styles.inputIcon} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Monto"
+                                            placeholderTextColor="#AAAAAA"
+                                            keyboardType="decimal-pad"
+                                            value={formatAmountInput(rawAmount)}
+                                            onChangeText={(text) => {
+                                                const numericValue = text.replace(/[^0-9]/g, '');
+                                                setRawAmount(numericValue);
+                                                const amount = parseAmountInput(formatAmountInput(numericValue));
+                                                setEditData({ ...editData, amount });
+                                            }}
+                                            returnKeyType="next"
+                                            onFocus={() => {
+                                                if (descriptionInputRef.current) {
+                                                    handleFocus(descriptionInputRef as React.RefObject<View>);
+                                                }
+                                            }}
+                                        />
+                                    </View>
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Categoría</Text>
-                            <TouchableOpacity
-                                style={styles.dropdown}
-                                onPress={() => setShowCategoryPicker(true)}
-                            >
-                                <Text style={styles.dropdownText}>
-                                    {editData.categoryId ?
-                                        categories.find(c => c.id === editData.categoryId)?.name :
-                                        'Seleccionar categoría'}
-                                </Text>
-                                <Icon name="chevron-down" size={20} color="#D4AF37" />
-                            </TouchableOpacity>
-                        </View>
+                                    <View style={styles.inputContainer}>
+                                        <Text style={styles.label}>Categoría</Text>
+                                        <TouchableOpacity
+                                            style={styles.dropdown}
+                                            onPress={() => setShowCategoryPicker(true)}
+                                        >
+                                            <Text style={styles.dropdownText}>
+                                                {editData.categoryId ?
+                                                    categories.find(c => c.id === editData.categoryId)?.name :
+                                                    'Seleccionar categoría'}
+                                            </Text>
+                                            <Icon name="chevron-down" size={20} color="#D4AF37" />
+                                        </TouchableOpacity>
+                                    </View>
 
-                        {showCategoryPicker && (
-                            <View style={styles.pickerContainer}>
-                                {categories.map(category => (
-                                    <TouchableOpacity
-                                        key={category.id}
-                                        style={styles.pickerItem}
-                                        onPress={() => {
-                                            setEditData({ ...editData, categoryId: category.id });
-                                            setShowCategoryPicker(false);
-                                        }}
+                                    <Modal
+                                        visible={showCategoryPicker}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowCategoryPicker(false)}
                                     >
-                                        <View style={[
-                                            styles.categoryIcon,
-                                            { backgroundColor: category.color || '#333333' }
-                                        ]}>
-                                            <Icon name={category.icon || 'tag'} size={14} color="#FFFFFF" />
-                                        </View>
-                                        <Text style={styles.pickerItemText}>{category.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
+                                        <TouchableOpacity
+                                            style={styles.modalOverlay}
+                                            activeOpacity={1}
+                                            onPress={() => setShowCategoryPicker(false)}
+                                        >
+                                            <View style={styles.modalPickerContainer}>
+                                                <View style={styles.tabContainer}>
+                                                    <TouchableOpacity
+                                                        style={[styles.tabButton, activeCategoryTab === 'default' && styles.activeTab]}
+                                                        onPress={() => setActiveCategoryTab('default')}
+                                                    >
+                                                        <Text style={styles.tabText}>Por Defecto</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.tabButton, activeCategoryTab === 'user' && styles.activeTab]}
+                                                        onPress={() => setActiveCategoryTab('user')}
+                                                    >
+                                                        <Text style={styles.tabText}>Mis Categorías</Text>
+                                                    </TouchableOpacity>
+                                                </View>
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Etiquetas</Text>
-                            <View style={styles.tagsInputContainer}>
-                                {selectedTags.map(tagId => {
-                                    const tag = allTags.find(t => t.id === tagId);
-                                    return tag ? (
-                                        <View key={tagId} style={[
-                                            styles.selectedTag,
-                                            { backgroundColor: tag.color || '#D4AF37' }
-                                        ]}>
-                                            <Text style={styles.selectedTagText}>{tag.name}</Text>
+                                                <ScrollView style={styles.pickerScrollView}>
+                                                    {activeCategoryTab === 'default' ? (
+                                                        <>
+                                                            {defaultCategories.filter(cat => cat.type === editData.type).map(category => (
+                                                                <TouchableOpacity
+                                                                    key={category.id}
+                                                                    style={styles.pickerItem}
+                                                                    onPress={() => {
+                                                                        setEditData({ ...editData, categoryId: category.id });
+                                                                        setShowCategoryPicker(false);
+                                                                    }}
+                                                                >
+                                                                    <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
+                                                                        <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
+                                                                    </View>
+                                                                    <Text style={styles.pickerItemText}>{category.name}</Text>
+                                                                </TouchableOpacity>
+                                                            ))}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {userCategories.filter(cat => cat.type === editData.type).map(category => (
+                                                                <TouchableOpacity
+                                                                    key={category.id}
+                                                                    style={styles.pickerItem}
+                                                                    onPress={() => {
+                                                                        setEditData({ ...editData, categoryId: category.id });
+                                                                        setShowCategoryPicker(false);
+                                                                    }}
+                                                                >
+                                                                    <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
+                                                                        <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
+                                                                    </View>
+                                                                    <Text style={styles.pickerItemText}>{category.name}</Text>
+                                                                </TouchableOpacity>
+                                                            ))}
+                                                        </>
+                                                    )}
+
+                                                    <TouchableOpacity
+                                                        style={styles.pickerItem}
+                                                        onPress={() => {
+                                                            setShowCategoryPicker(false);
+                                                            setShowNewCategoryModal(true);
+                                                        }}
+                                                    >
+                                                        <Icon name="plus" size={16} color="#D4AF37" />
+                                                        <Text style={[styles.pickerItemText, { color: '#D4AF37' }]}>Crear nueva categoría</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.pickerItem}
+                                                        onPress={() => {
+                                                            setEditData({ ...editData, categoryId: undefined });
+                                                            setShowCategoryPicker(false);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.pickerItemText}>Sin categoría</Text>
+                                                    </TouchableOpacity>
+                                                </ScrollView>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Modal>
+
+                                    <Modal
+                                        visible={showNewCategoryModal}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowNewCategoryModal(false)}
+                                    >
+                                        <View style={styles.modalOverlay}>
+                                            <View style={styles.modalContainer}>
+                                                <Text style={styles.modalTitle}>Nueva Categoría</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Nombre de la categoría"
+                                                    value={newCategoryName}
+                                                    onChangeText={setNewCategoryName}
+                                                />
+
+                                                <View style={styles.colorPickerContainer}>
+                                                    <Text style={styles.label}>Color:</Text>
+                                                    <TouchableOpacity
+                                                        style={[styles.colorPreview, { backgroundColor: newCategoryColor }]}
+                                                        onPress={() => openColorPicker('category')}
+                                                    />
+                                                </View>
+
+                                                <View style={styles.modalButtonContainer}>
+                                                    <Pressable
+                                                        style={[styles.modalButton, styles.cancelButton]}
+                                                        onPress={() => setShowNewCategoryModal(false)}
+                                                    >
+                                                        <Text style={styles.modalButtonText}>Cancelar</Text>
+                                                    </Pressable>
+                                                    <Pressable
+                                                        style={[styles.modalButton, styles.confirmButton]}
+                                                        onPress={handleCreateCategory}
+                                                    >
+                                                        <Text style={styles.modalButtonText}>Crear</Text>
+                                                    </Pressable>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </Modal>
+
+                                    <View style={styles.inputContainer}>
+                                        <Text style={styles.label}>Etiquetas</Text>
+                                        <View style={styles.tagsInputContainer}>
+                                            {selectedTags.map(tagId => {
+                                                const tag = allTags.find(t => t.id === tagId);
+                                                return tag ? (
+                                                    <View key={tagId} style={[styles.selectedTag, { backgroundColor: tag.color }]}>
+                                                        <Text style={styles.selectedTagText}>{tag.name}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => setSelectedTags(selectedTags.filter(id => id !== tagId))}
+                                                        >
+                                                            <Icon name="close" size={16} color="#FFFFFF" />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : null;
+                                            })}
                                             <TouchableOpacity
-                                                onPress={() => setSelectedTags(selectedTags.filter(id => id !== tagId))}
+                                                style={styles.addTagButton}
+                                                onPress={() => setShowTagPicker(true)}
                                             >
-                                                <Icon name="close" size={16} color="#FFFFFF" />
+                                                <Icon name="plus" size={20} color="#D4AF37" />
                                             </TouchableOpacity>
                                         </View>
-                                    ) : null;
-                                })}
-                                <TouchableOpacity
-                                    style={styles.addTagButton}
-                                    onPress={() => setShowTagPicker(true)}
-                                >
-                                    <Icon name="plus" size={20} color="#D4AF37" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {showTagPicker && (
-                            <View style={styles.pickerContainer}>
-                                {allTags.map(tag => (
-                                    <TouchableOpacity
-                                        key={tag.id}
-                                        style={styles.pickerItem}
-                                        onPress={() => {
-                                            if (!selectedTags.includes(tag.id)) {
-                                                setSelectedTags([...selectedTags, tag.id]);
-                                            }
-                                            setShowTagPicker(false);
-                                        }}
-                                    >
-                                        <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
-                                        <Text style={styles.pickerItemText}>{tag.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-
-                        {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Descripción (opcional)"
-                            value={editData.description}
-                            onChangeText={(description) => setEditData({ ...editData, description })}
-                            multiline
-                        />
-
-                        <View style={styles.modalButtonContainer}>
-                            <Pressable
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setShowEditModal(false)}
-                            >
-                                <Text style={styles.modalButtonText}>Cancelar</Text>
-                            </Pressable>
-
-                            <Pressable
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={handleEdit}
-                                disabled={editLoading}
-                            >
-                                {editLoading ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator color="#000" />
                                     </View>
-                                ) : (
-                                    <Text style={styles.modalButtonText}>Guardar</Text>
-                                )}
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
+
+                                    <Modal
+                                        visible={showTagPicker}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowTagPicker(false)}
+                                    >
+                                        <TouchableOpacity
+                                            style={styles.modalOverlay}
+                                            activeOpacity={1}
+                                            onPress={() => setShowTagPicker(false)}
+                                        >
+                                            <View style={styles.modalPickerContainer}>
+                                                <View style={styles.tabContainer}>
+                                                    <TouchableOpacity
+                                                        style={[styles.tabButton, activeTagTab === 'default' && styles.activeTab]}
+                                                        onPress={() => setActiveTagTab('default')}
+                                                    >
+                                                        <Text style={styles.tabText}>Por Defecto</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.tabButton, activeTagTab === 'user' && styles.activeTab]}
+                                                        onPress={() => setActiveTagTab('user')}
+                                                    >
+                                                        <Text style={styles.tabText}>Mis Etiquetas</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+
+                                                <ScrollView style={styles.pickerScrollView}>
+                                                    {activeTagTab === 'default' ? (
+                                                        defaultTags.filter(tag => !selectedTags.includes(tag.id)).map(tag => (
+                                                            <TouchableOpacity
+                                                                key={tag.id}
+                                                                style={styles.pickerItem}
+                                                                onPress={() => {
+                                                                    setSelectedTags([...selectedTags, tag.id]);
+                                                                    setShowTagPicker(false);
+                                                                }}
+                                                            >
+                                                                <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                                                <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                                            </TouchableOpacity>
+                                                        ))
+                                                    ) : (
+                                                        userTags.filter(tag => !selectedTags.includes(tag.id)).map(tag => (
+                                                            <TouchableOpacity
+                                                                key={tag.id}
+                                                                style={styles.pickerItem}
+                                                                onPress={() => {
+                                                                    setSelectedTags([...selectedTags, tag.id]);
+                                                                    setShowTagPicker(false);
+                                                                }}
+                                                            >
+                                                                <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                                                <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                                            </TouchableOpacity>
+                                                        ))
+                                                    )}
+
+                                                    <TouchableOpacity
+                                                        style={styles.pickerItem}
+                                                        onPress={() => {
+                                                            setShowTagPicker(false);
+                                                            setShowNewTagModal(true);
+                                                        }}
+                                                    >
+                                                        <Icon name="plus" size={16} color="#D4AF37" />
+                                                        <Text style={[styles.pickerItemText, { color: '#D4AF37' }]}>Crear nueva etiqueta</Text>
+                                                    </TouchableOpacity>
+                                                </ScrollView>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </Modal>
+
+                                    <Modal
+                                        visible={showNewTagModal}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowNewTagModal(false)}
+                                    >
+                                        <View style={styles.modalOverlay}>
+                                            <View style={styles.modalContainer}>
+                                                <Text style={styles.modalTitle}>Nueva Etiqueta</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Nombre de la etiqueta"
+                                                    value={newTagName}
+                                                    onChangeText={setNewTagName}
+                                                />
+
+                                                <View style={styles.colorPickerContainer}>
+                                                    <Text style={styles.label}>Color:</Text>
+                                                    <TouchableOpacity
+                                                        style={[styles.colorPreview, { backgroundColor: newTagColor }]}
+                                                        onPress={() => openColorPicker('tag')}
+                                                    />
+                                                </View>
+
+                                                <View style={styles.modalButtonContainer}>
+                                                    <Pressable
+                                                        style={[styles.modalButton, styles.cancelButton]}
+                                                        onPress={() => setShowNewTagModal(false)}
+                                                    >
+                                                        <Text style={styles.modalButtonText}>Cancelar</Text>
+                                                    </Pressable>
+                                                    <Pressable
+                                                        style={[styles.modalButton, styles.confirmButton]}
+                                                        onPress={handleCreateTag}
+                                                    >
+                                                        <Text style={styles.modalButtonText}>Crear</Text>
+                                                    </Pressable>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </Modal>
+
+                                    <Modal
+                                        visible={showColorPicker}
+                                        transparent={true}
+                                        animationType="fade"
+                                        onRequestClose={() => setShowColorPicker(false)}
+                                    >
+                                        <View style={styles.colorPickerModal}>
+                                            <View style={styles.colorPickerContainer}>
+                                                <ColorPicker
+                                                    color={colorPickerFor === 'category' ? newCategoryColor : newTagColor}
+                                                    onColorChange={handleColorChange}
+                                                    thumbSize={30}
+                                                    sliderSize={30}
+                                                    noSnap={true}
+                                                    row={false}
+                                                />
+                                                <TouchableOpacity
+                                                    style={styles.colorPickerDoneButton}
+                                                    onPress={() => setShowColorPicker(false)}
+                                                >
+                                                    <Text style={styles.colorPickerDoneButtonText}>Listo</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    </Modal>
+
+                                    {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
+
+                                    <View style={styles.inputGroup}>
+                                        <Icon name="text" size={20} color="#D4AF37" style={styles.inputIcon} />
+                                        <TextInput
+                                            ref={descriptionInputRef}
+                                            style={[styles.input, { height: Platform.OS === 'web' ? 100 : 50 }]}
+                                            placeholder="Descripción (opcional)"
+                                            placeholderTextColor="#AAAAAA"
+                                            value={editData.description}
+                                            onChangeText={(description) => setEditData({ ...editData, description })}
+                                            multiline
+                                            returnKeyType="done"
+                                            onFocus={() => {
+                                                if (descriptionInputRef.current) {
+                                                    handleFocus(descriptionInputRef as React.RefObject<View>);
+                                                }
+                                            }}
+                                        />
+                                    </View>
+
+                                    <View style={styles.modalButtonContainer}>
+                                        <Pressable
+                                            style={[styles.modalButton, styles.cancelButton]}
+                                            onPress={() => setShowEditModal(false)}
+                                        >
+                                            <Text style={styles.modalButtonText}>Cancelar</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            style={[styles.modalButton, styles.confirmButton]}
+                                            onPress={handleEdit}
+                                            disabled={editLoading}
+                                        >
+                                            {editLoading ? (
+                                                <ActivityIndicator color="#000" />
+                                            ) : (
+                                                <Text style={styles.modalButtonText}>Guardar</Text>
+                                            )}
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            </View>
+                        </ScrollView>
+                    </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );

@@ -203,6 +203,7 @@ const FinanceScreen: React.FC = () => {
                 onRefresh={onRefresh}
                 selectedMonthYear={selectedMonthYear}
                 categories={categories}
+                setCategories={setCategories}
                 userId={user?.id || ''}
                 refreshing={refreshing}
                 onRefreshTrigger={onRefresh}
