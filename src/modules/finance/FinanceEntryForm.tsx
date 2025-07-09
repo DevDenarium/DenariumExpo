@@ -12,11 +12,11 @@ import {
     TouchableWithoutFeedback,
     View,
     KeyboardAvoidingView,
-    NativeMethods
+    NativeMethods, ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {FinanceService} from '../../services/Finance.service';
-import {CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag} from './FinanceScreen.types';
+import {CreateEntryDto, FinanceCategory, FinanceEntry, FinanceEntryType, FinanceTag} from './FinanceScreen.types';
 import { styles } from './FinanceEntryForm.styles';
 import {registerLocale, setDefaultLocale} from "react-datepicker";
 import {es} from 'date-fns/locale';
@@ -70,23 +70,29 @@ interface FinanceEntryFormProps {
     tags: FinanceTag[];
     setCategories: React.Dispatch<React.SetStateAction<FinanceCategory[]>>;
     setTags: React.Dispatch<React.SetStateAction<FinanceTag[]>>;
+    initialData?: Partial<FinanceEntry>;
+    isEditing?: boolean;
+    onCancel?: () => void;
 }
 
 const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                                                onEntryAdded,
                                                                categories,
                                                                tags,
-                                                               setCategories,
-                                                               setTags
+                                                               setCategories = () => {},
+                                                               setTags = () => {},
+                                                               initialData,
+                                                               isEditing = false,
+                                                               onCancel = () => {}
                                                            }) => {
     const [formData, setFormData] = useState<CreateEntryDto>({
         title: '',
         amount: 0,
         type: FinanceEntryType.EXPENSE,
-        date: new Date(),
+        date: initialData?.date ? new Date(initialData.date) : new Date(),
         description: '',
         categoryId: undefined,
-        tagIds: []
+        tagIds: initialData?.tags?.map(t => t.id) || []
     });
     const [activeCategoryTab, setActiveCategoryTab] = useState<'default' | 'user'>('default');
     const [activeTagTab, setActiveTagTab] = useState<'default' | 'user'>('default');
@@ -98,7 +104,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [showTagPicker, setShowTagPicker] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [selectedTags, setSelectedTags] = useState<string[]>(formData.tagIds || []);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
     const [newTagName, setNewTagName] = useState('');
@@ -107,9 +113,29 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const [newTagColor, setNewTagColor] = useState('#D4AF37');
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [colorPickerFor, setColorPickerFor] = useState<'category' | 'tag'>('category');
-    const [rawAmount, setRawAmount] = useState('');
+    const [rawAmount, setRawAmount] = useState(
+        initialData?.amount ? Math.round(initialData.amount * 100).toString().replace('.', '') : ''
+    );
     const scrollViewRef = useRef<ScrollView>(null);
     const descriptionInputRef = useRef<TextInput>(null);
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                title: initialData.title || '',
+                amount: initialData.amount || 0,
+                type: initialData.type || FinanceEntryType.EXPENSE,
+                date: initialData.date ? new Date(initialData.date) : new Date(),
+                description: initialData.description || '',
+                categoryId: initialData.categoryId,
+                tagIds: initialData?.tags?.map(t => t.id) || []
+            });
+            setSelectedTags(initialData.tags?.map(t => t.id) || []);
+            setRawAmount(
+                initialData.amount ? Math.round(initialData.amount * 100).toString().replace('.', '') : ''
+            );
+        }
+    }, [initialData]);
 
     const handleSubmit = async () => {
         Keyboard.dismiss();
@@ -122,11 +148,25 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
 
         setLoading(true);
         try {
-            await FinanceService.createEntry({
-                ...formData,
-                amount: amount,
-                tagIds: selectedTags
-            });
+            if (isEditing && initialData?.id) {
+                await FinanceService.updateEntry(initialData.id, {
+                    title: formData.title,
+                    description: formData.description,
+                    amount: amount,
+                    type: formData.type,
+                    categoryId: formData.categoryId,
+                    date: formData.date.toISOString(),
+                    tagIds: selectedTags
+                });
+                Alert.alert('Éxito', 'Movimiento actualizado correctamente');
+            } else {
+                await FinanceService.createEntry({
+                    ...formData,
+                    amount: amount,
+                    tagIds: selectedTags
+                });
+                Alert.alert('Éxito', 'Movimiento registrado correctamente');
+            }
 
             setFormData({
                 title: '',
@@ -141,8 +181,8 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
             setSelectedTags([]);
             onEntryAdded();
         } catch (error) {
-            console.error('Error creating entry:', error);
-            Alert.alert('Error', 'No se pudo registrar el movimiento');
+            console.error('Error saving entry:', error);
+            Alert.alert('Error', 'No se pudo guardar el movimiento');
         } finally {
             setLoading(false);
         }
@@ -170,6 +210,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         return `${formattedInteger},${decimalPart}`;
     };
 
+
     const parseAmountInput = (formattedValue: string): number => {
         if (!formattedValue) return 0;
 
@@ -179,6 +220,8 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
 
         return parseFloat(numericString) || 0;
     };
+
+
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('es-ES', {
@@ -272,6 +315,8 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
             setNewTagColor(color);
         }
     };
+
+
 
     const WebDatePicker = () => {
         if (!ReactDatePicker) {
@@ -391,6 +436,9 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.formContainer}>
+                        <Text style={styles.modalTitle}>
+                            {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+                        </Text>
                         <View style={styles.typeSelector}>
                             <TouchableOpacity
                                 style={[styles.typeButton, formData.type === 'INCOME' && styles.typeButtonActive]}
@@ -594,15 +642,23 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     <View style={styles.modalButtonContainer}>
                                         <Pressable
                                             style={[styles.modalButton, styles.cancelButton]}
-                                            onPress={() => setShowNewCategoryModal(false)}
+                                            onPress={onCancel}
                                         >
                                             <Text style={styles.modalButtonText}>Cancelar</Text>
                                         </Pressable>
+
                                         <Pressable
                                             style={[styles.modalButton, styles.confirmButton]}
-                                            onPress={handleCreateCategory}
+                                            onPress={handleSubmit}
+                                            disabled={loading}
                                         >
-                                            <Text style={styles.modalButtonText}>Crear</Text>
+                                            {loading ? (
+                                                <ActivityIndicator color="#000" />
+                                            ) : (
+                                                <Text style={styles.modalButtonText}>
+                                                    {isEditing ? 'Guardar Cambios' : 'Agregar Movimiento'}
+                                                </Text>
+                                            )}
                                         </Pressable>
                                     </View>
                                 </View>
@@ -796,16 +852,33 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                             />
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.submitButton}
-                            onPress={handleSubmit}
-                            disabled={loading}
-                        >
-                            <Icon name="check" size={20} color="#000" style={styles.submitIcon} />
-                            <Text style={styles.submitButtonText}>
-                                {loading ? 'Registrando...' : 'Agregar Movimiento'}
-                            </Text>
-                        </TouchableOpacity>
+                        <View style={[
+                            styles.buttonContainer,
+                            isEditing ? styles.buttonContainerEditing : styles.buttonContainerCreating
+                        ]}>
+                            {isEditing && (
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.cancelButton]}
+                                    onPress={onCancel}
+                                >
+                                    <Text style={styles.buttonText}>Cancelar</Text>
+                                </TouchableOpacity>
+                            )}
+
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.submitButton]}
+                                onPress={handleSubmit}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#000" />
+                                ) : (
+                                    <Text style={styles.buttonText}>
+                                        {isEditing ? 'Guardar Cambios' : 'Agregar Movimiento'}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
 
                         {Platform.OS === 'web' && (
                             <View>

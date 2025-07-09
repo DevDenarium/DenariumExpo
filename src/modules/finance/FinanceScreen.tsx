@@ -271,7 +271,6 @@ const FinanceScreen: React.FC = () => {
                         >
                             <Icon name="close" size={24} color="#D4AF37" />
                         </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Nuevo Movimiento</Text>
 
                         <FinanceEntryForm
                             onEntryAdded={handleEntryAdded}

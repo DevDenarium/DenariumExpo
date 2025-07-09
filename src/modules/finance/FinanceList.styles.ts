@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
     },
     closeButton: {
         marginTop: 15,
-        padding: 10,
+        padding: 5,
         alignItems: 'center',
     },
     closeButtonText: {
@@ -474,5 +474,33 @@ export const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 15,
     },
+    // En FinanceList.styles.js, añade estos estilos:
+
+    modalContent: {
+        backgroundColor: '#1c1c1c',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingBottom: 20,
+        width: '100%',
+        paddingHorizontal: 5,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333'
+    },
+
+    formSection: {
+        marginBottom: 20
+    },
+    sectionTitle: {
+        color: '#D4AF37',
+        fontSize: 16,
+        marginBottom: 10
+    }
 });
 

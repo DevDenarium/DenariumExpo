@@ -347,6 +347,33 @@ export const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 15,
     },
+    // En FinanceEntryForm.styles.js:
+    buttonContainer: {
+        flexDirection: 'row',
+        marginTop: 20,
+    },
+    buttonContainerEditing: {
+        justifyContent: 'space-between',
+    },
+    buttonContainerCreating: {
+        justifyContent: 'center',
+    },
+
+    actionButton: {
+        borderRadius: 8,
+        padding: 15,
+        alignItems: 'center',
+        minWidth: '48%',
+    },
+    buttonText: {
+        fontWeight: 'bold',
+        color: '#000',
+    },
+// Para el botón de cancelar:
+    cancelButtonText: {
+        color: '#D4AF37',
+    },
+
 });
 
 export default styles;
