@@ -497,7 +497,7 @@ export const styles = StyleSheet.create({
         borderBottomColor: '#333333'
     },
     editModalHeader: {
-        flexDirection: 'row-reverse', // Para que la X quede a la derecha
+        flexDirection: 'row', // Cambiado a 'row' para alinear título y botón
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
@@ -541,7 +541,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     fullScreenModalContainer: {
-        backgroundColor: '#2a2a2a',
+        backgroundColor: '#1c1c1c',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
