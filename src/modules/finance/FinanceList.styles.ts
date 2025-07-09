@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import {Platform, StyleSheet} from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
@@ -477,12 +477,15 @@ export const styles = StyleSheet.create({
     // En FinanceList.styles.js, añade estos estilos:
 
     modalContent: {
-        backgroundColor: '#1c1c1c',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingBottom: 20,
-        width: '100%',
         paddingHorizontal: 5,
+        backgroundColor: '#2a2a2a',
+        width: '90%',
+        maxWidth: 500,
+        borderRadius: 12,
+        overflow: 'hidden',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -493,7 +496,37 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#333333'
     },
-
+    editModalHeader: {
+        flexDirection: 'row-reverse', // Para que la X quede a la derecha
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    editModalContainer: {
+        backgroundColor: '#1e1e1e', // Gris más oscuro como en nuevo movimiento
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        maxHeight: '85%',
+        width: '100%',
+    },
+    editModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    editModalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    editModalCloseButton: {
+        padding: 5,
+        marginLeft: 10,
+    },
     formSection: {
         marginBottom: 20
     },
@@ -501,6 +534,18 @@ export const styles = StyleSheet.create({
         color: '#D4AF37',
         fontSize: 16,
         marginBottom: 10
-    }
+    },
+    fullScreenModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    fullScreenModalContainer: {
+        backgroundColor: '#2a2a2a',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        height: '80%',
+    },
 });
 

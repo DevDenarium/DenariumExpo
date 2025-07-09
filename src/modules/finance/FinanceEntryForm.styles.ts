@@ -197,12 +197,6 @@ export const styles = StyleSheet.create({
     },
     submitButton: {
         backgroundColor: '#D4AF37',
-        borderRadius: 8,
-        padding: 15,
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 10,
     },
     submitButtonText: {
         color: '#000000',
@@ -274,8 +268,9 @@ export const styles = StyleSheet.create({
     },
     modalButtonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         marginTop: 20,
+        justifyContent: 'space-between',
+        gap: 10, // Espacio entre botones
     },
     modalButton: {
         borderRadius: 5,
@@ -291,6 +286,7 @@ export const styles = StyleSheet.create({
     },
     modalButtonText: {
         fontWeight: 'bold',
+        color: '#000',
     },
     tabContainer: {
         flexDirection: 'row',
@@ -350,7 +346,9 @@ export const styles = StyleSheet.create({
     // En FinanceEntryForm.styles.js:
     buttonContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         marginTop: 20,
+        gap: 10,
     },
     buttonContainerEditing: {
         justifyContent: 'space-between',
@@ -360,10 +358,13 @@ export const styles = StyleSheet.create({
     },
 
     actionButton: {
-        borderRadius: 8,
-        padding: 15,
+        flex: 1,
+        borderRadius: 6,  // Bordes ligeramente menos redondeados
+        paddingVertical: 10,  // Menos altura
+        paddingHorizontal: 12,  // Menos ancho
         alignItems: 'center',
-        minWidth: '48%',
+        justifyContent: 'center',
+        minHeight: 40,  // Altura fija
     },
     buttonText: {
         fontWeight: 'bold',
@@ -372,7 +373,9 @@ export const styles = StyleSheet.create({
 // Para el botón de cancelar:
     cancelButtonText: {
         color: '#D4AF37',
+        fontWeight: 'bold',
     },
+
 
 });
 

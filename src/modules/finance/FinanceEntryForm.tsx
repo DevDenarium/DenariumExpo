@@ -73,6 +73,8 @@ interface FinanceEntryFormProps {
     initialData?: Partial<FinanceEntry>;
     isEditing?: boolean;
     onCancel?: () => void;
+    hideHeader?: boolean;
+    customStyles?: boolean;
 }
 
 const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
@@ -83,7 +85,9 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                                                setTags = () => {},
                                                                initialData,
                                                                isEditing = false,
-                                                               onCancel = () => {}
+                                                               onCancel = () => {},
+                                                               hideHeader = false,
+                                                               customStyles = false,
                                                            }) => {
     const [formData, setFormData] = useState<CreateEntryDto>({
         title: '',
@@ -427,7 +431,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? (customStyles ? 100 : 0) : 0}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <ScrollView
@@ -436,9 +440,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.formContainer}>
-                        <Text style={styles.modalTitle}>
-                            {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
-                        </Text>
                         <View style={styles.typeSelector}>
                             <TouchableOpacity
                                 style={[styles.typeButton, formData.type === 'INCOME' && styles.typeButtonActive]}
@@ -656,7 +657,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                                 <ActivityIndicator color="#000" />
                                             ) : (
                                                 <Text style={styles.modalButtonText}>
-                                                    {isEditing ? 'Guardar Cambios' : 'Agregar Movimiento'}
+                                                    {isEditing ? 'Guardar' : 'Agregar Movimiento'}
                                                 </Text>
                                             )}
                                         </Pressable>
@@ -852,16 +853,13 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                             />
                         </View>
 
-                        <View style={[
-                            styles.buttonContainer,
-                            isEditing ? styles.buttonContainerEditing : styles.buttonContainerCreating
-                        ]}>
+                        <View style={styles.buttonContainer}>
                             {isEditing && (
                                 <TouchableOpacity
                                     style={[styles.actionButton, styles.cancelButton]}
                                     onPress={onCancel}
                                 >
-                                    <Text style={styles.buttonText}>Cancelar</Text>
+                                    <Text style={styles.cancelButtonText}>Cancelar</Text>
                                 </TouchableOpacity>
                             )}
 
@@ -874,7 +872,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     <ActivityIndicator color="#000" />
                                 ) : (
                                     <Text style={styles.buttonText}>
-                                        {isEditing ? 'Guardar Cambios' : 'Agregar Movimiento'}
+                                        {isEditing ? 'Guardar' : 'Agregar Movimiento'}
                                     </Text>
                                 )}
                             </TouchableOpacity>

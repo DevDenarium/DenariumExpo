@@ -706,31 +706,45 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
+            // In the FinanceList component, update the showEditModal section:
+            // En el componente FinanceList, reemplaza el modal de edición con este:
             <Modal
                 visible={showEditModal}
-                animationType="slide" // Prueba con "fade" o "none"
+                animationType="slide"
                 transparent={true}
                 onRequestClose={() => setShowEditModal(false)}
-                hardwareAccelerated={true} // Solo Android
-                statusBarTranslucent={true}
             >
-                <View style={styles.modalOverlay}>
-                    <FinanceEntryForm
-                        onEntryAdded={() => {
-                            setShowEditModal(false);
-                            onRefresh();
-                        }}
-                        categories={localCategories}
-                        tags={allTags}
-                        setCategories={setLocalCategories}
-                        setTags={setAllTags}
-                        initialData={{
-                            ...selectedEntry,
-                            tags: selectedEntry?.tags || []
-                        }}
-                        isEditing={true}
-                        onCancel={() => setShowEditModal(false)}
-                    />
+                <View style={styles.editModalOverlay}>
+                    <View style={styles.editModalContainer}>
+                        <View style={styles.editModalHeader}>
+                            <TouchableOpacity
+                                onPress={() => setShowEditModal(false)}
+                                style={styles.editModalCloseButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                            <Text style={styles.editModalTitle}>Editar Movimiento</Text>
+                        </View>
+
+                        <FinanceEntryForm
+                            onEntryAdded={() => {
+                                setShowEditModal(false);
+                                onRefresh();
+                            }}
+                            categories={localCategories}
+                            tags={allTags}
+                            setCategories={setLocalCategories}
+                            setTags={setAllTags}
+                            initialData={{
+                                ...selectedEntry,
+                                tags: selectedEntry?.tags || []
+                            }}
+                            isEditing={true}
+                            onCancel={() => setShowEditModal(false)}
+                            hideHeader={true}
+                            customStyles={true} // Añade esta prop
+                        />
+                    </View>
                 </View>
             </Modal>
         </View>
