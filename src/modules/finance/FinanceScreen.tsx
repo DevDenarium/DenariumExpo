@@ -261,23 +261,22 @@ const FinanceScreen: React.FC = () => {
                     <View style={[styles.modalContent, {
                         borderTopLeftRadius: 20,
                         borderTopRightRadius: 20,
-                        maxHeight: '90%', // Limita la altura máxima
+                        maxHeight: '90%',
                         minHeight: '90%',
-                        width: '100%'
+                        width: '100%',
+                        backgroundColor: '#2a2a2a', // Cambiar a gris claro
+                        padding: 20, // Añadir padding interno
+                        elevation: 0, // Eliminar sombra en Android
+                        shadowOpacity: 0, // Eliminar sombra en iOS
                     }]}>
-                        <TouchableOpacity
-                            onPress={() => setShowEntryForm(false)}
-                            style={styles.closeButton}
-                        >
-                            <Icon name="close" size={24} color="#D4AF37" />
-                        </TouchableOpacity>
-
                         <FinanceEntryForm
                             onEntryAdded={handleEntryAdded}
                             categories={categories}
                             setCategories={setCategories}
                             tags={tags}
                             setTags={setTags}
+                            onCancel={() => setShowEntryForm(false)}
+                            hideHeader={false}
                         />
                     </View>
                 </View>

@@ -440,6 +440,19 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={styles.formContainer}>
+                        {!hideHeader && (
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>
+                                    {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={onCancel}
+                                    style={styles.closeButton}
+                                >
+                                    <Icon name="close" size={24} color="#D4AF37" />
+                                </TouchableOpacity>
+                            </View>
+                        )}
                         <View style={styles.typeSelector}>
                             <TouchableOpacity
                                 style={[styles.typeButton, formData.type === 'INCOME' && styles.typeButtonActive]}

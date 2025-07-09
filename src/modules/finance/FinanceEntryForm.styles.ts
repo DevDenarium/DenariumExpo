@@ -12,6 +12,9 @@ export const styles = StyleSheet.create({
     header: {
         marginBottom: 20,
     },
+    closeButton: {
+        padding: 5,
+    },
     title: {
         color: '#D4AF37',
         fontSize: 20,
@@ -375,7 +378,15 @@ export const styles = StyleSheet.create({
         color: '#D4AF37',
         fontWeight: 'bold',
     },
-
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
 
 });
 
