@@ -251,23 +251,27 @@ const FinanceScreen: React.FC = () => {
                 }
             />
 
+            // En el componente FinanceScreen, modifica el Modal:
             <Modal
                 animationType="slide"
                 transparent={true}
                 visible={showEntryForm}
                 onRequestClose={() => setShowEntryForm(false)}
             >
-                <View style={[styles.modalContainer, { justifyContent: 'flex-end' }]}>
+                <View style={[styles.modalContainer, {
+                    justifyContent: 'flex-end',
+                    backgroundColor: 'rgba(0,0,0,0.7)' // Fondo oscuro semi-transparente
+                }]}>
                     <View style={[styles.modalContent, {
                         borderTopLeftRadius: 20,
                         borderTopRightRadius: 20,
                         maxHeight: '90%',
                         minHeight: '90%',
                         width: '100%',
-                        backgroundColor: '#2a2a2a', // Cambiar a gris claro
-                        padding: 20, // Añadir padding interno
-                        elevation: 0, // Eliminar sombra en Android
-                        shadowOpacity: 0, // Eliminar sombra en iOS
+                        backgroundColor: '#1c1c1c', // Cambiado a gris oscuro (fondo exterior)
+                        padding: 0, // Eliminamos el padding aquí
+                        elevation: 0,
+                        shadowOpacity: 0,
                     }]}>
                         <FinanceEntryForm
                             onEntryAdded={handleEntryAdded}
@@ -277,6 +281,7 @@ const FinanceScreen: React.FC = () => {
                             setTags={setTags}
                             onCancel={() => setShowEntryForm(false)}
                             hideHeader={false}
+                            customStyles={true} // Asegúrate de pasar esta prop
                         />
                     </View>
                 </View>

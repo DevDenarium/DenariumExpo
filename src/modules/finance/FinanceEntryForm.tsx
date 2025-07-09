@@ -430,7 +430,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: '#1c1c1c' }} // Fondo oscuro
             keyboardVerticalOffset={Platform.OS === 'ios' ? (customStyles ? 100 : 0) : 0}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -439,20 +439,20 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                     contentContainerStyle={styles.scrollContainer}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.formContainer}>
-                        {!hideHeader && (
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>
-                                    {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={onCancel}
-                                    style={styles.closeButton}
-                                >
-                                    <Icon name="close" size={24} color="#D4AF37" />
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                    {!hideHeader && (
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>
+                                {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={onCancel}
+                                style={styles.closeButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={[styles.formContainer, customStyles && styles.customFormContainer]}>
                         <View style={styles.typeSelector}>
                             <TouchableOpacity
                                 style={[styles.typeButton, formData.type === 'INCOME' && styles.typeButtonActive]}

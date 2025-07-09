@@ -388,6 +388,14 @@ export const styles = StyleSheet.create({
         borderBottomColor: '#333333',
     },
 
+    customFormContainer: {
+        backgroundColor: '#2a2a2a', // Gris claro para el formulario interior
+        borderRadius: 10,
+        margin: 20, // Margen para separarlo del fondo oscuro
+        padding: 20,
+        flex: 1,
+    },
+
 });
 
 export default styles;
