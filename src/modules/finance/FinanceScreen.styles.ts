@@ -123,6 +123,39 @@ export const styles = StyleSheet.create({
         width: '100%',
         paddingHorizontal: 5,
     },
+    // Agrega estos estilos a tu FinanceScreen.styles.ts
+    fullScreenModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    fullScreenModalContainer: {
+        backgroundColor: '#1c1c1c',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        maxHeight: '90%',
+        height: '90%', // Asegura que ocupe el 90% de la pantalla
+        width: '100%',
+    },
+    editModalHeader: {
+        flexDirection: 'row', // Cambiado a 'row' para alinear título y botón
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    editModalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    editModalCloseButton: {
+        padding: 5,
+        marginLeft: 10,
+    },
 });
 
 export default styles;

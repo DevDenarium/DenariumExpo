@@ -251,28 +251,25 @@ const FinanceScreen: React.FC = () => {
                 }
             />
 
-            // En el componente FinanceScreen, modifica el Modal:
+            // Reemplaza el Modal actual en FinanceScreen.tsx con este:
             <Modal
                 animationType="slide"
                 transparent={true}
                 visible={showEntryForm}
                 onRequestClose={() => setShowEntryForm(false)}
             >
-                <View style={[styles.modalContainer, {
-                    justifyContent: 'flex-end',
-                    backgroundColor: 'rgba(0,0,0,0.7)' // Fondo oscuro semi-transparente
-                }]}>
-                    <View style={[styles.modalContent, {
-                        borderTopLeftRadius: 20,
-                        borderTopRightRadius: 20,
-                        maxHeight: '90%',
-                        minHeight: '90%',
-                        width: '100%',
-                        backgroundColor: '#1c1c1c', // Cambiado a gris oscuro (fondo exterior)
-                        padding: 0, // Eliminamos el padding aquí
-                        elevation: 0,
-                        shadowOpacity: 0,
-                    }]}>
+                <View style={styles.fullScreenModalOverlay}>
+                    <View style={styles.fullScreenModalContainer}>
+                        <View style={styles.editModalHeader}>
+                            <Text style={styles.editModalTitle}>Nuevo Movimiento</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowEntryForm(false)}
+                                style={styles.editModalCloseButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+
                         <FinanceEntryForm
                             onEntryAdded={handleEntryAdded}
                             categories={categories}
@@ -280,8 +277,8 @@ const FinanceScreen: React.FC = () => {
                             tags={tags}
                             setTags={setTags}
                             onCancel={() => setShowEntryForm(false)}
-                            hideHeader={false}
-                            customStyles={true} // Asegúrate de pasar esta prop
+                            hideHeader={true}
+                            customStyles={true}
                         />
                     </View>
                 </View>
