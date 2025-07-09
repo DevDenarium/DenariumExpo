@@ -545,7 +545,9 @@ export const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        height: '80%',
+        maxHeight: '90%',
+        height: '90%', // Asegura que ocupe el 90% de la pantalla
+        width: '100%',
     },
 });
 
