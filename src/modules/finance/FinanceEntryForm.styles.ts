@@ -14,12 +14,13 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
-        paddingBottom: 15,
+        paddingBottom: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
     },
     closeButton: {
         padding: 5,
+        marginTop: 0,
     },
     typeSelector: {
         flexDirection: 'row',
@@ -218,8 +219,10 @@ export const styles = StyleSheet.create({
         color: '#D4AF37',
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: 5,
         textAlign: 'center',
+        marginTop: 10,
+        padding: 10,
     },
     modalButtonContainer: {
         flexDirection: 'row',

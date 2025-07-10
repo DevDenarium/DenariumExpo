@@ -484,8 +484,21 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         animationType="fade"
                         onRequestClose={() => setShowCategoryPicker(false)}
                     >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalPickerContainer}>
+                        <Pressable
+                            style={styles.modalOverlay}
+                            onPress={() => setShowCategoryPicker(false)}
+                        >
+                            <View style={styles.modalPickerContainer} onStartShouldSetResponder={() => true}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Seleccionar Categoría</Text>
+                                    <TouchableOpacity
+                                        onPress={() => setShowCategoryPicker(false)}
+                                        style={styles.closeButton}
+                                    >
+                                        <Icon name="close" size={24} color="#D4AF37" />
+                                    </TouchableOpacity>
+                                </View>
+
                                 <View style={styles.tabContainer}>
                                     <TouchableOpacity
                                         style={[styles.tabButton, activeCategoryTab === 'default' && styles.activeTab]}
@@ -557,7 +570,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </TouchableOpacity>
                                 </ScrollView>
                             </View>
-                        </View>
+                        </Pressable>
                     </Modal>
 
                     <Modal
@@ -566,8 +579,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         animationType="fade"
                         onRequestClose={() => setShowNewCategoryModal(false)}
                     >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContainer}>
+                        <Pressable
+                            style={styles.modalOverlay}
+                            onPress={() => setShowNewCategoryModal(false)}
+                        >
+                            <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <Text style={styles.modalTitle}>Nueva Categoría</Text>
                                 <TextInput
                                     style={styles.input}
@@ -600,7 +616,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </Pressable>
                                 </View>
                             </View>
-                        </View>
+                        </Pressable>
                     </Modal>
 
                     <View style={styles.inputContainer}>
@@ -634,8 +650,21 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         animationType="fade"
                         onRequestClose={() => setShowTagPicker(false)}
                     >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalPickerContainer}>
+                        <Pressable
+                            style={styles.modalOverlay}
+                            onPress={() => setShowTagPicker(false)}
+                        >
+                            <View style={styles.modalPickerContainer} onStartShouldSetResponder={() => true}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Seleccionar Etiquetas</Text>
+                                    <TouchableOpacity
+                                        onPress={() => setShowTagPicker(false)}
+                                        style={styles.closeButton}
+                                    >
+                                        <Icon name="close" size={24} color="#D4AF37" />
+                                    </TouchableOpacity>
+                                </View>
+
                                 <View style={styles.tabContainer}>
                                     <TouchableOpacity
                                         style={[styles.tabButton, activeTagTab === 'default' && styles.activeTab]}
@@ -694,7 +723,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </TouchableOpacity>
                                 </ScrollView>
                             </View>
-                        </View>
+                        </Pressable>
                     </Modal>
 
                     <Modal
@@ -703,8 +732,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         animationType="fade"
                         onRequestClose={() => setShowNewTagModal(false)}
                     >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContainer}>
+                        <Pressable
+                            style={styles.modalOverlay}
+                            onPress={() => setShowNewTagModal(false)}
+                        >
+                            <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <Text style={styles.modalTitle}>Nueva Etiqueta</Text>
                                 <TextInput
                                     style={styles.input}
@@ -736,7 +768,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </Pressable>
                                 </View>
                             </View>
-                        </View>
+                        </Pressable>
                     </Modal>
 
                     <Modal
@@ -745,8 +777,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         animationType="fade"
                         onRequestClose={() => setShowColorPicker(false)}
                     >
-                        <View style={styles.colorPickerModal}>
-                            <View style={styles.colorPickerContainer}>
+                        <Pressable
+                            style={styles.colorPickerModal}
+                            onPress={() => setShowColorPicker(false)}
+                        >
+                            <View style={styles.colorPickerContainer} onStartShouldSetResponder={() => true}>
                                 <ColorPicker
                                     color={colorPickerFor === 'category' ? newCategoryColor : newTagColor}
                                     onColorChange={handleColorChange}
@@ -762,7 +797,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     <Text style={styles.colorPickerDoneButtonText}>Listo</Text>
                                 </TouchableOpacity>
                             </View>
-                        </View>
+                        </Pressable>
                     </Modal>
 
                     {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
