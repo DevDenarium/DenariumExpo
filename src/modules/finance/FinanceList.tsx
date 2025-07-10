@@ -89,6 +89,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                                      selectedMonthYear,
                                                      categories,
                                                      userId,
+                                                     setCategories,
                                                      refreshing = false,
                                                      onRefreshTrigger = () => { },
                                                      headerComponent = null
@@ -138,6 +139,10 @@ const FinanceList: React.FC<FinanceListProps> = ({
             setPendingDelete(false);
         }
     }, [pendingDelete, showDetailModal]);
+
+    useEffect(() => {
+        setLocalCategories(categories);
+    }, [categories]);
 
     const formatDate = (date: Date | string): string => {
         const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -513,12 +518,14 @@ const FinanceList: React.FC<FinanceListProps> = ({
                                 setShowEditModal(false);
                                 onRefresh();
                             }}
-                            categories={localCategories}
+                            categories={categories}
                             tags={allTags}
-                            setCategories={setLocalCategories}
+                            setCategories={setCategories}  // Usando la prop recibida
                             setTags={setAllTags}
                             initialData={{
                                 ...selectedEntry,
+                                category: selectedEntry?.category,
+                                categoryId: selectedEntry?.categoryId,
                                 tags: selectedEntry?.tags || []
                             }}
                             isEditing={true}

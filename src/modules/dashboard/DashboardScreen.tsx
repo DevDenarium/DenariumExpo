@@ -16,13 +16,18 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
     const [imageError, setImageError] = useState(false);
     const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
 
+    useEffect(() => {
+        if (!user) {
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                })
+            );
+        }
+    }, [user, navigation]);
+
     if (!user) {
-        navigation.dispatch(
-            CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-            })
-        );
         return null;
     }
 
