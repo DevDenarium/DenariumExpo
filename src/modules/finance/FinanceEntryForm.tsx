@@ -585,12 +585,17 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         >
                             <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <Text style={styles.modalTitle}>Nueva Categoría</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Nombre de la categoría"
-                                    value={newCategoryName}
-                                    onChangeText={setNewCategoryName}
-                                />
+                                    <View style={styles.inputContainerModal}>
+                                        <TextInput
+                                            style={styles.inputVisible}
+                                            placeholder="Nombre de la categoría"
+                                            placeholderTextColor="#AAAAAA"
+                                            value={newCategoryName}
+                                            onChangeText={setNewCategoryName}
+                                            autoFocus={true}
+                                            selectionColor="#D4AF37" // Color del cursor
+                                        />
+                                </View>
 
                                 <View style={styles.colorPickerContainer}>
                                     <Text style={styles.label}>Color:</Text>
@@ -600,7 +605,9 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                             setColorPickerFor('category');
                                             setShowColorPickerModal(true);
                                         }}
-                                    />
+                                    >
+                                        <View />
+                                    </TouchableOpacity>
                                 </View>
 
                                 {/* ColorPickerModal integrado */}
@@ -753,12 +760,17 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         >
                             <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <Text style={styles.modalTitle}>Nueva Etiqueta</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Nombre de la etiqueta"
-                                    value={newTagName}
-                                    onChangeText={setNewTagName}
-                                />
+                                <View style={styles.inputContainerModal}>
+                                    <TextInput
+                                        style={styles.inputVisible}
+                                        placeholder="Nombre de la etiqueta"
+                                        placeholderTextColor="#AAAAAA"
+                                        value={newTagName}
+                                        onChangeText={setNewTagName}
+                                        autoFocus={true}
+                                        selectionColor="#D4AF37"
+                                    />
+                                </View>
 
                                 <View style={styles.colorPickerContainer}>
                                     <Text style={styles.label}>Color:</Text>
@@ -768,10 +780,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                             setColorPickerFor('tag');
                                             setShowColorPickerModal(true);
                                         }}
-                                    />
+                                    >
+                                        <View />
+                                    </TouchableOpacity>
                                 </View>
 
-                                {/* ColorPickerModal integrado */}
                                 <ColorPickerModal
                                     visible={showColorPickerModal && colorPickerFor === 'tag'}
                                     onClose={() => setShowColorPickerModal(false)}
@@ -798,7 +811,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </Pressable>
                                 </View>
                             </View>
-                        </Pressable>
+                        </Pressable>  {/* ← Ahora está correctamente ubicado */}
                     </Modal>
 
                     <ColorPickerModal

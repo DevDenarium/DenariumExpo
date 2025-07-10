@@ -70,10 +70,6 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         minWidth: '90%',
     },
-    inputContainer: {
-        marginBottom: 15,
-        zIndex: 1,
-    },
     label: {
         color: '#D4AF37',
         marginBottom: 8,
@@ -343,6 +339,21 @@ export const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 14,
     },
+    inputContainer: {
+        marginBottom: 15,
+
+    },
+    inputContainerModal: {
+        marginBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#D4AF37'
+    },
+    inputVisible: {
+        color: '#FFFFFF',  // Texto blanco
+        fontSize: 16,
+        paddingVertical: 12,
+        backgroundColor: 'transparent'
+    }
 });
 
 export default styles;
