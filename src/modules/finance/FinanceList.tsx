@@ -5,17 +5,14 @@ import {
     Modal,
     Platform,
     Pressable,
-    ScrollView,
     Text,
-    TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View,
-    KeyboardAvoidingView,
     ActivityIndicator,
     RefreshControl,
     FlatList,
-    StyleSheet
+    StyleSheet,
+    TextInput
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FinanceService } from '../../services/Finance.service';
@@ -58,13 +55,13 @@ if (Platform.OS === 'web') {
         ReactDatePicker = require('react-datepicker').default;
         require('react-datepicker/dist/react-datepicker.css');
     } catch (error) {
-        console.error('Error al cargar react-datepicker:', error);
+        console.error('Error loading react-datepicker:', error);
     }
 } else {
     try {
         DateTimePicker = require('@react-native-community/datetimepicker').default;
     } catch (error) {
-        console.error('Error al cargar DateTimePicker:', error);
+        console.error('Error loading DateTimePicker:', error);
     }
 }
 
@@ -108,27 +105,10 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [editDate, setEditDate] = useState<Date>(new Date());
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [allTags, setAllTags] = useState<FinanceTag[]>([]);
-    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const [showTagPicker, setShowTagPicker] = useState(false);
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
-    const [newTagName, setNewTagName] = useState('');
-    const [showNewTagModal, setShowNewTagModal] = useState(false);
-    const [newCategoryColor, setNewCategoryColor] = useState('#D4AF37');
-    const [newTagColor, setNewTagColor] = useState('#D4AF37');
-    const [showColorPicker, setShowColorPicker] = useState(false);
-    const [colorPickerFor, setColorPickerFor] = useState<'category' | 'tag'>('category');
     const [rawAmount, setRawAmount] = useState('');
-    const [activeCategoryTab, setActiveCategoryTab] = useState<'default' | 'user'>('default');
-    const [activeTagTab, setActiveTagTab] = useState<'default' | 'user'>('default');
-    const scrollViewRef = useRef<ScrollView>(null);
-    const descriptionInputRef = useRef<TextInput>(null);
     const [localCategories, setLocalCategories] = useState<FinanceCategory[]>(categories);
+    const [pendingDelete, setPendingDelete] = useState(false);
 
-    const defaultCategories = categories.filter(cat => cat.isDefault);
-    const userCategories = categories.filter(cat => !cat.isDefault);
-    const defaultTags = allTags.filter(tag => tag.isDefault);
-    const userTags = allTags.filter(tag => !tag.isDefault);
     useEffect(() => {
         const loadEntriesAndTags = async () => {
             try {
@@ -152,6 +132,13 @@ const FinanceList: React.FC<FinanceListProps> = ({
         loadEntriesAndTags();
     }, [refreshTrigger, sortBy, filterBy, selectedMonthYear, userId]);
 
+    useEffect(() => {
+        if (pendingDelete && !showDetailModal) {
+            setShowDeleteModal(true);
+            setPendingDelete(false);
+        }
+    }, [pendingDelete, showDetailModal]);
+
     const formatDate = (date: Date | string): string => {
         const dateObj = typeof date === 'string' ? new Date(date) : date;
         return dateObj.toLocaleDateString('es-ES', {
@@ -163,95 +150,14 @@ const FinanceList: React.FC<FinanceListProps> = ({
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
         if (Platform.OS === 'web') return;
-
         const currentDate = selectedDate || editDate;
         setShowDatePicker(Platform.OS === 'ios');
         setEditDate(currentDate);
         setEditData({ ...editData, date: currentDate.toISOString() });
     };
 
-    const handleWebDateChange = (date: Date) => {
-        setEditDate(date);
-        setEditData({ ...editData, date: date.toISOString() });
-    };
-
     const toggleDatePicker = () => {
         setShowDatePicker(!showDatePicker);
-    };
-
-    const WebDatePicker = () => {
-        if (!ReactDatePicker) {
-            return (
-                <View style={[styles.dateInputContainer, { marginBottom: 0 }]}>
-                    <TextInput
-                        style={[styles.input, styles.dateInput]}
-                        value={editDate ? formatDate(editDate) : ''}
-                        placeholder="Seleccionar fecha"
-                        editable={false}
-                    />
-                </View>
-            );
-        }
-
-        return (
-            <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
-                <ReactDatePicker
-                    selected={editDate}
-                    onChange={handleWebDateChange}
-                    dateFormat="dd/MM/yyyy"
-                    locale="es"
-                    customInput={
-                        <TextInput
-                            style={[styles.input, styles.dateInput]}
-                            value={formatDate(editDate)}
-                            placeholder="Seleccionar fecha"
-                        />
-                    }
-                    popperPlacement="bottom-start"
-                />
-            </View>
-        );
-    };
-
-    const MobileDatePicker = () => {
-        return (
-            <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
-                <TouchableOpacity
-                    style={[styles.input, styles.dateInput]}
-                    onPress={toggleDatePicker}
-                >
-                    <View style={styles.dateInputContent}>
-                        <Text style={{ color: editDate ? '#FFFFFF' : '#AAAAAA' }}>
-                            {editDate ? formatDate(editDate) : 'Seleccionar fecha'}
-                        </Text>
-                        <Icon name="calendar" size={20} color="#D4AF37" />
-                    </View>
-                </TouchableOpacity>
-
-                {showDatePicker && DateTimePicker && (
-                    <View style={styles.datePickerWrapper}>
-                        <DateTimePicker
-                            value={editDate}
-                            mode="date"
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                            onChange={handleDateChange}
-                            locale="es-ES"
-                            textColor="#FFFFFF"
-                            themeVariant="dark"
-                        />
-                    </View>
-                )}
-
-                {Platform.OS === 'ios' && showDatePicker && (
-                    <TouchableOpacity
-                        style={styles.datePickerButton}
-                        onPress={toggleDatePicker}
-                    >
-                        <Text style={styles.datePickerButtonText}>Listo</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        );
     };
 
     const filterEntries = (entries: FinanceEntry[], filter: FilterOption): FinanceEntry[] => {
@@ -260,14 +166,10 @@ const FinanceList: React.FC<FinanceListProps> = ({
         const threeMonthsAgo = new Date(now.setMonth(now.getMonth() - 3));
 
         switch (filter) {
-            case 'income':
-                return entries.filter(e => e.type === 'INCOME');
-            case 'expense':
-                return entries.filter(e => e.type === 'EXPENSE');
-            case 'lastMonth':
-                return entries.filter(e => new Date(e.date) >= oneMonthAgo);
-            case 'last3Months':
-                return entries.filter(e => new Date(e.date) >= threeMonthsAgo);
+            case 'income': return entries.filter(e => e.type === 'INCOME');
+            case 'expense': return entries.filter(e => e.type === 'EXPENSE');
+            case 'lastMonth': return entries.filter(e => new Date(e.date) >= oneMonthAgo);
+            case 'last3Months': return entries.filter(e => new Date(e.date) >= threeMonthsAgo);
             case 'specificMonth':
                 if (!selectedMonthYear) return entries;
                 const selectedMonth = Number(selectedMonthYear.month);
@@ -279,27 +181,19 @@ const FinanceList: React.FC<FinanceListProps> = ({
                         entryDate.getUTCFullYear() === selectedYear
                     );
                 });
-            default:
-                return entries;
+            default: return entries;
         }
     };
 
     const sortEntries = (entries: FinanceEntry[], sort: SortOption): FinanceEntry[] => {
         const sorted = [...entries];
-
         switch (sort) {
-            case 'recent':
-                return sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            case 'oldest':
-                return sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            case 'highest':
-                return sorted.sort((a, b) => b.amount - a.amount);
-            case 'lowest':
-                return sorted.sort((a, b) => a.amount - b.amount);
-            case 'type':
-                return sorted.sort((a, b) => a.type.localeCompare(b.type));
-            default:
-                return sorted;
+            case 'recent': return sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            case 'oldest': return sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            case 'highest': return sorted.sort((a, b) => b.amount - a.amount);
+            case 'lowest': return sorted.sort((a, b) => a.amount - b.amount);
+            case 'type': return sorted.sort((a, b) => a.type.localeCompare(b.type));
+            default: return sorted;
         }
     };
 
@@ -313,46 +207,30 @@ const FinanceList: React.FC<FinanceListProps> = ({
         setShowDetailModal(true);
     };
 
+    const handleDeletePress = () => {
+        setShowDetailModal(false);
+        setPendingDelete(true);
+    };
+
     const handleDelete = async () => {
         if (!selectedEntry) return;
 
         try {
+            setLoading(true);
             await FinanceService.deleteEntry(selectedEntry.id);
+
+            // Optimistic update
+            setEntries(prev => prev.filter(e => e.id !== selectedEntry.id));
             setShowDeleteModal(false);
-            setShowDetailModal(false);
-            onRefresh();
+
             Alert.alert('Éxito', 'Movimiento eliminado correctamente');
+            onRefresh();
         } catch (error) {
             console.error('Error deleting entry:', error);
             Alert.alert('Error', 'No se pudo eliminar el movimiento');
-        }
-    };
-
-    const handleEdit = async () => {
-        if (!selectedEntry || !editData) return;
-
-        setEditLoading(true);
-        try {
-            const formattedData = {
-                title: editData.title,
-                description: editData.description,
-                amount: Number(editData.amount),
-                type: editData.type,
-                categoryId: editData.categoryId,
-                date: editDate.toISOString(),
-                tagIds: selectedTags
-            };
-
-            await FinanceService.updateEntry(selectedEntry.id, formattedData);
-            setShowEditModal(false);
-            setShowDetailModal(false);
-            onRefresh();
-            Alert.alert('Éxito', 'Movimiento actualizado correctamente');
-        } catch (error) {
-            console.error('Error updating entry:', error);
-            Alert.alert('Error', 'No se pudo actualizar el movimiento');
         } finally {
-            setEditLoading(false);
+            setLoading(false);
+            setSelectedEntry(null);
         }
     };
 
@@ -369,38 +247,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
         }).format(amount);
     };
 
-    const formatAmountInput = (value: string): string => {
-        let numericValue = value.replace(/[^0-9]/g, '');
-
-        if (numericValue === '') return '';
-
-        numericValue = numericValue.replace(/^0+/, '');
-        if (numericValue === '') numericValue = '0';
-
-        while (numericValue.length < 3) {
-            numericValue = '0' + numericValue;
-        }
-
-        const integerPart = numericValue.slice(0, -2);
-        const decimalPart = numericValue.slice(-2);
-
-        const formattedInteger = integerPart.length > 0
-            ? parseInt(integerPart).toLocaleString('es-ES')
-            : '0';
-
-        return `${formattedInteger},${decimalPart}`;
-    };
-
-    const parseAmountInput = (formattedValue: string): number => {
-        if (!formattedValue) return 0;
-
-        const numericString = formattedValue
-            .replace(/\./g, '')
-            .replace(/,/g, '.');
-
-        return parseFloat(numericString) || 0;
-    };
-
     const openEditModal = () => {
         if (!selectedEntry) return;
         setEditData({
@@ -415,76 +261,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
         setSelectedTags(selectedEntry.tags?.map(tag => tag.id) || []);
         setRawAmount(selectedEntry.amount.toString().replace('.', '').replace(',', ''));
         setShowEditModal(true);
-    };
-
-    useEffect(() => {
-        setLocalCategories(categories);
-    }, [categories]);
-
-    const handleCreateCategory = async () => {
-        if (!newCategoryName) return;
-
-        try {
-            const newCategory = await FinanceService.createCategory({
-                name: newCategoryName,
-                type: editData.type as FinanceEntryType,
-                color: newCategoryColor,
-                icon: 'tag'
-            });
-
-            setLocalCategories([...localCategories, newCategory]);
-            setEditData({ ...editData, categoryId: newCategory.id });
-            setShowNewCategoryModal(false);
-            setNewCategoryName('');
-            setNewCategoryColor('#D4AF37');
-        } catch (error) {
-            Alert.alert('Error', 'No se pudo crear la categoría');
-        }
-    };
-
-    const handleCreateTag = async () => {
-        if (!newTagName) return;
-
-        try {
-            const newTag = await FinanceService.createTag({
-                name: newTagName,
-                color: newTagColor
-            });
-
-            setAllTags(prevTags => [...prevTags, newTag]);
-            setSelectedTags(prev => [...prev, newTag.id]);
-            setShowNewTagModal(false);
-            setNewTagName('');
-            setNewTagColor('#D4AF37');
-        } catch (error) {
-            Alert.alert('Error', 'No se pudo crear la etiqueta');
-        }
-    };
-
-    const openColorPicker = (forWhat: 'category' | 'tag') => {
-        Keyboard.dismiss();
-        setColorPickerFor(forWhat);
-        setShowColorPicker(true);
-    };
-
-    const handleColorChange = (color: string) => {
-        if (colorPickerFor === 'category') {
-            setNewCategoryColor(color);
-        } else {
-            setNewTagColor(color);
-        }
-    };
-
-    const handleFocus = (ref: React.RefObject<TextInput | View>) => {
-        if (Platform.OS !== 'web' && ref.current) {
-            setTimeout(() => {
-                if ('measure' in ref.current) {
-                    ref.current.measure((x, y, width, height, pageX, pageY) => {
-                        scrollViewRef.current?.scrollTo({ y: pageY - 100, animated: true });
-                    });
-                }
-            }, 100);
-        }
     };
 
     const renderItem = ({ item }: { item: FinanceEntry }) => (
@@ -562,6 +338,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 }
             />
 
+            {/* Modal de Detalles */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -649,8 +426,8 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             <Pressable
                                 style={[styles.modalButton, styles.editButton]}
                                 onPress={() => {
-                                    setShowDetailModal(false); // Cierra primero el modal de detalle
-                                    setTimeout(() => openEditModal(), 100); // Abre el modal de edición con un pequeño retraso
+                                    setShowDetailModal(false);
+                                    setTimeout(() => openEditModal(), 100);
                                 }}
                             >
                                 <Icon name="pencil" size={18} color="#000" />
@@ -659,7 +436,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
 
                             <Pressable
                                 style={[styles.modalButton, styles.deleteButton]}
-                                onPress={() => setShowDeleteModal(true)}
+                                onPress={handleDeletePress}
                             >
                                 <Icon name="trash-can" size={18} color="#000" />
                                 <Text style={styles.modalButtonText}>Eliminar</Text>
@@ -676,36 +453,43 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
+            {/* Modal de Confirmación de Eliminación */}
             <Modal
                 animationType="fade"
                 transparent={true}
                 visible={showDeleteModal}
                 onRequestClose={() => setShowDeleteModal(false)}
+                statusBarTranslucent={true}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
+                    <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                         <Text style={styles.modalTitle}>Confirmar eliminación</Text>
                         <Text style={styles.modalText}>¿Estás seguro que deseas eliminar este movimiento?</Text>
 
                         <View style={styles.modalButtonContainer}>
-                            <Pressable
+                            <TouchableOpacity
                                 style={[styles.modalButton, styles.cancelButton]}
                                 onPress={() => setShowDeleteModal(false)}
                             >
                                 <Text style={styles.modalButtonText}>Cancelar</Text>
-                            </Pressable>
+                            </TouchableOpacity>
 
-                            <Pressable
+                            <TouchableOpacity
                                 style={[styles.modalButton, styles.confirmButton]}
                                 onPress={handleDelete}
                             >
-                                <Text style={styles.modalButtonText}>Eliminar</Text>
-                            </Pressable>
+                                {loading ? (
+                                    <ActivityIndicator color="#000" />
+                                ) : (
+                                    <Text style={styles.modalButtonText}>Eliminar</Text>
+                                )}
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
 
+            {/* Modal de Edición */}
             <Modal
                 visible={showEditModal}
                 animationType="slide"

@@ -1,10 +1,6 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1c1c1c',
-    },
     headerContainer: {
         paddingHorizontal: 20,
         paddingTop: 20,
@@ -91,39 +87,6 @@ export const styles = StyleSheet.create({
     addEntryButtonIcon: {
         marginRight: 8,
     },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        backgroundColor: '#2a2a2a',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
-    },
-    modalTitle: {
-        color: '#D4AF37',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginLeft: 15,
-    },
-    closeButton: {
-        padding: 5,
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        backgroundColor: '#1c1c1c',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
-        maxHeight: '90%',
-        minHeight: '90%',
-        width: '100%',
-        paddingHorizontal: 5,
-    },
-    // Agrega estos estilos a tu FinanceScreen.styles.ts
     fullScreenModalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -135,11 +98,11 @@ export const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         padding: 20,
         maxHeight: '90%',
-        height: '90%', // Asegura que ocupe el 90% de la pantalla
+        height: '90%',
         width: '100%',
     },
     editModalHeader: {
-        flexDirection: 'row', // Cambiado a 'row' para alinear título y botón
+        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,

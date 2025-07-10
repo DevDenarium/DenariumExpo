@@ -4,16 +4,7 @@ import { styles } from './FinanceScreen.styles';
 import FinanceEntryForm from './FinanceEntryForm';
 import FinanceList from './FinanceList';
 import { FinanceService } from '../../services/Finance.service';
-import {
-    BalanceSummary,
-    Currency,
-    FinanceSettings,
-    SortOption,
-    FilterOption,
-    CURRENCIES,
-    MonthYear,
-    FinanceEntryType, FinanceCategory, FinanceTag
-} from './FinanceScreen.types';
+import { BalanceSummary, Currency, FinanceSettings, SortOption, FilterOption, CURRENCIES, MonthYear, FinanceEntryType, FinanceCategory, FinanceTag } from './FinanceScreen.types';
 import ConfigModal from './ConfigModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -84,19 +75,9 @@ const FinanceScreen: React.FC = () => {
 
     const getActiveFiltersCount = () => {
         let count = 0;
-
-        if (settings.filterBy !== 'all') {
-            count++;
-        }
-
-        if (settings.filterBy === 'specificMonth') {
-            count++;
-        }
-
-        if (settings.sortBy !== 'recent') {
-            count++;
-        }
-
+        if (settings.filterBy !== 'all') count++;
+        if (settings.filterBy === 'specificMonth') count++;
+        if (settings.sortBy !== 'recent') count++;
         return count;
     };
 
@@ -121,21 +102,14 @@ const FinanceScreen: React.FC = () => {
             setBalance(data);
         } catch (error) {
             console.error('Error loading balance:', error);
-            setBalance({
-                balance: 0,
-                incomes: 0,
-                expenses: 0
-            });
+            setBalance({ balance: 0, incomes: 0, expenses: 0 });
         }
     };
 
     const onRefresh = async () => {
         setRefreshing(true);
         try {
-            await Promise.all([
-                loadBalance(),
-                loadCategoriesAndTags()
-            ]);
+            await Promise.all([loadBalance(), loadCategoriesAndTags()]);
             setRefreshTrigger(prev => !prev);
         } catch (error) {
             console.error('Error during refresh:', error);
@@ -154,16 +128,6 @@ const FinanceScreen: React.FC = () => {
             console.error('Error updating balance:', error);
         }
     };
-
-    useEffect(() => {
-        const loadData = async () => {
-            await Promise.all([
-                loadBalance(),
-                loadCategoriesAndTags()
-            ]);
-        };
-        loadData();
-    }, [user, refreshTrigger]);
 
     const formatAmount = (amount: number): string => {
         const formattedAmount = amount.toLocaleString('de-DE', {
@@ -234,10 +198,7 @@ const FinanceScreen: React.FC = () => {
 
                         <TouchableOpacity
                             style={styles.addEntryButton}
-                            onPress={() => {
-                                console.log('Botón presionado, showEntryForm:', !showEntryForm);
-                                setShowEntryForm(true);
-                            }}
+                            onPress={() => setShowEntryForm(true)}
                         >
                             <Icon
                                 name="plus-circle"
@@ -251,7 +212,6 @@ const FinanceScreen: React.FC = () => {
                 }
             />
 
-            // Reemplaza el Modal actual en FinanceScreen.tsx con este:
             <Modal
                 animationType="slide"
                 transparent={true}

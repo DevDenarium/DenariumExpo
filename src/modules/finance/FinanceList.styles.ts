@@ -1,4 +1,4 @@
-import {Platform, StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     container: {
@@ -72,6 +72,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        padding: 20,
     },
     modalContainer: {
         width: '80%',
@@ -80,7 +81,6 @@ export const styles = StyleSheet.create({
         padding: 20,
         borderWidth: 1,
         borderColor: '#D4AF37',
-        zIndex: 9999,
     },
     modalTitle: {
         color: '#D4AF37',
@@ -152,27 +152,6 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
     },
-    datePickerWrapper: {
-        position: 'absolute',
-        top: 60,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        backgroundColor: '#2a2a2a',
-        borderRadius: 10,
-        elevation: 5,
-    },
-    datePickerButton: {
-        backgroundColor: '#D4AF37',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    datePickerButtonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-    },
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -225,115 +204,6 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    typeSelector: {
-        flexDirection: 'row',
-        marginBottom: 15,
-        justifyContent: 'space-between',
-    },
-    typeButton: {
-        flex: 1,
-        padding: 10,
-        borderRadius: 5,
-        backgroundColor: '#333333',
-        marginHorizontal: 5,
-        alignItems: 'center',
-    },
-    typeButtonActive: {
-        backgroundColor: '#D4AF37',
-    },
-    typeButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-    },
-    typeButtonTextActive: {
-        color: '#000000',
-    },
-    inputContainer: {
-        marginBottom: 15,
-    },
-    label: {
-        color: '#D4AF37',
-        marginBottom: 8,
-        fontSize: 14,
-    },
-    dropdown: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#333333',
-        borderRadius: 5,
-        padding: 15,
-        marginBottom: 15,
-    },
-    dropdownText: {
-        color: '#FFFFFF',
-    },
-    pickerContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 5,
-        padding: 10,
-        marginTop: -10,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#333333',
-        maxHeight: 200,
-        overflow: 'scroll',
-    },
-    pickerItem: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    pickerItemText: {
-        color: '#FFFFFF',
-        marginLeft: 10,
-    },
-    categoryIcon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    tagsInputContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        backgroundColor: '#333333',
-        borderRadius: 5,
-        padding: 10,
-        minHeight: 50,
-        alignItems: 'center',
-    },
-    selectedTag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#D4AF37',
-        borderRadius: 15,
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        marginRight: 8,
-        marginBottom: 8,
-    },
-    selectedTagText: {
-        color: '#000000',
-        marginRight: 5,
-    },
-    addTagButton: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        borderWidth: 1,
-        borderColor: '#D4AF37',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    tagColor: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        marginRight: 8,
-    },
     categoryContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -343,12 +213,6 @@ export const styles = StyleSheet.create({
         color: '#D4AF37',
         fontSize: 14,
         marginLeft: 5,
-    },
-    tagsTitle: {
-        color: '#D4AF37',
-        fontSize: 14,
-        marginTop: 10,
-        marginBottom: 5,
     },
     tagsContainerModal: {
         flexDirection: 'row',
@@ -386,155 +250,6 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
     },
-    formContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 10,
-        padding: 20,
-        marginHorizontal: 0.5,
-        marginBottom: 15,
-    },
-    inputGroup: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#333333',
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        marginBottom: 15,
-        width: '100%',
-    },
-    inputIcon: {
-        marginRight: 10,
-    },
-    typeIcon: {
-        marginRight: 5,
-    },
-    modalPickerContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 10,
-        width: '80%',
-        maxHeight: '60%',
-        borderWidth: 1,
-        borderColor: '#333333',
-    },
-    pickerScrollView: {
-        padding: 10,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
-        marginBottom: 10,
-    },
-    tabButton: {
-        flex: 1,
-        padding: 12,
-        alignItems: 'center',
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
-    },
-    activeTab: {
-        borderBottomColor: '#D4AF37',
-    },
-    tabText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-    },
-    colorPickerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    colorPreview: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        marginLeft: 10,
-        borderWidth: 1,
-        borderColor: '#FFFFFF',
-    },
-    colorPickerModal: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    colorPickerDoneButton: {
-        backgroundColor: '#D4AF37',
-        padding: 10,
-        borderRadius: 5,
-        marginTop: 15,
-        alignSelf: 'center',
-    },
-    colorPickerDoneButtonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-    },
-    scrollContainer: {
-        flexGrow: 1,
-        paddingVertical: 15,
-        paddingHorizontal: 15,
-    },
-    // En FinanceList.styles.js, añade estos estilos:
-
-    modalContent: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
-        paddingHorizontal: 5,
-        backgroundColor: '#2a2a2a',
-        width: '90%',
-        maxWidth: 500,
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333'
-    },
-    editModalHeader: {
-        flexDirection: 'row', // Cambiado a 'row' para alinear título y botón
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
-    },
-    editModalContainer: {
-        backgroundColor: '#1e1e1e', // Gris más oscuro como en nuevo movimiento
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        padding: 20,
-        maxHeight: '85%',
-        width: '100%',
-    },
-    editModalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        justifyContent: 'flex-end',
-    },
-    editModalTitle: {
-        color: '#D4AF37',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    editModalCloseButton: {
-        padding: 5,
-        marginLeft: 10,
-    },
-    formSection: {
-        marginBottom: 20
-    },
-    sectionTitle: {
-        color: '#D4AF37',
-        fontSize: 16,
-        marginBottom: 10
-    },
     fullScreenModalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -546,8 +261,48 @@ export const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         padding: 20,
         maxHeight: '90%',
-        height: '90%', // Asegura que ocupe el 90% de la pantalla
+        height: '90%',
         width: '100%',
+    },
+    editModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    editModalTitle: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    editModalCloseButton: {
+        padding: 5,
+        marginLeft: 10,
+    },
+    datePickerWrapper: {
+        position: 'absolute',
+        top: 60,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        elevation: 5,
+    },
+    datePickerButton: {
+        backgroundColor: '#D4AF37',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    datePickerButtonText: {
+        color: '#000000',
+        fontWeight: 'bold',
     },
 });
 
+export default styles;

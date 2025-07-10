@@ -76,7 +76,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     headers: { Authorization: `Bearer ${token}` }
                 };
 
-                const profileResponse = await axios.get('http://192.168.20.14:3000/auth/me', config);
+                const profileResponse = await axios.get('http://192.168.100.4:3000/auth/me', config);
                 const updatedUser = profileResponse.data;
 
                 if (updatedUser.profilePicture) {

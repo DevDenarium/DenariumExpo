@@ -9,22 +9,17 @@ export const styles = StyleSheet.create({
         marginBottom: 15,
         flex: 1,
     },
-    header: {
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
     },
     closeButton: {
         padding: 5,
-    },
-    title: {
-        color: '#D4AF37',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#333333',
-        marginTop: 10,
     },
     typeSelector: {
         flexDirection: 'row',
@@ -73,12 +68,6 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         minWidth: '90%',
-    },
-    sectionTitle: {
-        color: '#D4AF37',
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 15,
     },
     inputContainer: {
         marginBottom: 15,
@@ -198,43 +187,6 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    submitButton: {
-        backgroundColor: '#D4AF37',
-    },
-    submitButtonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    submitIcon: {
-        marginRight: 10,
-    },
-    pickerContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 5,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#333333',
-        maxHeight: 200,
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
-    },
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 999,
-    },
     datePickerWrapper: {
         position: 'absolute',
         top: 60,
@@ -273,7 +225,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: 20,
         justifyContent: 'space-between',
-        gap: 10, // Espacio entre botones
+        gap: 10,
     },
     modalButton: {
         borderRadius: 5,
@@ -346,56 +298,43 @@ export const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 15,
     },
-    // En FinanceEntryForm.styles.js:
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 20,
         gap: 10,
     },
-    buttonContainerEditing: {
-        justifyContent: 'space-between',
-    },
-    buttonContainerCreating: {
-        justifyContent: 'center',
-    },
-
     actionButton: {
         flex: 1,
-        borderRadius: 6,  // Bordes ligeramente menos redondeados
-        paddingVertical: 10,  // Menos altura
-        paddingHorizontal: 12,  // Menos ancho
+        borderRadius: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 40,  // Altura fija
+        minHeight: 40,
     },
     buttonText: {
         fontWeight: 'bold',
         color: '#000',
     },
-// Para el botón de cancelar:
     cancelButtonText: {
         color: '#D4AF37',
         fontWeight: 'bold',
     },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
-    },
-
     customFormContainer: {
-        backgroundColor: '#2a2a2a', // Gris claro para el formulario interior
+        backgroundColor: '#2a2a2a',
         borderRadius: 10,
-        margin: 20, // Margen para separarlo del fondo oscuro
+        margin: 20,
         padding: 20,
         flex: 1,
     },
-
+    submitButton: {
+        backgroundColor: '#D4AF37',
+        borderRadius: 6,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });
 
 export default styles;
