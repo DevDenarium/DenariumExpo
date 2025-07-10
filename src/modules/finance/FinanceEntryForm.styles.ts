@@ -338,6 +338,11 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    colorHexText: {
+        color: '#FFFFFF',
+        marginLeft: 10,
+        fontSize: 14,
+    },
 });
 
 export default styles;

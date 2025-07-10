@@ -5,8 +5,8 @@ import { FinanceService } from '../../services/Finance.service';
 import { CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag, FinanceEntry } from './FinanceScreen.types';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';
-import ColorPicker from 'react-native-wheel-color-picker';
 import { styles } from './FinanceEntryForm.styles';
+import ColorPickerModal from './ColorPickerModal';
 
 registerLocale('es', es);
 setDefaultLocale('es');
@@ -97,7 +97,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const [showNewTagModal, setShowNewTagModal] = useState(false);
     const [newCategoryColor, setNewCategoryColor] = useState('#D4AF37');
     const [newTagColor, setNewTagColor] = useState('#D4AF37');
-    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [showColorPickerModal, setShowColorPickerModal] = useState(false);
     const [colorPickerFor, setColorPickerFor] = useState<'category' | 'tag'>('category');
     const [rawAmount, setRawAmount] = useState(
         initialData?.amount ? Math.round(initialData.amount * 100).toString().replace('.', '') : ''
@@ -274,17 +274,17 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     };
 
     const openColorPicker = (forWhat: 'category' | 'tag') => {
-        Keyboard.dismiss();
         setColorPickerFor(forWhat);
-        setShowColorPicker(true);
+        setShowColorPickerModal(true);
     };
 
-    const handleColorChange = (color: string) => {
+    const handleColorSelected = (color: string) => {
         if (colorPickerFor === 'category') {
             setNewCategoryColor(color);
         } else {
             setNewTagColor(color);
         }
+        setShowColorPickerModal(false);
     };
 
     const WebDatePicker = () => {
@@ -596,9 +596,24 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     <Text style={styles.label}>Color:</Text>
                                     <TouchableOpacity
                                         style={[styles.colorPreview, {backgroundColor: newCategoryColor}]}
-                                        onPress={() => openColorPicker('category')}
+                                        onPress={() => {
+                                            setColorPickerFor('category');
+                                            setShowColorPickerModal(true);
+                                        }}
                                     />
                                 </View>
+
+                                {/* ColorPickerModal integrado */}
+                                <ColorPickerModal
+                                    visible={showColorPickerModal && colorPickerFor === 'category'}
+                                    onClose={() => setShowColorPickerModal(false)}
+                                    onColorSelected={(color) => {
+                                        setNewCategoryColor(color);
+                                        setShowColorPickerModal(false);
+                                    }}
+                                    initialColor={newCategoryColor}
+                                    title="Color para categoría"
+                                />
 
                                 <View style={styles.modalButtonContainer}>
                                     <Pressable
@@ -749,9 +764,24 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     <Text style={styles.label}>Color:</Text>
                                     <TouchableOpacity
                                         style={[styles.colorPreview, {backgroundColor: newTagColor}]}
-                                        onPress={() => openColorPicker('tag')}
+                                        onPress={() => {
+                                            setColorPickerFor('tag');
+                                            setShowColorPickerModal(true);
+                                        }}
                                     />
                                 </View>
+
+                                {/* ColorPickerModal integrado */}
+                                <ColorPickerModal
+                                    visible={showColorPickerModal && colorPickerFor === 'tag'}
+                                    onClose={() => setShowColorPickerModal(false)}
+                                    onColorSelected={(color) => {
+                                        setNewTagColor(color);
+                                        setShowColorPickerModal(false);
+                                    }}
+                                    initialColor={newTagColor}
+                                    title="Color para etiqueta"
+                                />
 
                                 <View style={styles.modalButtonContainer}>
                                     <Pressable
@@ -771,34 +801,12 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         </Pressable>
                     </Modal>
 
-                    <Modal
-                        visible={showColorPicker}
-                        transparent={true}
-                        animationType="fade"
-                        onRequestClose={() => setShowColorPicker(false)}
-                    >
-                        <Pressable
-                            style={styles.colorPickerModal}
-                            onPress={() => setShowColorPicker(false)}
-                        >
-                            <View style={styles.colorPickerContainer} onStartShouldSetResponder={() => true}>
-                                <ColorPicker
-                                    color={colorPickerFor === 'category' ? newCategoryColor : newTagColor}
-                                    onColorChange={handleColorChange}
-                                    thumbSize={30}
-                                    sliderSize={30}
-                                    noSnap={true}
-                                    row={false}
-                                />
-                                <TouchableOpacity
-                                    style={styles.colorPickerDoneButton}
-                                    onPress={() => setShowColorPicker(false)}
-                                >
-                                    <Text style={styles.colorPickerDoneButtonText}>Listo</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Pressable>
-                    </Modal>
+                    <ColorPickerModal
+                        visible={showColorPickerModal}
+                        onClose={() => setShowColorPickerModal(false)}
+                        onColorSelected={handleColorSelected}
+                        initialColor={colorPickerFor === 'category' ? newCategoryColor : newTagColor}
+                    />
 
                     {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
 
