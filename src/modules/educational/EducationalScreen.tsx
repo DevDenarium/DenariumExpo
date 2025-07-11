@@ -1,3 +1,4 @@
+// EducationalScreen.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
@@ -20,6 +21,7 @@ import {
     ContentCategory
 } from './EducationalScreen.types';
 import YoutubePlayerWrapper from '../../admin/content/YoutubePlayerWrapper';
+import StoryItem from '../../admin/content/StoryItem';
 
 const VideoItem = ({ item }: { item: EducationalContent }) => {
     const [error, setError] = useState<string | null>(null);
@@ -157,32 +159,21 @@ const EducationalScreen: React.FC = () => {
             </ScrollView>
 
             {stories.length > 0 && (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.storiesContainer}
-                    contentContainerStyle={styles.storiesContent}
-                >
-                    {stories.map(story => (
-                        <TouchableOpacity
-                            key={story.id}
-                            style={styles.storyCircle}
-                            onPress={() => openStoryModal(story)}
-                        >
-                            {story.videoUrl ? (
-                                <Image
-                                    source={{ uri: story.videoUrl }}
-                                    style={styles.storyImage}
-                                />
-                            ) : (
-                                <View style={[styles.storyImage, styles.storyPlaceholder]}>
-                                    <Icon name="video-off" size={30} color="#999" />
-                                </View>
-                            )}
-                            <Text style={styles.storyTitle}>{story.title}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                <View style={styles.storiesContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingRight: 20 }}
+                    >
+                        {stories.map(story => (
+                            <StoryItem
+                                key={story.id}
+                                item={story}
+                                onPress={() => openStoryModal(story)}
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
             )}
 
             <Modal
@@ -190,31 +181,27 @@ const EducationalScreen: React.FC = () => {
                 transparent={true}
                 animationType="fade"
                 onRequestClose={closeStoryModal}
+                statusBarTranslucent={true}
             >
-                <View style={styles.storyModal}>
+                <View style={styles.fullscreenModal}>
                     {selectedStory?.videoUrl ? (
-                        <>
-                            <YoutubePlayerWrapper url={selectedStory.videoUrl} autoplay />
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={closeStoryModal}
-                                activeOpacity={0.8}
-                            >
-                                <Icon name="close" size={24} color="#FFF" />
-                            </TouchableOpacity>
-                        </>
+                        <YoutubePlayerWrapper
+                            url={selectedStory.videoUrl}
+                            autoplay={true}
+                            fullscreen={true}
+                            controls={false}
+                        />
                     ) : (
                         <View style={styles.storyModalPlaceholder}>
                             <Text style={styles.modalPlaceholderText}>Contenido no disponible</Text>
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={closeStoryModal}
-                                activeOpacity={0.8}
-                            >
-                                <Icon name="close" size={24} color="#FFF" />
-                            </TouchableOpacity>
                         </View>
                     )}
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={closeStoryModal}
+                    >
+                        <Icon name="close" size={24} color="#FFF" />
+                    </TouchableOpacity>
                 </View>
             </Modal>
 

@@ -1,3 +1,4 @@
+// YoutubePlayerWrapper.tsx
 import React, { useRef, useEffect } from 'react';
 import { Platform, StyleSheet, View, Text, Dimensions } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
@@ -39,7 +40,6 @@ const YoutubePlayerWrapper: React.FC<Props> = ({
     const videoId = extractYouTubeId(url);
 
     useEffect(() => {
-        // Solución para el error de postMessage
         if (playerRef.current) {
             const originalPostMessage = playerRef.current.postMessage;
             playerRef.current.postMessage = (data: string) => {
@@ -61,28 +61,31 @@ const YoutubePlayerWrapper: React.FC<Props> = ({
         );
     }
 
-    // Configuración para pantalla completa
+    // Configuración especial para historias (pantalla completa y autoplay)
     if (fullscreen) {
-        const screenHeight = Dimensions.get('window').height;
-        const screenWidth = Dimensions.get('window').width;
-
         return (
             <View style={styles.fullscreenContainer}>
                 <YoutubePlayer
                     ref={playerRef}
-                    height={screenHeight}
-                    width={screenWidth}
-                    play={autoplay}
+                    height={Dimensions.get('window').height}
+                    width={Dimensions.get('window').width}
+                    play={true} // Forzar autoplay
                     videoId={videoId}
                     webViewProps={{
-                        allowsInlineMediaPlayback: true,
-                        mediaPlaybackRequiresUserAction: Platform.OS !== 'android',
-                        injectedJavaScript: `
-                            document.querySelector('iframe').allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
-                            true;
-                        `,
+                        allowsInlineMediaPlayback: false,
+                        mediaPlaybackRequiresUserAction: false,
                     }}
                     webViewStyle={styles.fullscreenWebView}
+                    initialPlayerParams={{
+                        autoplay: 1, // Asegurar autoplay
+                        controls: 0, // Ocultar controles
+                        modestbranding: 1, // Ocultar logo de YouTube
+                        rel: 0, // No mostrar videos relacionados al final
+                        showinfo: 0, // Ocultar información del video
+                        fs: 0, // Ocultar botón de pantalla completa
+                        iv_load_policy: 3, // Ocultar anotaciones
+                        disablekb: 1, // Deshabilitar controles del teclado
+                    }}
                 />
             </View>
         );

@@ -1,4 +1,5 @@
-import { StyleSheet, Dimensions } from 'react-native';
+// EducationalScreen.styles.ts
+import {StyleSheet, Dimensions, Platform} from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -103,10 +104,20 @@ export const styles = StyleSheet.create({
     storiesContainer: {
         flexGrow: 0,
         marginBottom: 16,
-        maxHeight: 100,
+        height: 180,
+        paddingLeft: 10,
     },
     storiesContent: {
         paddingLeft: 20,
+    },
+
+    storyItem: {
+        width: 100,
+        height: 160,
+        marginRight: 10,
+        borderRadius: 10,
+        overflow: 'hidden',
+        position: 'relative',
     },
     storyCircle: {
         width: 80,
@@ -120,9 +131,9 @@ export const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     storyImage: {
-        width: 76,
-        height: 76,
-        borderRadius: 38,
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     storyPlaceholder: {
         backgroundColor: '#EEE',
@@ -130,11 +141,15 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     storyTitle: {
-        marginTop: 5,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        color: '#FFF',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: 5,
         fontSize: 12,
         textAlign: 'center',
-        color: '#333',
-        maxWidth: 80,
     },
 
     // Modal de historia
@@ -158,19 +173,6 @@ export const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 18,
     },
-    closeButton: {
-        position: 'absolute',
-        top: 50,
-        right: 20,
-        backgroundColor: 'rgb(211,174,55)',
-        borderRadius: 20,
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-
-    // Estados
     loader: {
         marginVertical: 40,
     },
@@ -205,5 +207,34 @@ export const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    fullscreenContainer: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+    },
+    fullscreenVideo: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 50 : 20,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    fullscreenModal: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
     },
 });
