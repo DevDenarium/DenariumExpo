@@ -29,7 +29,7 @@ export interface FinanceTag {
     id: string;
     name: string;
     userId: string;
-    color?: string;
+    color: string;
     isDefault: boolean;
 }
 

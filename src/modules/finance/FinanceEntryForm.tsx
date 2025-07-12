@@ -7,6 +7,7 @@ import { registerLocale, setDefaultLocale } from "react-datepicker";
 import { es } from 'date-fns/locale';
 import { styles } from './FinanceEntryForm.styles';
 import ColorPickerModal from './ColorPickerModal';
+import axios from "axios";
 
 registerLocale('es', es);
 setDefaultLocale('es');
@@ -109,6 +110,9 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
     const userCategories = categories.filter(cat => !cat.isDefault);
     const defaultTags = tags.filter(tag => tag.isDefault);
     const userTags = tags.filter(tag => !tag.isDefault);
+    const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+    const [editingTagId, setEditingTagId] = useState<string | null>(null);
+    const [isEditingItem, setIsEditingItem] = useState(false);
 
     useEffect(() => {
         if (initialData) {
@@ -127,6 +131,103 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
             );
         }
     }, [initialData]);
+
+    const handleEditCategory = (category: FinanceCategory) => {
+        setNewCategoryName(category.name);
+        setNewCategoryColor(category.color || '#D4AF37');
+        setFormData({...formData, type: category.type});
+        setEditingCategoryId(category.id);
+        setIsEditingItem(true);
+        setShowNewCategoryModal(true);
+        setShowCategoryPicker(false);
+    };
+
+    const handleUpdateCategory = async () => {
+        if (!newCategoryName || !editingCategoryId) return;
+        try {
+            const updatedCategory = await FinanceService.updateCategory(editingCategoryId, {
+                name: newCategoryName,
+                color: newCategoryColor,
+                type: formData.type
+            });
+
+            setCategories(categories.map(cat =>
+                cat.id === editingCategoryId ? updatedCategory : cat
+            ));
+
+            setShowNewCategoryModal(false);
+            setNewCategoryName('');
+            setNewCategoryColor('#D4AF37');
+            setEditingCategoryId(null);
+            setIsEditingItem(false);
+        } catch (error) {
+            Alert.alert('Error', 'No se pudo actualizar la categoría');
+        }
+    };
+
+    const handleDeleteCategory = async (categoryId: string) => {
+        try {
+            await FinanceService.deleteCategory(categoryId);
+            setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+            if (formData.categoryId === categoryId) {
+                setFormData({...formData, categoryId: undefined});
+            }
+            Alert.alert('Éxito', 'Categoría eliminada correctamente');
+        } catch (error) {
+            Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo eliminar la categoría');
+        }
+    };
+
+    // En FinanceEntryForm.tsx
+    const handleUpdateTag = async () => {
+        if (!newTagName || !editingTagId) return;
+        try {
+            const updatedTag = await FinanceService.updateTag(editingTagId, {
+                name: newTagName,
+                color: newTagColor
+            });
+
+            setTags(tags.map(tag =>
+                tag.id === editingTagId ? updatedTag : tag
+            ));
+
+            setShowNewTagModal(false);
+            setNewTagName('');
+            setNewTagColor('#D4AF37');
+            setEditingTagId(null);
+            setIsEditingItem(false);
+            Alert.alert('Éxito', 'Etiqueta actualizada correctamente');
+        } catch (error) {
+            console.error('Error updating tag:', error);
+            let errorMessage = 'No se pudo actualizar la etiqueta';
+            if (axios.isAxiosError(error)) {
+                errorMessage = error.response?.data?.message || errorMessage;
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            Alert.alert('Error', errorMessage);
+        }
+    };
+
+    const handleDeleteTag = async (tagId: string) => {
+        try {
+            await FinanceService.deleteTag(tagId);
+            setTags(prevTags => prevTags.filter(tag => tag.id !== tagId));
+            setSelectedTags(prev => prev.filter(id => id !== tagId));
+            Alert.alert('Éxito', 'Etiqueta eliminada correctamente');
+        } catch (error) {
+            console.error('Error deleting tag:', error);
+            Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo eliminar la etiqueta');
+        }
+    };
+    const handleEditTag = (tag: FinanceTag) => {
+        setNewTagName(tag.name);
+        setNewTagColor(tag.color);
+        setEditingTagId(tag.id);
+        setIsEditingItem(true);
+        setShowNewTagModal(true);
+        setShowTagPicker(false);
+    };
 
     const handleSubmit = async () => {
         Keyboard.dismiss();
@@ -517,35 +618,63 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                 <ScrollView style={styles.pickerScrollView}>
                                     {activeCategoryTab === 'default' ? (
                                         defaultCategories.filter(cat => cat.type === formData.type).map(category => (
-                                            <TouchableOpacity
-                                                key={category.id}
-                                                style={styles.pickerItem}
-                                                onPress={() => {
-                                                    setFormData({ ...formData, categoryId: category.id });
-                                                    setShowCategoryPicker(false);
-                                                }}
-                                            >
-                                                <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
-                                                    <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
-                                                </View>
-                                                <Text style={styles.pickerItemText}>{category.name}</Text>
-                                            </TouchableOpacity>
+                                            <View key={category.id} style={styles.pickerItemContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.pickerItem}
+                                                    onPress={() => {
+                                                        setFormData({ ...formData, categoryId: category.id });
+                                                        setShowCategoryPicker(false);
+                                                    }}
+                                                >
+                                                    <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
+                                                        <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
+                                                    </View>
+                                                    <Text style={styles.pickerItemText}>{category.name}</Text>
+                                                </TouchableOpacity>
+                                            </View>
                                         ))
                                     ) : (
                                         userCategories.filter(cat => cat.type === formData.type).map(category => (
-                                            <TouchableOpacity
-                                                key={category.id}
-                                                style={styles.pickerItem}
-                                                onPress={() => {
-                                                    setFormData({ ...formData, categoryId: category.id });
-                                                    setShowCategoryPicker(false);
-                                                }}
-                                            >
-                                                <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
-                                                    <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
-                                                </View>
-                                                <Text style={styles.pickerItemText}>{category.name}</Text>
-                                            </TouchableOpacity>
+                                            <View key={category.id} style={styles.pickerItemContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.pickerItem}
+                                                    onPress={() => {
+                                                        setFormData({ ...formData, categoryId: category.id });
+                                                        setShowCategoryPicker(false);
+                                                    }}
+                                                >
+                                                    <View style={[styles.categoryIcon, { backgroundColor: category.color || '#333333' }]}>
+                                                        <Icon name={category.icon || 'tag'} size={16} color="#FFFFFF" />
+                                                    </View>
+                                                    <Text style={styles.pickerItemText}>{category.name}</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={styles.tagOptionsButton}
+                                                    onPress={() => {
+                                                        Alert.alert(
+                                                            category.name,
+                                                            '¿Qué acción deseas realizar?',
+                                                            [
+                                                                {
+                                                                    text: 'Editar',
+                                                                    onPress: () => handleEditCategory(category)
+                                                                },
+                                                                {
+                                                                    text: 'Eliminar',
+                                                                    onPress: () => handleDeleteCategory(category.id),
+                                                                    style: 'destructive'
+                                                                },
+                                                                {
+                                                                    text: 'Cancelar',
+                                                                    style: 'cancel'
+                                                                }
+                                                            ]
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon name="dots-vertical" size={20} color="#AAAAAA" />
+                                                </TouchableOpacity>
+                                            </View>
                                         ))
                                     )}
 
@@ -585,16 +714,16 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         >
                             <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <Text style={styles.modalTitle}>Nueva Categoría</Text>
-                                    <View style={styles.inputContainerModal}>
-                                        <TextInput
-                                            style={styles.inputVisible}
-                                            placeholder="Nombre de la categoría"
-                                            placeholderTextColor="#AAAAAA"
-                                            value={newCategoryName}
-                                            onChangeText={setNewCategoryName}
-                                            autoFocus={true}
-                                            selectionColor="#D4AF37" // Color del cursor
-                                        />
+                                <View style={styles.inputContainerModal}>
+                                    <TextInput
+                                        style={styles.inputVisible}
+                                        placeholder="Nombre de la categoría"
+                                        placeholderTextColor="#AAAAAA"
+                                        value={newCategoryName}
+                                        onChangeText={setNewCategoryName}
+                                        autoFocus={true}
+                                        selectionColor="#D4AF37"
+                                    />
                                 </View>
 
                                 <View style={styles.colorPickerContainer}>
@@ -610,7 +739,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* ColorPickerModal integrado */}
                                 <ColorPickerModal
                                     visible={showColorPickerModal && colorPickerFor === 'category'}
                                     onClose={() => setShowColorPickerModal(false)}
@@ -632,9 +760,11 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
 
                                     <Pressable
                                         style={[styles.modalButton, styles.confirmButton]}
-                                        onPress={handleCreateCategory}
+                                        onPress={isEditingItem ? handleUpdateCategory : handleCreateCategory}  // <-- Corregido
                                     >
-                                        <Text style={styles.modalButtonText}>Crear</Text>
+                                        <Text style={styles.modalButtonText}>
+                                            {isEditingItem ? 'Actualizar' : 'Crear'}
+                                        </Text>
                                     </Pressable>
                                 </View>
                             </View>
@@ -705,31 +835,59 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                 <ScrollView style={styles.pickerScrollView}>
                                     {activeTagTab === 'default' ? (
                                         defaultTags.filter(tag => !selectedTags.includes(tag.id)).map(tag => (
-                                            <TouchableOpacity
-                                                key={tag.id}
-                                                style={styles.pickerItem}
-                                                onPress={() => {
-                                                    setSelectedTags([...selectedTags, tag.id]);
-                                                    setShowTagPicker(false);
-                                                }}
-                                            >
-                                                <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
-                                                <Text style={styles.pickerItemText}>{tag.name}</Text>
-                                            </TouchableOpacity>
+                                            <View key={tag.id} style={styles.pickerItemContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.pickerItem}
+                                                    onPress={() => {
+                                                        setSelectedTags([...selectedTags, tag.id]);
+                                                        setShowTagPicker(false);
+                                                    }}
+                                                >
+                                                    <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                                    <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                                </TouchableOpacity>
+                                            </View>
                                         ))
                                     ) : (
                                         userTags.filter(tag => !selectedTags.includes(tag.id)).map(tag => (
-                                            <TouchableOpacity
-                                                key={tag.id}
-                                                style={styles.pickerItem}
-                                                onPress={() => {
-                                                    setSelectedTags([...selectedTags, tag.id]);
-                                                    setShowTagPicker(false);
-                                                }}
-                                            >
-                                                <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
-                                                <Text style={styles.pickerItemText}>{tag.name}</Text>
-                                            </TouchableOpacity>
+                                            <View key={tag.id} style={styles.pickerItemContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.pickerItem}
+                                                    onPress={() => {
+                                                        setSelectedTags([...selectedTags, tag.id]);
+                                                        setShowTagPicker(false);
+                                                    }}
+                                                >
+                                                    <View style={[styles.tagColor, { backgroundColor: tag.color || '#D4AF37' }]} />
+                                                    <Text style={styles.pickerItemText}>{tag.name}</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={styles.tagOptionsButton}
+                                                    onPress={() => {
+                                                        Alert.alert(
+                                                            tag.name,
+                                                            '¿Qué acción deseas realizar?',
+                                                            [
+                                                                {
+                                                                    text: 'Editar',
+                                                                    onPress: () => handleEditTag(tag)
+                                                                },
+                                                                {
+                                                                    text: 'Eliminar',
+                                                                    onPress: () => handleDeleteTag(tag.id),
+                                                                    style: 'destructive'
+                                                                },
+                                                                {
+                                                                    text: 'Cancelar',
+                                                                    style: 'cancel'
+                                                                }
+                                                            ]
+                                                        );
+                                                    }}
+                                                >
+                                                    <Icon name="dots-vertical" size={20} color="#AAAAAA" />
+                                                </TouchableOpacity>
+                                            </View>
                                         ))
                                     )}
 
@@ -805,13 +963,16 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                     </Pressable>
                                     <Pressable
                                         style={[styles.modalButton, styles.confirmButton]}
-                                        onPress={handleCreateTag}
+                                        onPress={isEditingItem ? handleUpdateTag : handleCreateTag}
                                     >
-                                        <Text style={styles.modalButtonText}>Crear</Text>
+                                        <Text style={styles.modalButtonText}>
+                                            {isEditingItem ? 'Actualizar' : 'Crear'}
+                                        </Text>
                                     </Pressable>
+
                                 </View>
                             </View>
-                        </Pressable>  {/* ← Ahora está correctamente ubicado */}
+                        </Pressable>
                     </Modal>
 
                     <ColorPickerModal

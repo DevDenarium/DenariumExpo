@@ -17,6 +17,76 @@ export const FinanceService = {
         return token;
     },
 
+
+    async deleteCategory(id: string): Promise<boolean> {
+        const token = await this.getToken();
+        try {
+            await axios.delete(`${API_BASE_URL}/finance/categories/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            throw error;
+        }
+    },
+
+    async updateCategory(id: string, updateData: any): Promise<FinanceCategory> {
+        const token = await this.getToken();
+        try {
+            const response = await axios.put(`${API_BASE_URL}/finance/categories/${id}`, updateData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating category:', error);
+            throw error;
+        }
+    },
+
+    async updateTag(id: string, updateData: any): Promise<FinanceTag> {
+        const token = await this.getToken();
+        try {
+            const response = await axios.put(`${API_BASE_URL}/finance/tags/${id}`, updateData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating tag:', error);
+            if (axios.isAxiosError(error)) {
+                const errorMessage = error.response?.data?.message || 'No se pudo actualizar la etiqueta';
+                throw new Error(errorMessage);
+            }
+            throw error;
+        }
+    },
+
+    async deleteTag(id: string): Promise<boolean> {
+        const token = await this.getToken();
+        try {
+            await axios.delete(`${API_BASE_URL}/finance/tags/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error deleting tag:', error);
+            if (axios.isAxiosError(error)) {
+                const errorMessage = error.response?.data?.message || 'No se pudo eliminar la etiqueta';
+                throw new Error(errorMessage);
+            }
+            throw error;
+        }
+    },
+
     async createEntry(entryData: any): Promise<any> {
         const token = await this.getToken();
         try {

@@ -353,7 +353,18 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         paddingVertical: 12,
         backgroundColor: 'transparent'
-    }
+    },
+    pickerItemContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    tagOptionsButton: {
+        padding: 10,
+        marginLeft: 10,
+    },
 });
+
 
 export default styles;
