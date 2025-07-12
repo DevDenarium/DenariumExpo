@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) throw new Error('Token no encontrado');
 
-            const response = await axios.get<UserResponse>('http://192.168.20.16:3000/auth/me', {
+            const response = await axios.get<UserResponse>('http://192.168.100.4:3000/auth/me', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) return false;
 
-            const response = await axios.get('http://192.168.20.16:3000/auth/me', {
+            const response = await axios.get('http://192.168.100.4:3000/auth/me', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

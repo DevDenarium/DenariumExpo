@@ -1,5 +1,4 @@
-// EducationalScreen.styles.ts
-import {StyleSheet, Dimensions, Platform} from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -79,7 +78,7 @@ export const styles = StyleSheet.create({
     },
     video: {
         width: '100%',
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
         borderRadius: 8,
     },
     videoPlaceholder: {

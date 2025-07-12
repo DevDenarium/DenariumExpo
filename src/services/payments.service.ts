@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.20.16:3000';
+const API_BASE_URL = 'http://192.168.100.4:3000';
 
 export const PaymentsService = {
     async createCheckoutSession(email: string, planId: string, token: string): Promise<string> {
