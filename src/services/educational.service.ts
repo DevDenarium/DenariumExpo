@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EducationalContent, ContentCategory } from '../modules/educational/EducationalScreen.types';
 
-const API_BASE_URL = 'http://192.168.100.4:3000'; // Cambiar por tu URL de producción
+const API_BASE_URL = 'http://192.168.0.211:3000'; // Cambiar por tu URL de producción
 
 export const EducationalService = {
     fetchCategories: async (): Promise<ContentCategory[]> => {

@@ -109,8 +109,6 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 15,
         flexDirection: 'row',
         alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
     },
     pickerItemText: {
         color: '#FFFFFF',
@@ -359,6 +357,8 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
+        borderBottomWidth: 1,  // Mover el borde aquí
+        borderBottomColor: '#333333',  // Color del borde
     },
     tagOptionsButton: {
         padding: 10,
