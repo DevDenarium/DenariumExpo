@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await AsyncStorage.removeItem('@Auth:user');
             await AsyncStorage.removeItem('@Auth:token');
             setUser(null);
+
         } catch (error) {
             console.error('Error signing out:', error);
             throw error;

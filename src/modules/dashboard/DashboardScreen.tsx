@@ -54,7 +54,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
         try {
             const status = await SubscriptionsService.getSubscriptionStatus();
             if (status) {
-                switch(status.planType) {
+                switch(status.plan) {
                     case 'CORPORATE_PREMIUM':
                         setSubscriptionPlan('Premium');
                         break;
