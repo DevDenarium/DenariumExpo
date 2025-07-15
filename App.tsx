@@ -30,7 +30,24 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 const CustomHeader = ({ navigation }: { navigation: any }) => {
-    const { signOut } = useAuth();
+    const auth = useAuth(); // Siempre obtenemos el contexto primero
+
+    const handleSignOut = async () => {
+        try {
+            if (auth.signOut) {
+                await auth.signOut();
+                // Opcional: redirigir al login si es necesario
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    })
+                );
+            }
+        } catch (error) {
+            console.error('Error during sign out:', error);
+        }
+    };
 
     return (
         <SafeAreaView style={headerStyles.safeArea}>
@@ -43,7 +60,7 @@ const CustomHeader = ({ navigation }: { navigation: any }) => {
                 </TouchableOpacity>
                 <View style={headerStyles.spacer} />
                 <TouchableOpacity
-                    onPress={signOut}
+                    onPress={handleSignOut}
                     style={headerStyles.iconButton}
                 >
                     <Icon name="logout" size={24} color="#D4AF37" />

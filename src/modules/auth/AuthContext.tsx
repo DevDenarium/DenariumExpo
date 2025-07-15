@@ -47,17 +47,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
-    const signOut = async () => {
+    const signOut = React.useCallback(async () => {
         try {
             await AsyncStorage.removeItem('@Auth:user');
             await AsyncStorage.removeItem('@Auth:token');
             setUser(null);
-
         } catch (error) {
             console.error('Error signing out:', error);
             throw error;
         }
-    };
+    }, []); // Dependencias vacías para que no cambie entre renderizados
 
     const updateUser = async (userData: Partial<UserResponse>) => {
         if (!user) return;
