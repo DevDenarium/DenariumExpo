@@ -342,12 +342,14 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                             {plans.map(renderPlanCard)}
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.customPlanButton}
-                            onPress={() => Alert.alert('Solicitar plan personalizado', 'Contacta con nuestro equipo para un plan a medida')}
-                        >
-                            <Text style={styles.customPlanText}>¿Necesitas un plan personalizado?</Text>
-                        </TouchableOpacity>
+                        {user.role === UserRole.CORPORATE && (
+                            <TouchableOpacity
+                                style={styles.customPlanButton}
+                                onPress={() => Alert.alert('Solicitar plan personalizado', 'Contacta con nuestro equipo para un plan a medida')}
+                            >
+                                <Text style={styles.customPlanText}>¿Necesitas un plan personalizado?</Text>
+                            </TouchableOpacity>
+                        )}
                     </>
                 )}
 
