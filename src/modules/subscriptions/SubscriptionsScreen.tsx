@@ -1,105 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { styles } from './SubscriptionsScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { SubscriptionsScreenProps, SubscriptionPlan, SubscriptionStatus, SubscriptionPlanType } from './SubscriptionsScreen.types';
+import { styles } from './SubscriptionsScreen.styles';
+import {
+    SubscriptionsScreenProps,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    SubscriptionResponse
+} from './SubscriptionsScreen.types';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from "../navegation/Navegation.types";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { UserRole } from '../auth/user.types';
 import { SubscriptionsService } from '../../services/subscription.service';
 import { useAuth } from '../auth/AuthContext';
+import {PaymentSuccessData} from "../payments/PaymentsScreen.types";
+import {AxiosError} from "axios";
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 const useTypedNavigation = () => useNavigation<NavigationProp>();
 
-const corporatePlans: SubscriptionPlan[] = [
-    {
-        id: 'corporate_premium',
-        name: 'Plan Premium Corporativo',
-        price: 100,
-        period: 'mes',
-        features: [
-            'Acceso completo a métricas',
-            'Acceso a transacciones',
-            'Acceso completo a contenido educativo',
-            'Notificaciones informativas de gastos',
-            'Suscripción de 50 empleados',
-            '1 asesoría al mes gratuita'
-        ],
-        highlight: true,
-        icon: 'trophy',
-        employeeLimit: 50,
-        freeAdvisoryCount: 1,
-        type: 'CORPORATE_PREMIUM'
-    },
-    {
-        id: 'corporate_gold',
-        name: 'Plan Gold Corporativo',
-        price: 50,
-        period: 'mes',
-        features: [
-            'Acceso completo a métricas',
-            'Acceso a transacciones',
-            'Acceso completo a contenido educativo',
-            'Notificaciones limitadas informativas de gastos',
-            'Suscripción de 10 empleados'
-        ],
-        icon: 'medal',
-        employeeLimit: 10,
-        type: 'CORPORATE_GOLD'
-    },
-    {
-        id: 'corporate_free',
-        name: 'Plan Free Corporativo',
-        price: 0,
-        period: 'mes',
-        features: [
-            'Acceso completo a métricas',
-            'Acceso a transacciones',
-            'Acceso limitado a contenido educativo',
-            'Notificaciones limitadas informativas de gastos'
-        ],
-        icon: 'office-building',
-        type: 'CORPORATE_FREE'
-    }
-];
-
-const personalPlans: SubscriptionPlan[] = [
-    {
-        id: 'personal_premium',
-        name: 'Plan Premium Personal',
-        price: 20,
-        period: 'mes',
-        features: [
-            'Acceso completo a métricas',
-            'Acceso a transacciones',
-            'Acceso completo a contenido educativo',
-            'Notificaciones informativas de gastos',
-            '1 asesoría al mes gratuita'
-        ],
-        highlight: true,
-        icon: 'star',
-        freeAdvisoryCount: 1,
-        type: 'PERSONAL_PREMIUM'
-    },
-    {
-        id: 'personal_free',
-        name: 'Plan Free Personal',
-        price: 0,
-        period: 'mes',
-        features: [
-            'Acceso básico a métricas',
-            'Acceso a transacciones básicas',
-            'Acceso limitado a contenido educativo'
-        ],
-        icon: 'account-outline',
-        type: 'PERSONAL_FREE'
-    }
-];
-
 const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
-    const { user, loading: authLoading, updateUser, refreshUser } = useAuth();
+    const { user, loading: authLoading, refreshUser } = useAuth();
     const navigation = useTypedNavigation();
 
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -122,37 +44,20 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
     const fetchSubscriptionStatus = async () => {
         try {
             const status = await SubscriptionsService.getSubscriptionStatus();
-
-            if (status) {
-                if (user?.role === UserRole.CORPORATE && !status.planType) {
-                    status.planType = 'CORPORATE_FREE';
-                    status.status = 'ACTIVE';
-                    status.daysRemaining = Infinity;
-                } else if (user?.role === UserRole.PERSONAL && !status.planType) {
-                    status.planType = 'PERSONAL_FREE';
-                    status.status = 'ACTIVE';
-                    status.daysRemaining = Infinity;
-                }
-                setCurrentSubscription(status);
-            } else if (user) {
-                const defaultSubscription: SubscriptionStatus = {
-                    planType: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
-                    status: 'ACTIVE',
-                    startDate: new Date().toISOString(),
-                    endDate: '9999-12-31',
-                    daysRemaining: Infinity
-                };
-                setCurrentSubscription(defaultSubscription);
-            }
+            setCurrentSubscription(status);
         } catch (error) {
             console.error('Error fetching subscription status:', error);
+            // Set default free subscription if error occurs
             if (user) {
                 const defaultSubscription: SubscriptionStatus = {
-                    planType: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
+                    plan: user.role === UserRole.CORPORATE ? 'CORPORATE_FREE' : 'PERSONAL_FREE',
+                    planName: user.role === UserRole.CORPORATE ? 'Plan Free Corporativo' : 'Plan Free Personal',
                     status: 'ACTIVE',
                     startDate: new Date().toISOString(),
                     endDate: '9999-12-31',
-                    daysRemaining: Infinity
+                    daysRemaining: Infinity,
+                    isPremium: false,
+                    features: []
                 };
                 setCurrentSubscription(defaultSubscription);
             }
@@ -163,23 +68,24 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
         try {
             if (!user) return;
 
-            let availablePlans: SubscriptionPlan[] = [];
-
-            switch(user.role) {
-                case UserRole.CORPORATE:
-                    availablePlans = [...corporatePlans];
-                    break;
-                case UserRole.CORPORATE_EMPLOYEE:
-                    availablePlans = [];
-                    break;
-                case UserRole.PERSONAL:
-                    availablePlans = [...personalPlans];
-                    break;
-                default:
-                    availablePlans = [];
-            }
-
-            setPlans(availablePlans);
+            const availablePlans = await SubscriptionsService.getAvailablePlans(user.role);
+            setPlans(availablePlans.map((plan: any) => ({
+                id: plan.name.toLowerCase().replace(/ /g, '_'),
+                name: plan.name,
+                type: plan.planType || plan.type || // Primero intenta con planType
+                    (plan.name.includes('Personal Free') ? 'PERSONAL_FREE' :
+                        plan.name.includes('Personal Premium') ? 'PERSONAL_PREMIUM' :
+                            plan.name.includes('Corporate Free') ? 'CORPORATE_FREE' :
+                                plan.name.includes('Corporate Gold') ? 'CORPORATE_GOLD' :
+                                    'CORPORATE_PREMIUM'), // Fallback basado en nombre
+                price: plan.price,
+                period: 'mes',
+                features: plan.features,
+                highlight: plan.price > 0,
+                icon: plan.price > 0 ? 'star' : 'account-outline',
+                employeeLimit: plan.employeeLimit,
+                freeAdvisoryCount: plan.freeAdvisoryCount
+            })));
         } catch (error) {
             console.error('Error fetching available plans:', error);
             Alert.alert('Error', 'No se pudieron cargar los planes disponibles');
@@ -187,39 +93,45 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
     };
 
     const handleSubscribe = async (plan: SubscriptionPlan) => {
+        if (!plan.type) {
+            console.error('Plan type is missing:', plan);
+            Alert.alert('Error', 'El plan seleccionado no tiene tipo definido');
+            return;
+        }
+
         setIsProcessing(true);
         try {
+            console.log('Plan seleccionado:', {
+                name: plan.name,
+                type: plan.type,
+                price: plan.price
+            });
+
             if (plan.price === 0) {
-                const response = await SubscriptionsService.activateFreeSubscription(plan.type as SubscriptionPlanType);
-
-                if (response.success) {
-                    Alert.alert('Éxito', 'Plan activado correctamente');
-                    await fetchSubscriptionStatus();
-
-                    if (user) {
-                        await updateUser({
-                            ...user,
-                            subscriptionType: plan.type,
-                            isPremium: plan.type.includes('PREMIUM') // Actualiza isPremium
-                        });
-                    }
-                }
+                const response = await SubscriptionsService.activateFreeSubscription(plan.type);
+                Alert.alert('Éxito', 'Suscripción gratuita activada correctamente');
+                await fetchSubscriptionStatus();
+                await refreshUser();
             } else {
+                // Navegar a la pantalla de pago en lugar de procesar directamente
                 navigation.navigate('PaymentsScreen', {
-                    plan,
-                    onSuccess: async () => {
-                        await fetchSubscriptionStatus();
-                        await refreshUser();
+                    plan: {
+                        ...plan,
+                        type: plan.type // Asegurarse que el type está definido
+                    },
+                    onSuccess: async (data: PaymentSuccessData) => {
+                        // Esta función se ejecutará cuando el pago sea exitoso
+                        if (data.subscription) {
+                            Alert.alert('Éxito', 'Suscripción premium activada correctamente');
+                            await fetchSubscriptionStatus();
+                            await refreshUser();
+                        }
                     }
-
                 });
             }
         } catch (error) {
-            console.error('Subscription error:', error);
-            Alert.alert(
-                'Error',
-                error instanceof Error ? error.message : 'Error al procesar la suscripción'
-            );
+            console.error('Error en suscripción:', error);
+            Alert.alert('Error', 'No se pudo completar la suscripción');
         } finally {
             setIsProcessing(false);
         }
@@ -258,34 +170,41 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
             key={plan.id}
             style={[
                 styles.card,
-                currentSubscription?.planType === plan.type && styles.currentPlan,
+                currentSubscription?.plan === plan.type && styles.currentPlan,
                 plan.highlight && styles.highlightCard
             ]}
         >
             <View style={styles.badgeContainer}>
-                {currentSubscription?.planType === plan.type && (
-                    <View style={styles.currentBadge}>
-                        <Text style={styles.currentBadgeText}>TU PLAN</Text>
-                    </View>
-                )}
-
-                {plan.highlight && (
+                {plan.highlight && currentSubscription?.plan === plan.type ? (
+                    <>
+                        <View style={[styles.recommendedBadge, {top: -15}]}>
+                            <Text style={styles.recommendedText}>RECOMENDADO</Text>
+                        </View>
+                        <View style={[styles.currentBadge, {top: -20}]}>
+                            <Text style={styles.currentBadgeText}>TU PLAN</Text>
+                        </View>
+                    </>
+                ) : plan.highlight ? (
                     <View style={styles.recommendedBadge}>
                         <Text style={styles.recommendedText}>RECOMENDADO</Text>
                     </View>
-                )}
+                ) : currentSubscription?.plan === plan.type ? (
+                    <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>TU PLAN</Text>
+                    </View>
+                ) : null}
             </View>
 
             <View style={styles.cardHeader}>
                 <Icon
                     name={plan.icon}
                     size={30}
-                    color={plan.highlight ? '#D4AF37' : currentSubscription?.planType === plan.type ? '#4CAF50' : '#d3ae37'}
+                    color={plan.highlight ? '#D4AF37' : currentSubscription?.plan === plan.type ? '#4CAF50' : '#d3ae37'}
                     style={styles.planIcon}
                 />
                 <Text style={[
                     styles.cardTitle,
-                    currentSubscription?.planType === plan.type && styles.currentPlanTitle
+                    currentSubscription?.plan === plan.type && styles.currentPlanTitle
                 ]}>
                     {plan.name}
                 </Text>
@@ -294,13 +213,13 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
             <View style={styles.priceContainer}>
                 <Text style={[
                     styles.cardPrice,
-                    currentSubscription?.planType === plan.type && styles.currentPlanPrice
+                    currentSubscription?.plan === plan.type && styles.currentPlanPrice
                 ]}>
                     ${plan.price}
                 </Text>
                 <Text style={[
                     styles.cardPeriod,
-                    currentSubscription?.planType === plan.type && styles.currentPlanPeriod
+                    currentSubscription?.plan === plan.type && styles.currentPlanPeriod
                 ]}>
                     /{plan.period}
                 </Text>
@@ -308,7 +227,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
 
             <View style={[
                 styles.divider,
-                currentSubscription?.planType === plan.type && styles.currentDivider
+                currentSubscription?.plan === plan.type && styles.currentDivider
             ]} />
 
             <View style={styles.featureList}>
@@ -317,11 +236,11 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                         <Icon
                             name="check-circle"
                             size={18}
-                            color={currentSubscription?.planType === plan.type ? '#4CAF50' : '#D4AF37'}
+                            color={currentSubscription?.plan === plan.type ? '#4CAF50' : '#D4AF37'}
                         />
                         <Text style={[
                             styles.featureText,
-                            currentSubscription?.planType === plan.type && styles.currentFeatureText
+                            currentSubscription?.plan === plan.type && styles.currentFeatureText
                         ]}>
                             {feature}
                         </Text>
@@ -329,7 +248,7 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                 ))}
             </View>
 
-            {currentSubscription?.planType === plan.type ? (
+            {currentSubscription?.plan === plan.type ? (
                 <View style={styles.currentPlanButton}>
                     <Icon name="check-circle" size={20} color="#4CAF50" style={styles.currentPlanIcon} />
                     <Text style={styles.currentPlanText}>ACTUALMENTE ACTIVO</Text>
@@ -389,19 +308,14 @@ const SubscriptionsScreen: React.FC<SubscriptionsScreenProps> = () => {
                             />
                             <View>
                                 <Text style={styles.statusPlan}>
-                                    {currentSubscription.planType === 'CORPORATE_FREE' ? 'Plan Free Corporativo' :
-                                        currentSubscription.planType === 'CORPORATE_GOLD' ? 'Plan Gold Corporativo' :
-                                            currentSubscription.planType === 'CORPORATE_PREMIUM' ? 'Plan Premium Corporativo' :
-                                                currentSubscription.planType === 'PERSONAL_FREE' ? 'Plan Free Personal' :
-                                                        currentSubscription.planType === 'PERSONAL_PREMIUM' ? 'Plan Premium Personal' :
-                                                            'Plan Corporativo'}
+                                    {currentSubscription.planName}
                                 </Text>
                                 <Text style={styles.statusText}>
                                     Estado: <Text style={styles.statusHighlight}>
                                     {currentSubscription.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
                                 </Text>
                                 </Text>
-                                {currentSubscription.planType?.includes('FREE') ? (
+                                {currentSubscription.plan?.includes('FREE') ? (
                                     <Text style={styles.statusDate}>
                                         Acceso gratuito permanente
                                     </Text>

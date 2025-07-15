@@ -1,4 +1,4 @@
-import { SubscriptionPlan } from "../subscriptions/SubscriptionsScreen.types";
+import {SubscriptionPlan, SubscriptionPlanType} from "../subscriptions/SubscriptionsScreen.types";
 import { Appointment } from "../appointment/AppointmentScreen.types";
 
 export type PaymentMetadata = {
@@ -8,7 +8,15 @@ export type PaymentMetadata = {
 
 export type PaymentSuccessData = {
     paymentType: 'subscription' | 'appointment';
-    subscription?: SubscriptionPlan;
+    subscription?: {
+        id: string;
+        name: string;
+        price: number;
+        period: string;
+        features: string[];
+        type: SubscriptionPlanType;
+        [key: string]: any;
+    };
     appointment?: Appointment;
 };
 

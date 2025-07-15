@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 20,
-        marginBottom: 15,
+        marginBottom: 40,
         borderWidth: 1,
         borderColor: '#333',
         position: 'relative',
@@ -94,10 +94,11 @@ export const styles = StyleSheet.create({
     highlightCard: {
         borderColor: '#D4AF37',
     },
+    // Modifica el badgeContainer y los estilos de las insignias así:
     badgeContainer: {
         position: 'absolute',
-        top: -10,
-        right: -5,
+        top: -10,  // Ajusta según necesites
+        right: 10,
         flexDirection: 'column',
         alignItems: 'flex-end',
         zIndex: 1,
@@ -107,7 +108,6 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 12,
-        marginBottom: 5,
         borderWidth: 2,
         borderColor: '#1c1c1c',
         elevation: 3,
@@ -115,6 +115,9 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 2,
+        marginBottom: 4,  // Espacio entre badges cuando hay ambos
+        // Cuando está solo, se posiciona con top negativo
+        top: -8,  // Lo saca del card
     },
     currentBadge: {
         backgroundColor: '#4CAF50',
@@ -128,6 +131,8 @@ export const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 2,
+        // Cuando está solo, se posiciona con top negativo
+        top: -8,  // Lo saca del card
     },
     currentBadgeText: {
         fontSize: 12,

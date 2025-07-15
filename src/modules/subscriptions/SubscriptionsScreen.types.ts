@@ -8,8 +8,7 @@ export type SubscriptionPlanType =
     'PERSONAL_PREMIUM' |
     'CORPORATE_FREE' |
     'CORPORATE_GOLD' |
-    'CORPORATE_PREMIUM' |
-    'CUSTOM';
+    'CORPORATE_PREMIUM';
 
 export interface SubscriptionPlan {
     id: string;
@@ -17,7 +16,6 @@ export interface SubscriptionPlan {
     price: number;
     period: string;
     features: string[];
-    isCurrent?: boolean;
     highlight?: boolean;
     icon: string;
     employeeLimit?: number;
@@ -26,23 +24,21 @@ export interface SubscriptionPlan {
 }
 
 export interface SubscriptionStatus {
-    planType: SubscriptionPlanType;
+    plan: SubscriptionPlanType;
+    planName: string;
     status: 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'PENDING';
     startDate: string;
     endDate: string;
+    daysRemaining: number;
+    isPremium: boolean;
+    features: string[];
     employeeLimit?: number;
     freeAdvisoryCount?: number;
-    daysRemaining?: number;
 }
 
 export interface SubscriptionResponse {
     success: boolean;
     message?: string;
     subscription?: SubscriptionStatus;
-    planType: SubscriptionPlanType;
-}
-
-export interface SubscriptionError {
-    error: string;
-    message: string;
+    planType?: SubscriptionPlanType;
 }

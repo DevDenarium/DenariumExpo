@@ -10,214 +10,81 @@ import { UserRole } from '../modules/auth/user.types';
 const API_BASE_URL = 'http://192.168.100.4:3000';
 
 export const SubscriptionsService = {
-
-    createDefaultSubscription: async (userId: string, role: UserRole): Promise<SubscriptionResponse> => {
+    getAvailablePlans: async (role: UserRole) => {
         try {
             const token = await getAuthToken();
-
-            let defaultPlan: SubscriptionPlanType;
-            switch(role) {
-                case UserRole.CORPORATE:
-                    defaultPlan = 'CORPORATE_FREE';
-                    break;
-                case UserRole.CORPORATE_EMPLOYEE:
-                    defaultPlan = 'CORPORATE_FREE';
-                    break;
-                case UserRole.PERSONAL:
-                default:
-                    defaultPlan = 'PERSONAL_FREE';
-            }
-
-            const response = await axios.post<SubscriptionResponse>(
-                `${API_BASE_URL}/subscriptions/create-default`,
-                { userId, planType: defaultPlan },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+            const response = await axios.get(`${API_BASE_URL}/subscriptions/plans`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            );
+            });
 
-            return response.data;
+            return role === UserRole.CORPORATE ?
+                response.data.corporate :
+                response.data.personal;
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error creating default subscription:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al crear la suscripción por defecto'
-            );
-        }
-    },
-
-    createSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
-        try {
-            const token = await getAuthToken();
-
-            const response = await axios.post<SubscriptionResponse>(
-                `${API_BASE_URL}/subscriptions`,
-                { planType },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            return response.data;
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error creating subscription:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al crear la suscripción'
-            );
+            console.error('Error getting available plans:', error);
+            throw error;
         }
     },
 
     getSubscriptionStatus: async (): Promise<SubscriptionStatus> => {
         try {
             const token = await getAuthToken();
+            const response = await axios.get(`${API_BASE_URL}/subscriptions/status`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-            const response = await axios.get<SubscriptionStatus>(
-                `${API_BASE_URL}/subscriptions/status`,
+            return {
+                ...response.data,
+                planType: response.data.plan,
+                daysRemaining: response.data.daysRemaining > 0 ? response.data.daysRemaining : 0
+            };
+        } catch (error) {
+            console.error('Error getting subscription status:', error);
+            throw error;
+        }
+    },
+
+    upgradeSubscription: async (plan: SubscriptionPlanType): Promise<SubscriptionResponse> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.post(
+                `${API_BASE_URL}/subscriptions/upgrade`,
+                { plan },
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 }
             );
 
             return {
                 ...response.data,
-                daysRemaining: calculateDaysRemaining(response.data.endDate)
+                planType: response.data.subscription?.planType || plan
             };
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error fetching subscription status:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al obtener el estado de la suscripción'
-            );
+            console.error('Error upgrading subscription:', error);
+            throw error;
         }
     },
 
-    upgradeSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
+    simulatePremiumPayment: async (plan: SubscriptionPlanType): Promise<SubscriptionResponse> => {
         try {
             const token = await getAuthToken();
 
-            const response = await axios.post<SubscriptionResponse>(
-                `${API_BASE_URL}/subscriptions/upgrade`,
-                { planType },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            return response.data;
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error upgrading subscription:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al actualizar la suscripción'
-            );
-        }
-    },
-
-    createCheckoutSession: async (
-        planType: SubscriptionPlanType,
-        price: number,
-        userId: string
-    ): Promise<{ sessionId: string }> => {
-        try {
-            const token = await getAuthToken();
-
-            const response = await axios.post<{ sessionId: string }>(
-                `${API_BASE_URL}/payments/create-checkout-session`,
-                {
-                    planType,
-                    price,
-                    userId
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            return response.data;
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error creating checkout session:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al crear la sesión de pago'
-            );
-        }
-    },
-
-    activateFreeSubscription: async (planType: SubscriptionPlanType): Promise<SubscriptionResponse> => {
-        try {
-            const token = await getAuthToken();
-
-            const response = await axios.post<SubscriptionResponse>(
-                `${API_BASE_URL}/subscriptions/activate-free`,
-                { planType },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            return response.data;
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error activating free subscription:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al activar la suscripción gratuita'
-            );
-        }
-    },
-
-    simulatePremiumPayment: async (): Promise<{ success: boolean }> => {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({ success: true });
-            }, 2000);
-        });
-    },
-
-    upgradeToPremium: async (planType?: SubscriptionPlanType): Promise<SubscriptionResponse> => {
-        try {
-            const token = await getAuthToken();
-
-            if (__DEV__) {
-                return {
-                    success: true,
-                    message: 'Subscription upgraded successfully (simulated)',
-                    planType: planType || 'PERSONAL_PREMIUM'
-                };
+            // Debug: Verifica que el plan llegue correctamente
+            console.log('Plan recibido:', plan);
+            if (!plan) {
+                throw new Error('El plan no está definido');
             }
 
-            const response = await axios.post<SubscriptionResponse>(
+            const response = await axios.post(
                 `${API_BASE_URL}/subscriptions/upgrade`,
-                { planType },
+                { plan }, // Envía como objeto { plan: "PERSONAL_PREMIUM" }
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -226,15 +93,46 @@ export const SubscriptionsService = {
                 }
             );
 
-            return response.data;
+            return {
+                success: true,
+                message: 'Pago simulado exitosamente',
+                subscription: response.data.subscription,
+                planType: plan
+            };
         } catch (error) {
-            const axiosError = error as AxiosError<{ message?: string }>;
-            console.error('Error upgrading subscription:', axiosError);
-            throw new Error(
-                axiosError.response?.data?.message ||
-                axiosError.message ||
-                'Error al actualizar la suscripción'
+            console.error('Detalles del error:', {
+                error: error instanceof AxiosError ? {
+                    message: error.message,
+                    status: error.response?.status,
+                    data: error.response?.data,
+                    request: error.config?.data
+                } : error
+            });
+            throw error;
+        }
+    },
+
+    activateFreeSubscription: async (plan: SubscriptionPlanType): Promise<SubscriptionResponse> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.post(
+                `${API_BASE_URL}/subscriptions/upgrade`,
+                { plan },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
+
+            return {
+                ...response.data,
+                planType: response.data.subscription?.planType || plan
+            };
+        } catch (error) {
+            console.error('Error activating free subscription:', error);
+            throw error;
         }
     }
 };
@@ -251,13 +149,3 @@ const getAuthToken = async (): Promise<string> => {
         throw new Error(`Error de autenticación: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
-
-const calculateDaysRemaining = (endDate: string): number => {
-    if (endDate === '9999-12-31') return Infinity;
-    const end = new Date(endDate);
-    const now = new Date();
-    const diffTime = end.getTime() - now.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-export default SubscriptionsService;

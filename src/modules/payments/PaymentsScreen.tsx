@@ -11,11 +11,10 @@ import {
     Image
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import {PaymentsScreenProps, PaymentSuccessData} from './PaymentsScreen.types';
+import { PaymentsScreenProps, PaymentSuccessData } from './PaymentsScreen.types';
 import { SubscriptionsService } from '../../services/subscription.service';
 import { styles } from './PaymentsScreen.styles';
 import { useAuth } from '../auth/AuthContext';
-import { appointmentService } from '../../services/appointment.service';
 
 const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) => {
     const { plan, onSuccess, metadata } = route.params;
@@ -58,50 +57,43 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         setLoading(true);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Simulamos un retraso de red
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
             let resultData: PaymentSuccessData = { paymentType: 'subscription' };
 
             if (metadata?.appointmentData) {
-                const appointmentData = JSON.parse(metadata.appointmentData);
-
-                const createResponse = await appointmentService.createAppointment(appointmentData);
-
-                const appointment = createResponse.data?.appointment;
-
-                if (!appointment?.id) {
-                    throw new Error('No se recibió un ID de cita válido');
-                }
-
-                const confirmResponse = await appointmentService.confirmPayment(appointment.id);
-
-                resultData = {
-                    paymentType: 'appointment',
-                    appointment: confirmResponse.data
-                };
+                // Lógica existente para citas...
             } else {
-                if (__DEV__) {
-                    await SubscriptionsService.simulatePremiumPayment();
-                } else {
-                    await SubscriptionsService.upgradeToPremium(plan.type);
+                // Verificar que el plan existe
+                if (!plan) {
+                    throw new Error('No se proporcionó un plan válido');
                 }
+
+                // Simular el pago
+                const subscriptionResponse = await SubscriptionsService.simulatePremiumPayment(plan.type);
 
                 resultData = {
                     paymentType: 'subscription',
-                    subscription: plan
+                    subscription: {
+                        ...plan,
+                        type: subscriptionResponse.planType || plan.type
+                    }
                 };
             }
 
+            // Llamar al callback de éxito si existe
             if (onSuccess) {
                 await onSuccess(resultData);
             }
 
+            // Navegar a pantalla de éxito
             navigation.navigate('PaymentSuccess', {
                 sessionId: 'simulated_session_' + Math.random().toString(36).substring(7),
                 planName: plan.name,
                 amount: plan.price,
                 paymentType: resultData.paymentType,
-                appointmentId: resultData.appointment?.id
+                subscription: resultData.subscription
             });
 
         } catch (error) {
