@@ -32,6 +32,7 @@ export interface Appointment {
         firstName: string;
         lastName: string;
         email: string;
+        phone: string;
         role: 'PERSONAL' | 'CORPORATE' | 'CORPORATE_EMPLOYEE';
     };
     admin?: {

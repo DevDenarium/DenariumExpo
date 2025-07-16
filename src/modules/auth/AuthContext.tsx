@@ -29,6 +29,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const storedToken = await AsyncStorage.getItem('@Auth:token');
 
             if (storedUser && storedToken) {
+                    axios.defaults.headers.common['Authorization'] =
+                        `Bearer ${storedToken}`;                 // <‑‑ NUEVO
                 setUser(JSON.parse(storedUser));
             }
             setLoading(false);
@@ -38,6 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const signIn = async (authData: AuthResponse) => {
         try {
+            axios.defaults.headers.common['Authorization'] =
+                `Bearer ${authData.access_token}`;          // <‑‑ NUEVO
             setUser(authData.user);
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(authData.user));
             await AsyncStorage.setItem('@Auth:token', authData.access_token);

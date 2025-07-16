@@ -17,7 +17,7 @@ import { styles } from './AppointmentManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO } from 'date-fns';
+import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { registerLocale, setDefaultLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -68,8 +68,6 @@ if (Platform.OS === 'web') {
         console.error('Error al cargar DateTimePicker:', error);
     }
 }
-
-const API_BASE_URL = 'http://192.168.100.4:3000';
 
 type FilterType = 'day' | 'month' | 'none';
 type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all' | 'past';
@@ -219,39 +217,43 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            let result;
+            let appointmentsData: Appointment[] = [];
+            console.log('Fetching appointments for user:', user?.role);
 
             if (user?.role === 'ADMIN') {
-                const pendingRes = await appointmentService.getPendingAppointments();
-                const userRes = await appointmentService.getUserAppointments();
-
-                result = [...pendingRes.data, ...userRes.data];
-
-                // Elimina duplicados por id, si los hay
-                const uniqueAppointmentsMap = new Map();
-                result.forEach(appt => {
-                    uniqueAppointmentsMap.set(appt.id, appt);
-                });
-                result = Array.from(uniqueAppointmentsMap.values());
+                const response = await appointmentService.getAdminAppointments();
+                console.log('Admin appointments response:', response);
+                // Verificar que la respuesta tenga datos y sea un array
+                appointmentsData = Array.isArray(response?.data) ? response.data : [];
+                console.log('Processed admin appointments:', appointmentsData);
             } else {
-                const userRes = await appointmentService.getUserAppointments();
-                result = userRes.data;
+                const userResponse = await appointmentService.getUserAppointments();
+                console.log('User appointments response:', userResponse);
+                appointmentsData = Array.isArray(userResponse?.data) ? userResponse.data : [];
             }
 
+            // Ordenar solo si hay datos
+            if (appointmentsData.length > 0) {
+                appointmentsData = appointmentsData.sort((a, b) =>
+                    new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime()
+                );
+            }
 
-            setAppointments(result);
+            console.log('Final appointments data:', appointmentsData);
+            setAppointments(appointmentsData);
         } catch (error) {
-            console.error('Error al obtener citas:', error);
+            console.error('Error fetching appointments:', error);
             Alert.alert('Error', 'No se pudieron cargar las citas');
+            setAppointments([]);
         } finally {
             setLoading(false);
         }
     };
 
-
     const applyFilters = () => {
         let result = [...appointments];
         const now = new Date();
+        console.log('Applying filters. Initial appointments:', result);
 
         // Filtro por fecha (día o mes)
         if (filterType !== 'none' && filterDate) {
@@ -259,63 +261,74 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 result = result.filter(appointment =>
                     isSameDay(parseISO(appointment.requestedDate), filterDate)
                 );
+                console.log('After day filter:', result);
             } else if (filterType === 'month') {
                 result = result.filter(appointment =>
                     isSameMonth(parseISO(appointment.requestedDate), filterDate) &&
                     isSameYear(parseISO(appointment.requestedDate), filterDate)
                 );
+                console.log('After month filter:', result);
             }
         }
 
         // Filtro por estado
         switch (statusFilter) {
             case 'upcoming':
-                result = result.filter(appointment =>
-                    ['CONFIRMED'].includes(appointment.status) &&
-                    isBefore(now, new Date(appointment.confirmedDate || appointment.requestedDate))
-                ).sort((a, b) =>
-                    new Date(a.confirmedDate || a.requestedDate).getTime() -
-                    new Date(b.confirmedDate || b.requestedDate).getTime()
-                );
+                result = result.filter(appointment => {
+                    const apptDate = new Date(appointment.confirmedDate || appointment.requestedDate);
+                    return (
+                        (appointment.status === 'CONFIRMED' || appointment.status === 'RESCHEDULED') &&
+                        isAfter(apptDate, now)
+                    );
+                }).sort((a, b) => {
+                    const dateA = new Date(a.confirmedDate || a.requestedDate);
+                    const dateB = new Date(b.confirmedDate || b.requestedDate);
+                    return dateA.getTime() - dateB.getTime();
+                });
+                console.log('After upcoming filter:', result);
                 break;
 
             case 'pending':
                 result = result.filter(appointment =>
                     ['PENDING_ADMIN_REVIEW', 'RESCHEDULED'].includes(appointment.status)
                 ).sort((a, b) =>
-                    new Date(a.requestedDate).getTime() -
-                    new Date(b.requestedDate).getTime()
+                    new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime()
                 );
+                console.log('After pending filter:', result);
                 break;
 
             case 'cancelled':
                 result = result.filter(appointment =>
                     ['CANCELLED', 'REJECTED'].includes(appointment.status)
                 ).sort((a, b) =>
-                    new Date(b.requestedDate).getTime() -
-                    new Date(a.requestedDate).getTime()
+                    new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime()
                 );
+                console.log('After cancelled filter:', result);
                 break;
 
             case 'past':
-                result = result.filter(appointment =>
-                    ['CONFIRMED', 'RESCHEDULED'].includes(appointment.status) &&
-                    isBefore(new Date(appointment.confirmedDate || appointment.requestedDate), now)
-                ).sort((a, b) =>
+                result = result.filter(appointment => {
+                    const apptDate = new Date(appointment.confirmedDate || appointment.requestedDate);
+                    return (
+                        ['CONFIRMED', 'COMPLETED'].includes(appointment.status) &&
+                        isBefore(apptDate, now)
+                    );
+                }).sort((a, b) =>
                     new Date(b.confirmedDate || b.requestedDate).getTime() -
                     new Date(a.confirmedDate || a.requestedDate).getTime()
                 );
+                console.log('After past filter:', result);
                 break;
 
             case 'all':
             default:
-                // No filtro adicional
+                console.log('No status filter applied');
                 break;
         }
 
+        console.log('Final filtered appointments:', result);
         setFilteredAppointments(result);
     };
-
 
     const handleProposeReschedule = async (appointmentId: string, newDate: string) => {
         try {
@@ -331,15 +344,24 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         if (!selectedAppointment) return;
 
         try {
-            await appointmentService.confirmAppointment(
+            const confirmedDate = new Date(selectedDate);
+            if (selectedTime) {
+                const [hours, minutes] = selectedTime.split(':').map(Number);
+                confirmedDate.setHours(hours, minutes, 0, 0);
+            }
+
+            const response = await appointmentService.confirmAppointment(
                 selectedAppointment.id,
-                selectedDate.toISOString()
+                confirmedDate.toISOString()
             );
 
+            setAppointments(prev => prev.map(appt =>
+                appt.id === selectedAppointment.id ? response.data : appt
+            ));
+
+            Alert.alert('Éxito', 'Cita confirmada correctamente');
             setShowModal(false);
-            fetchAppointments();
-            resetForm();
-            Alert.alert('Éxito', 'Cita confirmada exitosamente');
+            await fetchAppointments();
         } catch (error) {
             console.error('Error confirming appointment:', error);
             Alert.alert('Error', 'No se pudo confirmar la cita');
@@ -347,57 +369,59 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     };
 
     const handleRescheduleAppointment = async () => {
-        if (!selectedAppointment) {
-            Alert.alert('Error', 'No hay cita seleccionada');
+        if (!selectedAppointment || !selectedTime) {
+            Alert.alert('Error', 'Selecciona fecha y hora');
             return;
         }
-
-        if (!selectedTime) {
-            Alert.alert('Error', 'Debes seleccionar un horario');
-            return;
-        }
-
-        // ✅ Agregado: combinar fecha seleccionada con la hora seleccionada
-        const [hours, minutes] = selectedTime.split(':').map(Number);
-        const newDate = new Date(selectedDate);
-        newDate.setHours(hours, minutes, 0, 0);
 
         try {
+            const [hours, minutes] = selectedTime.split(':').map(Number);
+            const suggestedDate = new Date(selectedDate);
+            suggestedDate.setHours(hours, minutes, 0, 0);
+
             await appointmentService.proposeReschedule(
                 selectedAppointment.id,
-                newDate.toISOString() // usar la nueva fecha con hora combinada
+                suggestedDate.toISOString()
             );
 
+            Alert.alert('Éxito', 'Propuesta de reagendamiento enviada');
             setShowModal(false);
             fetchAppointments();
-            resetForm();
-            Alert.alert('Éxito', 'Se ha enviado la propuesta de reagendamiento al cliente');
         } catch (error) {
-            console.error('Error rescheduling appointment:', error);
+            console.error('Error rescheduling:', error);
             Alert.alert('Error', 'No se pudo reagendar la cita');
         }
     };
 
-
     const handleCancelAppointment = async () => {
         if (!selectedAppointment) return;
 
-        try {
-            await appointmentService.cancelAppointment(selectedAppointment.id);
+        Alert.alert(
+            'Confirmar cancelación',
+            '¿Estás seguro de cancelar esta cita? El cliente recibirá un reintegro con una multa del 10%.',
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Sí, cancelar',
+                    onPress: async () => {
+                        try {
+                            await appointmentService.cancelAppointment(selectedAppointment.id);
 
-            // If the appointment was paid, process refund
-            if (selectedAppointment.paymentStatus === 'PAID') {
-                await appointmentService.processRefund(selectedAppointment.id);
-            }
+                            if (selectedAppointment.status === 'CONFIRMED') {
+                                await appointmentService.processRefund(selectedAppointment.id);
+                            }
 
-            setShowModal(false);
-            fetchAppointments();
-            resetForm();
-            Alert.alert('Éxito', 'Cita cancelada y reembolso procesado si aplica');
-        } catch (error) {
-            console.error('Error canceling appointment:', error);
-            Alert.alert('Error', 'No se pudo cancelar la cita');
-        }
+                            Alert.alert('Éxito', 'Cita cancelada y reintegro procesado');
+                            setShowModal(false);
+                            fetchAppointments();
+                        } catch (error) {
+                            console.error('Error canceling:', error);
+                            Alert.alert('Error', 'No se pudo cancelar la cita');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const resetForm = () => {
@@ -438,7 +462,8 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
     const getStatusText = (status: AppointmentStatus) => {
         switch (status) {
-            case 'PENDING_ADMIN_REVIEW': return 'PENDIENTE';
+            case 'PENDING_PAYMENT': return 'PENDIENTE DE PAGO';
+            case 'PENDING_ADMIN_REVIEW': return 'PENDIENTE DE REVISIÓN';
             case 'CONFIRMED': return 'CONFIRMADA';
             case 'CANCELLED': return 'CANCELADA';
             case 'RESCHEDULED': return 'REAGENDADA';
@@ -471,6 +496,21 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     </View>
                 </View>
                 <View style={styles.cardBody}>
+                    {item.user && (
+                        <>
+                            <Text style={styles.cardDate}>
+                                <Text style={{fontWeight: 'bold'}}>Cliente:</Text> {item.user.firstName} {item.user.lastName}
+                            </Text>
+                            <Text style={styles.cardDate}>
+                                <Text style={{fontWeight: 'bold'}}>Email:</Text> {item.user.email}
+                            </Text>
+                            {item.user.phone && (
+                                <Text style={styles.cardDate}>
+                                    <Text style={{fontWeight: 'bold'}}>Teléfono:</Text> {item.user.phone}
+                                </Text>
+                            )}
+                        </>
+                    )}
                     {item.description && (
                         <Text style={styles.cardDescription}>{item.description}</Text>
                     )}
@@ -485,11 +525,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     {item.confirmedDate && (
                         <Text style={styles.cardDate}>
                             <Text style={{ fontWeight: 'bold' }}>Confirmada:</Text> {formatDate(item.confirmedDate)}
-                        </Text>
-                    )}
-                    {item.user && (
-                        <Text style={styles.cardDate}>
-                            <Text style={{ fontWeight: 'bold' }}>Cliente:</Text> {item.user.firstName} {item.user.lastName} ({item.user.email})
                         </Text>
                     )}
                     <Text style={styles.cardDate}>

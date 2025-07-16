@@ -256,4 +256,32 @@ export const styles = StyleSheet.create({
     rejectButton: {
         backgroundColor: '#F44336',
     } as ViewStyle,
+    // En AppointmentScreen.styles.ts
+    typeSelectorContainer: {
+        marginBottom: 15,
+    },
+    typeLabel: {
+        color: '#FFFFFF',
+        marginBottom: 8,
+        fontSize: 16,
+    },
+    typeButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    typeButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: '#333',
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    typeButtonSelected: {
+        backgroundColor: '#D4AF37',
+    },
+    typeButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
 });

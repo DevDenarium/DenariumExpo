@@ -15,6 +15,7 @@ import { PaymentsScreenProps, PaymentSuccessData } from './PaymentsScreen.types'
 import { SubscriptionsService } from '../../services/subscription.service';
 import { styles } from './PaymentsScreen.styles';
 import { useAuth } from '../auth/AuthContext';
+import {appointmentService} from "../../services/appointment.service";
 
 const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) => {
     const { plan, onSuccess, metadata } = route.params;
@@ -48,6 +49,7 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         setCardExpiry(formatExpiryDate(text));
     };
 
+    // ——— handlePayment ———
     const handlePayment = async () => {
         if (!user) {
             Alert.alert('Error', 'Usuario no autenticado');
@@ -57,55 +59,71 @@ const PaymentsScreen: React.FC<PaymentsScreenProps> = ({ route, navigation }) =>
         setLoading(true);
 
         try {
-            // Simulamos un retraso de red
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Simula latencia de red / SDK de pago
+            await new Promise(r => setTimeout(r, 1500));
 
+            // Datos que devolveremos al caller
             let resultData: PaymentSuccessData = { paymentType: 'subscription' };
 
+            /* ============================================================
+               FLUJO 1: Asesorías (nuevo)
+               ============================================================ */
             if (metadata?.appointmentData) {
-                // Lógica existente para citas...
-            } else {
-                // Verificar que el plan existe
-                if (!plan) {
-                    throw new Error('No se proporcionó un plan válido');
+                const appointmentData = JSON.parse(metadata.appointmentData);
+                const payload = { ...appointmentData, userId: user.id };
+
+                // Primero crear la cita
+                const createResp = await appointmentService.createAppointment(payload);
+                const newAppointment = createResp.data.appointment;
+
+                // Si requiere pago, confirmarlo
+                if (createResp.data.paymentRequired) {
+                    await appointmentService.confirmPayment(newAppointment.id);
                 }
 
-                // Simular el pago
-                const subscriptionResponse = await SubscriptionsService.simulatePremiumPayment(plan.type);
+                resultData = {
+                    paymentType: 'appointment',
+                    appointment: newAppointment,
+                };
+            }
+
+            /* ============================================================
+               FLUJO 2: Suscripciones (sin cambios)
+               ============================================================ */
+            else {
+                const subscriptionResp = await SubscriptionsService
+                    .simulatePremiumPayment(plan.type);
 
                 resultData = {
                     paymentType: 'subscription',
                     subscription: {
                         ...plan,
-                        type: subscriptionResponse.planType || plan.type
-                    }
+                        type: subscriptionResp.planType || plan.type,
+                    },
                 };
             }
 
-            // Llamar al callback de éxito si existe
-            if (onSuccess) {
-                await onSuccess(resultData);
-            }
+            // Callback al caller (AppointmentScreen o quien sea)
+            if (onSuccess) { await onSuccess(resultData); }
 
-            // Navegar a pantalla de éxito
+            // Navega a pantalla de éxito
             navigation.navigate('PaymentSuccess', {
-                sessionId: 'simulated_session_' + Math.random().toString(36).substring(7),
-                planName: plan.name,
-                amount: plan.price,
+                sessionId: 'simulated_session_' + Math.random().toString(36).slice(2),
+                planName:   plan.name,
+                amount:     plan.price,
                 paymentType: resultData.paymentType,
-                subscription: resultData.subscription
+                subscription: resultData.subscription,
+                appointment:  resultData.appointment,
             });
 
         } catch (error) {
-            console.error('Payment error:', error);
-            Alert.alert(
-                'Error',
-                error instanceof Error ? error.message : 'Ocurrió un error al procesar el pago'
-            );
+            console.error('Error en pago:', error);
+            Alert.alert('Pago fallido', 'Intenta de nuevo.');
         } finally {
             setLoading(false);
         }
     };
+
 
     const getPaymentDescription = () => {
         if (metadata?.appointmentData) {

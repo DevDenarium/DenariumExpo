@@ -93,15 +93,31 @@ class AppointmentService {
             const headers = await this.getHeaders();
             const response = await axios.get(`${API_BASE_URL}/appointments`, {
                 headers,
-                params: { filter: 'mine' }
+                params: { filter: 'mine' },
+                validateStatus: (status) => status < 500 // Don't throw for 4xx errors
             });
+
+            if (response.status === 404) {
+                throw new Error('Endpoint not found. Please check the API URL.');
+            }
+
+            if (!response.data) {
+                throw new Error('No data received from server');
+            }
+
             return {
                 data: response.data,
                 status: response.status
             };
         } catch (error: any) {
-            console.error('Error fetching user appointments:', error);
-            throw new Error(error.response?.data?.message || 'Error al obtener las citas');
+            console.error('Detailed error:', {
+                message: error.message,
+                url: `${API_BASE_URL}/appointments`,
+                requestConfig: error.config,
+                responseData: error.response?.data,
+                responseStatus: error.response?.status
+            });
+            throw new Error(error.response?.data?.message || 'Failed to fetch user appointments');
         }
     }
 
@@ -119,6 +135,44 @@ class AppointmentService {
         } catch (error: any) {
             console.error('Error fetching availability:', error);
             throw new Error(error.response?.data?.message || 'Error al obtener la disponibilidad');
+        }
+    }
+
+    async getAdminAppointments(): Promise<ApiResponse<Appointment[]>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.get(`${API_BASE_URL}/appointments/admin`, {
+                headers,
+                validateStatus: (status) => status < 500
+            });
+
+            // Manejo específico de 404
+            if (response.status === 404) {
+                console.warn('Endpoint /admin no encontrado, intentando con /all');
+                const fallbackResponse = await axios.get(`${API_BASE_URL}/appointments`, {
+                    headers,
+                    params: { filter: 'all' }
+                });
+                return {
+                    data: fallbackResponse.data,
+                    status: fallbackResponse.status
+                };
+            }
+
+            if (!response.data) {
+                throw new Error('Respuesta vacía del servidor');
+            }
+
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error en getAdminAppointments:', {
+                message: error.message,
+                response: error.response?.data
+            });
+            throw new Error(error.response?.data?.message || 'Error al cargar citas de administrador');
         }
     }
 
@@ -220,6 +274,12 @@ class AppointmentService {
                 { date: confirmedDate },
                 { headers }
             );
+
+            // Asegurarse de que la respuesta incluye todos los datos necesarios
+            if (!response.data?.id) {
+                throw new Error('Respuesta inválida del servidor');
+            }
+
             return {
                 data: response.data,
                 status: response.status
@@ -272,12 +332,29 @@ class AppointmentService {
                 headers
             });
             return {
-                data: response.data,
+                data: response.data || [],
                 status: response.status
             };
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error fetching pending appointments:', error);
-            throw new Error(error.response?.data?.message || 'Error al obtener las citas pendientes');
+            throw error;
+        }
+    }
+
+    async getUpcomingAppointments(): Promise<ApiResponse<Appointment[]>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.get(`${API_BASE_URL}/appointments/upcoming`, {
+                headers
+            });
+
+            return {
+                data: response.data || [],
+                status: response.status
+            };
+        } catch (error) {
+            console.error('Error fetching upcoming appointments:', error);
+            throw error;
         }
     }
 

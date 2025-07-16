@@ -8,7 +8,7 @@ export type SubscriptionPlanType =
     'PERSONAL_PREMIUM' |
     'CORPORATE_FREE' |
     'CORPORATE_GOLD' |
-    'CORPORATE_PREMIUM';
+    'CORPORATE_PREMIUM' | 'ADVISORY_SINGLE';
 
 export interface SubscriptionPlan {
     id: string;

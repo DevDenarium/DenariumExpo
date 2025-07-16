@@ -124,25 +124,37 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const response = await appointmentService.getUserAppointments();
-            let appointmentsData = response.data;
+            let appointmentsData: Appointment[] = [];
 
+            // Obtener citas del usuario
+            const userResponse = await appointmentService.getUserAppointments();
+            appointmentsData = [...userResponse.data];
+
+            // Si es admin, obtener también citas pendientes y confirmadas
             if (user?.role === 'ADMIN') {
                 const pendingResponse = await appointmentService.getPendingAppointments();
-                const combined = [...appointmentsData, ...pendingResponse.data];
+                const confirmedResponse = await appointmentService.getUserAppointments(); // Obtener también confirmadas
 
-                const appointmentMap = new Map();
-                combined.forEach(appt => {
-                    appointmentMap.set(appt.id, appt);
-                });
+                const allAppointments = [...pendingResponse.data, ...confirmedResponse.data];
+                const pendingIds = new Set(appointmentsData.map(a => a.id));
 
-                appointmentsData = Array.from(appointmentMap.values());
+                // Filtrar para evitar duplicados y mantener solo las no existentes
+                const uniquePending = allAppointments.filter(a => !pendingIds.has(a.id));
+                appointmentsData = [...appointmentsData, ...uniquePending];
             }
 
+            // Ordenar por fecha y asegurar que todas tienen estado definido
+            appointmentsData = appointmentsData.map(appt => ({
+                ...appt,
+                status: appt.status || 'PENDING_ADMIN_REVIEW'
+            })).sort((a, b) =>
+                new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime()
+            );
+
             setAppointments(appointmentsData);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error fetching appointments:', error);
-            Alert.alert('Error', error.message || 'No se pudieron cargar las citas');
+            Alert.alert('Error', 'No se pudieron cargar las citas');
         } finally {
             setLoading(false);
         }
@@ -154,21 +166,33 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
         switch (activeFilter) {
             case 'upcoming':
-                filtered = filtered.filter(appt =>
-                    appt.status === 'CONFIRMED' &&
-                    isAfter(new Date(appt.confirmedDate || appt.requestedDate), now)
-                );
+                filtered = filtered.filter(appt => {
+                    const apptDate = new Date(appt.confirmedDate || appt.requestedDate);
+                    return (
+                        (appt.status === 'CONFIRMED' || appt.status === 'RESCHEDULED') &&
+                        isAfter(apptDate, now)
+                    );
+                });
                 break;
             case 'pending':
-                filtered = filtered.filter(appt =>
-                    ['PENDING_ADMIN_REVIEW', 'RESCHEDULED'].includes(appt.status)
-                );
+                if (user?.role === 'ADMIN') {
+                    filtered = filtered.filter(appt =>
+                        ['PENDING_ADMIN_REVIEW', 'RESCHEDULED'].includes(appt.status)
+                    );
+                } else {
+                    filtered = filtered.filter(appt =>
+                        ['PENDING_ADMIN_REVIEW', 'RESCHEDULED', 'PENDING_PAYMENT'].includes(appt.status)
+                    );
+                }
                 break;
             case 'past':
-                filtered = filtered.filter(appt =>
-                    (appt.status === 'CONFIRMED' || appt.status === 'COMPLETED') &&
-                    isBefore(new Date(appt.confirmedDate || appt.requestedDate), now)
-                );
+                filtered = filtered.filter(appt => {
+                    const apptDate = new Date(appt.confirmedDate || appt.requestedDate);
+                    return (
+                        ['CONFIRMED', 'COMPLETED'].includes(appt.status) &&
+                        isBefore(apptDate, now)
+                    );
+                });
                 break;
             case 'cancelled':
                 filtered = filtered.filter(appt =>
@@ -179,6 +203,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 break;
         }
 
+        // Ordenar por fecha más cercana primero
         filtered.sort((a, b) => {
             const dateA = new Date(a.confirmedDate || a.requestedDate);
             const dateB = new Date(b.confirmedDate || b.requestedDate);
@@ -237,70 +262,59 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     };
 
     const handleCreateAppointment = async () => {
-        if (!formData.title || !selectedDate || !selectedTime) {
-            Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
-            return;
-        }
-
-        const duration = parseInt(formData.duration) || 60;
-        const finalDate = new Date(selectedDate);
-        finalDate.setHours(selectedTime.getHours());
-        finalDate.setMinutes(selectedTime.getMinutes());
-
-        const appointmentData = {
-            title: formData.title,
-            description: formData.description,
-            requestedDate: finalDate.toISOString(),
-            duration,
-            isVirtual: formData.isVirtual
-        };
-
-        if (actionType === 'edit' && selectedAppointment) {
-            try {
-                await appointmentService.updateAppointment(selectedAppointment.id, appointmentData);
-                Alert.alert('Éxito', 'Cita actualizada exitosamente');
-                setShowModal(false);
-                resetForm();
-                fetchAppointments();
-            } catch (error: any) {
-                console.error('Error updating appointment:', error);
-                Alert.alert('Error', error.message || 'No se pudo actualizar la cita');
+        try {
+            if (!selectedDate || !selectedTime) {
+                Alert.alert('Completa fecha y hora');
+                return;
             }
-            return;
-        }
 
-        const advisoryPlan: SubscriptionPlan = {
-            id: 'single_advisory_' + Date.now(),
-            name: 'Asesoría única',
-            price: 10,
-            period: 'una vez',
-            features: [
-                '1 sesión de asesoría financiera',
-                `Duración de ${duration} minutos`,
-                formData.isVirtual ? 'Virtual' : 'Presencial'
-            ],
-            type: 'CUSTOM',
-            icon: 'account-cash'
-        };
+            // Combinar fecha y hora seleccionadas
+            const fullDate = new Date(selectedDate);
+            fullDate.setHours(selectedTime.getHours());
+            fullDate.setMinutes(selectedTime.getMinutes());
+            fullDate.setSeconds(0);
+            fullDate.setMilliseconds(0);
 
-        resetForm();
-        setShowModal(false);
+            // Precio según tipo de asesoría
+            const price = formData.isVirtual ? 10 : 25;
+            const duration = parseInt(formData.duration) || 60;
 
-        paymentsNavigation.navigate('PaymentsScreen', {
-            plan: advisoryPlan,
-            metadata: {
-                appointmentData: JSON.stringify(appointmentData)
-            },
-            onSuccess: async (paymentResult?: any) => {
-                try {
+            const advisoryPlan: SubscriptionPlan = {
+                id: `advisory_${Date.now()}`,
+                name: `Asesoría ${formData.isVirtual ? 'Virtual' : 'Presencial'}`,
+                price,
+                period: 'una vez',
+                features: [
+                    `1 sesión de asesoría ${formData.isVirtual ? 'virtual' : 'presencial'}`,
+                    `Duración: ${duration} minutos`
+                ],
+                type: 'ADVISORY_SINGLE',
+                icon: 'account-cash',
+            };
+
+            const appointmentData = {
+                title: formData.title,
+                description: formData.description,
+                isVirtual: formData.isVirtual,
+                duration,
+                requestedDate: fullDate.toISOString(),
+            };
+
+            // Cerrar modal antes de navegar
+            setShowModal(false);
+
+            navigation.navigate('PaymentsScreen', {
+                plan: advisoryPlan,
+                metadata: { appointmentData: JSON.stringify(appointmentData) },
+                onSuccess: async () => {
+                    // Refrescar citas después de pago exitoso
                     await fetchAppointments();
-                    Alert.alert('Éxito', 'Cita creada y pagada exitosamente. Está pendiente de confirmación.');
-                } catch (error) {
-                    console.error('Error:', error);
-                    Alert.alert('Error', 'Hubo un problema al cargar las citas después del pago');
-                }
-            }
-        });
+                },
+            });
+        } catch (err) {
+            console.error('Error creando cita:', err);
+            Alert.alert('Error', 'No se pudo crear la cita');
+        }
     };
 
     const handleCancelAppointment = async () => {
@@ -377,20 +391,14 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const getStatusText = (status: AppointmentStatus) => {
         switch (status) {
-            case 'PENDING_ADMIN_REVIEW':
-                return 'PENDIENTE';
-            case 'CONFIRMED':
-                return 'CONFIRMADA';
-            case 'CANCELLED':
-                return 'CANCELADA';
-            case 'RESCHEDULED':
-                return 'REAGENDADA';
-            case 'REJECTED':
-                return 'RECHAZADA';
-            case 'COMPLETED':
-                return 'COMPLETADA';
-            default:
-                return status;
+            case 'PENDING_PAYMENT': return 'PENDIENTE DE PAGO';
+            case 'PENDING_ADMIN_REVIEW': return 'PENDIENTE DE REVISIÓN';
+            case 'CONFIRMED': return 'CONFIRMADA';
+            case 'CANCELLED': return 'CANCELADA';
+            case 'RESCHEDULED': return 'REAGENDADA';
+            case 'REJECTED': return 'RECHAZADA';
+            case 'COMPLETED': return 'COMPLETADA';
+            default: return status;
         }
     };
 
@@ -707,6 +715,30 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             onChangeText={(text) => setFormData({...formData, description: text})}
                             multiline
                         />
+
+                        <View style={styles.typeSelectorContainer}>
+                            <Text style={styles.typeLabel}>Tipo de asesoría:</Text>
+                            <View style={styles.typeButtonsContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.typeButton,
+                                        formData.isVirtual && styles.typeButtonSelected
+                                    ]}
+                                    onPress={() => setFormData({...formData, isVirtual: true})}
+                                >
+                                    <Text style={styles.typeButtonText}>Virtual ($10)</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.typeButton,
+                                        !formData.isVirtual && styles.typeButtonSelected
+                                    ]}
+                                    onPress={() => setFormData({...formData, isVirtual: false})}
+                                >
+                                    <Text style={styles.typeButtonText}>Presencial ($25)</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
                         {Platform.OS === 'web' ? <WebDatePicker/> : <MobileDatePicker/>}
 
