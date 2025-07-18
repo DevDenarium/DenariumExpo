@@ -10,6 +10,8 @@ import {
     ActivityIndicator,
     Alert,
     Linking,
+    Platform,
+    Image
 } from 'react-native';
 import { styles } from './VideoManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -23,6 +25,10 @@ import {
     UpdateContentForm,
     VideoManagementProps,
 } from './VideoManagement.types';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { AwsService } from '../../services/aws.service';
+import { VideoCompressionService } from '../../services/video-compression.service';
 
 const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const { user } = useAuth();
@@ -39,18 +45,96 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         type: 'VIDEO',
         categoryId: categories.length > 0 ? categories[0].id : '',
         videoUrl: '',
-        duration: 0, // Valor por defecto para number
+        duration: 0,
         isPremium: false,
         isActive: true,
     });
+    const [videoUri, setVideoUri] = useState<string | null>(null);
+    const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [compressionProgress, setCompressionProgress] = useState(0);
+    const [isCompressing, setIsCompressing] = useState(false);
+    const [videoFileSize, setVideoFileSize] = useState<string>('');
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const validateYouTubeUrl = (url: string): boolean => {
-        const pattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-        return pattern.test(url);
+    // Función para seleccionar video
+    const pickVideo = async () => {
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                allowsEditing: true,
+                aspect: activeTab === 'videos' ? [16, 9] : [9, 16],
+                quality: 1,
+            });
+
+            if (!result.canceled) {
+                const videoUri = result.assets[0].uri;
+                setVideoUri(videoUri);
+                
+                // Obtener información del archivo de manera compatible con web
+                try {
+                    if (Platform.OS === 'web') {
+                        // En web, usar fetch para obtener el tamaño
+                        const response = await fetch(videoUri);
+                        const blob = await response.blob();
+                        const sizeFormatted = VideoCompressionService.formatFileSize(blob.size);
+                        setVideoFileSize(sizeFormatted);
+                        
+                        console.log(`Video seleccionado: ${sizeFormatted}`);
+                        
+                        // Mostrar advertencia si el archivo es muy grande
+                        if (blob.size > 30 * 1024 * 1024) { // 30MB
+                            Alert.alert(
+                                'Archivo Grande',
+                                `El video seleccionado tiene un tamaño de ${sizeFormatted}. Se aplicará compresión automática durante la subida.`,
+                                [{ text: 'Entendido' }]
+                            );
+                        }
+                    } else {
+                        // En móvil, usar FileSystem
+                        const fileInfo = await FileSystem.getInfoAsync(videoUri);
+                        if (fileInfo.exists && 'size' in fileInfo) {
+                            const sizeFormatted = VideoCompressionService.formatFileSize(fileInfo.size);
+                            setVideoFileSize(sizeFormatted);
+                            
+                            console.log(`Video seleccionado: ${sizeFormatted}`);
+                            
+                            // Mostrar advertencia si el archivo es muy grande
+                            if (fileInfo.size > 30 * 1024 * 1024) { // 30MB
+                                Alert.alert(
+                                    'Archivo Grande',
+                                    `El video seleccionado tiene un tamaño de ${sizeFormatted}. Se aplicará compresión automática durante la subida.`,
+                                    [{ text: 'Entendido' }]
+                                );
+                            }
+                        } else {
+                            setVideoFileSize('Tamaño desconocido');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('No se pudo obtener información del video:', error);
+                    setVideoFileSize('Tamaño desconocido');
+                }
+                
+                // Generar thumbnail
+                const thumbnail = await generateThumbnail(videoUri);
+                setThumbnailUri(thumbnail);
+                handleFormChange('videoUrl', 'uploading'); // Marcador temporal
+            }
+        } catch (error) {
+            console.error('Error seleccionando video:', error);
+            Alert.alert('Error', 'No se pudo seleccionar el video');
+        }
     };
 
+    // Función simple para generar thumbnail
+    const generateThumbnail = async (uri: string) => {
+        // Implementación básica - en producción usaría una librería específica
+        return uri;
+    };
+
+    // Función para validar formulario
     const validateForm = (): boolean => {
         const errors: Record<string, string> = {};
 
@@ -66,13 +150,15 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             errors.description = 'La descripción no puede exceder 500 caracteres';
         }
 
-        if (!formData.videoUrl.trim()) {
-            errors.videoUrl = 'La URL es requerida';
-        } else if (!validateYouTubeUrl(formData.videoUrl)) {
-            errors.videoUrl = 'Ingrese una URL válida de YouTube';
+        if (!formData.categoryId) {
+            errors.categoryId = 'La categoría es requerida';
         }
 
-        if (formData.type === 'VIDEO' && (formData.duration <= 0 || formData.duration > 120)) {
+        if (!videoUri && !isEditMode) {
+            errors.video = 'Debe seleccionar un video';
+        }
+
+        if (formData.duration < 1 || formData.duration > 7200) {
             errors.duration = 'La duración debe ser entre 1 y 120 minutos';
         }
 
@@ -80,12 +166,55 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         return Object.keys(errors).length === 0;
     };
 
+    // Función para subir video
+    const uploadVideo = async (uri: string) => {
+        try {
+            setUploadProgress(0);
+            setIsCompressing(false);
+            setCompressionProgress(0);
+
+            const awsService = new AwsService();
+            const s3Key = await awsService.uploadFile(uri, (progress: number) => {
+                setUploadProgress(progress);
+            });
+
+            console.log('Video uploaded successfully with key:', s3Key);
+            return s3Key;
+        } catch (error) {
+            setIsCompressing(false);
+            setCompressionProgress(0);
+            setUploadProgress(0);
+            console.error('Error uploading video:', error);
+            
+            // Manejo específico de errores
+            let errorMessage = 'No se pudo subir el video';
+            
+            if (error instanceof Error) {
+                if (error.message.includes('demasiado grande')) {
+                    errorMessage = 'El video es demasiado grande. El tamaño máximo permitido es 30MB.';
+                } else if (error.message.includes('413') || error.message.includes('Payload Too Large')) {
+                    errorMessage = 'El archivo es muy grande para el servidor. Seleccione un video más pequeño.';
+                } else if (error.message.includes('timeout')) {
+                    errorMessage = 'La subida del video tomó demasiado tiempo. Verifique su conexión a internet.';
+                } else if (error.message.includes('network')) {
+                    errorMessage = 'Error de conexión. Verifique su conexión a internet e intente nuevamente.';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
+            Alert.alert('Error de Subida', errorMessage);
+            throw error;
+        }
+    };
+
+    // Función para obtener contenidos
     const fetchContents = async () => {
         try {
             setLoading(true);
             const response = await EducationalService.fetchContents({
                 type: activeTab === 'videos' ? 'VIDEO' : 'STORY',
-                isActive: undefined // Traer todos, activos e inactivos
+                isActive: undefined
             });
             setContents(response);
         } catch (error) {
@@ -96,6 +225,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         }
     };
 
+    // Función para obtener categorías
     const fetchCategories = async () => {
         try {
             const response = await EducationalService.fetchCategories();
@@ -109,6 +239,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         }
     };
 
+    // Efectos
     useEffect(() => {
         fetchCategories();
     }, []);
@@ -117,10 +248,12 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         fetchContents();
     }, [activeTab]);
 
+    // Función para cambiar tab
     const handleTabChange = (tab: 'videos' | 'stories') => {
         setActiveTab(tab);
     };
 
+    // Función para agregar contenido
     const handleAddContent = () => {
         setFormData({
             title: '',
@@ -132,53 +265,16 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             isPremium: false,
             isActive: true,
         });
+        setVideoUri(null);
+        setThumbnailUri(null);
+        setUploadProgress(0);
         setFormErrors({});
         setIsEditMode(false);
         setCurrentContent(null);
         setModalVisible(true);
     };
 
-    const handleEditContent = (content: EducationalContent) => {
-        setFormData({
-            title: content.title,
-            description: content.description,
-            type: content.type,
-            categoryId: content.categoryId,
-            videoUrl: content.videoUrl || '', // Valor por defecto para string
-            duration: content.duration || 0,  // Valor por defecto para number
-            isPremium: content.isPremium,
-            isActive: content.isActive,
-        });
-        setFormErrors({});
-        setIsEditMode(true);
-        setCurrentContent(content);
-        setModalVisible(true);
-    };
-
-    const handleDeleteContent = async (id: string) => {
-        Alert.alert(
-            'Confirmar eliminación',
-            '¿Estás seguro de que deseas eliminar este contenido?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await EducationalService.deleteContent(id);
-                            fetchContents();
-                            Alert.alert('Éxito', 'Contenido eliminado correctamente');
-                        } catch (error) {
-                            console.error('Error deleting content:', error);
-                            Alert.alert('Error', 'No se pudo eliminar el contenido');
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
+    // Función para cambiar campos del formulario
     const handleFormChange = (field: keyof CreateContentForm, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (formErrors[field]) {
@@ -186,194 +282,173 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         }
     };
 
+    // Función para eliminar todos los videos de prueba
+    const handleDeleteAllTestVideos = async () => {
+        Alert.alert(
+            'Eliminar Videos de Prueba',
+            '⚠️ ¿Estás seguro de que quieres eliminar TODOS los videos? Esta acción eliminará:\n\n• Todos los videos del tipo seleccionado\n• Los archivos de S3 asociados\n• Esta acción NO se puede deshacer\n\n¿Continuar?',
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Eliminar Todo',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            let deletedCount = 0;
+                            let errorCount = 0;
+
+                            for (const content of contents) {
+                                try {
+                                    await EducationalService.deleteContent(content.id);
+                                    
+                                    // También eliminar el archivo de S3 si existe
+                                    if (content.videoUrl && !content.videoUrl.includes('youtube') && !content.videoUrl.includes('youtu.be')) {
+                                        try {
+                                            const awsService = new AwsService();
+                                            await awsService.deleteFile(content.videoUrl);
+                                        } catch (deleteError) {
+                                            console.warn('No se pudo eliminar el archivo de S3:', deleteError);
+                                        }
+                                    }
+                                    
+                                    deletedCount++;
+                                } catch (error) {
+                                    console.error('Error eliminando contenido:', content.id, error);
+                                    errorCount++;
+                                }
+                            }
+
+                            Alert.alert(
+                                'Limpieza Completada',
+                                `✅ Videos eliminados: ${deletedCount}\n${errorCount > 0 ? `❌ Errores: ${errorCount}` : '🎉 Todos los videos fueron eliminados exitosamente'}`
+                            );
+                            
+                            fetchContents();
+                        } catch (error) {
+                            console.error('Error en limpieza masiva:', error);
+                            Alert.alert('Error', 'Hubo un problema durante la limpieza');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Función para eliminar contenido
+    const handleDeleteContent = async (content: EducationalContent) => {
+        Alert.alert(
+            'Confirmar Eliminación',
+            `¿Estás seguro de que deseas eliminar "${content.title}"? Esta acción no se puede deshacer.`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Eliminar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await EducationalService.deleteContent(content.id);
+                            
+                            // También eliminar el archivo de S3 si existe
+                            if (content.videoUrl && !content.videoUrl.includes('youtube') && !content.videoUrl.includes('youtu.be')) {
+                                try {
+                                    const awsService = new AwsService();
+                                    await awsService.deleteFile(content.videoUrl);
+                                } catch (deleteError) {
+                                    console.warn('No se pudo eliminar el archivo de S3:', deleteError);
+                                }
+                            }
+                            
+                            Alert.alert('Éxito', 'Contenido eliminado correctamente');
+                            fetchContents();
+                        } catch (error) {
+                            console.error('Error deleting content:', error);
+                            Alert.alert('Error', 'No se pudo eliminar el contenido');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Función para editar contenido
+    const handleEditContent = (content: EducationalContent) => {
+        setFormData({
+            title: content.title,
+            description: content.description,
+            type: content.type,
+            categoryId: content.categoryId,
+            videoUrl: content.videoUrl || '',
+            duration: content.duration || 0,
+            isPremium: content.isPremium,
+            isActive: content.isActive,
+        });
+        setVideoUri(null);
+        setThumbnailUri(null);
+        setUploadProgress(0);
+        setFormErrors({});
+        setIsEditMode(true);
+        setCurrentContent(content);
+        setModalVisible(true);
+    };
+
+    // Función para enviar formulario
     const handleSubmit = async () => {
         if (!validateForm()) return;
 
         setIsSubmitting(true);
-
         try {
+            let videoUrl = formData.videoUrl;
+
+            // Si hay un video nuevo, subirlo
+            if (videoUri && videoUrl === 'uploading') {
+                videoUrl = await uploadVideo(videoUri);
+            }
+
+            const contentData = {
+                ...formData,
+                videoUrl,
+            };
+
             if (isEditMode && currentContent) {
-                // Cambia esta parte para enviar los dos argumentos por separado
-                await EducationalService.updateContent(
-                    currentContent.id,
-                    {
-                        title: formData.title,
-                        description: formData.description,
-                        categoryId: formData.categoryId,
-                        videoUrl: formData.videoUrl,
-                        duration: formData.duration,
-                        isPremium: formData.isPremium,
-                        isActive: formData.isActive
-                    }
-                );
+                await EducationalService.updateContent(currentContent.id, contentData);
                 Alert.alert('Éxito', 'Contenido actualizado correctamente');
             } else {
-                await EducationalService.createContent(formData);
+                await EducationalService.createContent(contentData);
                 Alert.alert('Éxito', 'Contenido creado correctamente');
             }
+
             setModalVisible(false);
             fetchContents();
         } catch (error) {
-            console.error('Error saving content:', error);
+            console.error('Error submitting form:', error);
             Alert.alert('Error', 'No se pudo guardar el contenido');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const previewVideo = () => {
-        if (formData.videoUrl && validateYouTubeUrl(formData.videoUrl)) {
-            Linking.openURL(formData.videoUrl);
-        } else {
-            Alert.alert('Error', 'Ingrese una URL válida de YouTube primero');
-        }
-    };
-
-    const renderContentCard = (content: EducationalContent) => {
-        const category = categories.find(cat => cat.id === content.categoryId);
-        const isVideo = content.type === 'VIDEO';
-
-        return (
-            <View key={content.id} style={styles.contentCard}>
-                <View style={styles.contentHeader}>
-                    <Text style={styles.contentTitle}>{content.title}</Text>
-                    {content.isPremium && (
-                        <View style={styles.premiumBadge}>
-                            <Text style={styles.premiumBadgeText}>PREMIUM</Text>
-                        </View>
-                    )}
-                    {!content.isActive && (
-                        <View style={styles.inactiveBadge}>
-                            <Text style={styles.inactiveBadgeText}>INACTIVO</Text>
-                        </View>
-                    )}
-                </View>
-                <Text style={styles.contentDescription}>{content.description}</Text>
-                <View style={styles.contentMeta}>
-                    {category && (
-                        <Text style={styles.contentCategory}>
-                            <Icon name={category.icon || 'video'} size={12} color={category.color || '#000'} /> {category.name}
-                        </Text>
-                    )}
-                    <Text style={styles.contentDuration}>
-                        {isVideo ? `${content.duration} min` : 'Historia (1 min max)'}
-                    </Text>
-                </View>
-                <View style={styles.contentRestrictions}>
-                    <Text style={styles.restrictionText}>
-                        {content.isPremium ? 'Solo Premium: Acceso completo' : 'Todos: '}
-                        {isVideo
-                            ? content.isPremium ? 'Video completo' : `Primeros ${Math.min(content.duration || 0, 2)} min`
-                            : content.isPremium ? 'Historia completa' : 'Vista previa'}
-                    </Text>
-                </View>
-                <View style={styles.contentActions}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, styles.editButton]}
-                        onPress={() => handleEditContent(content)}
-                    >
-                        <Text style={styles.actionButtonText}>Editar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.actionButton, styles.deleteButton]}
-                        onPress={() => handleDeleteContent(content.id)}
-                    >
-                        <Text style={styles.actionButtonText}>Eliminar</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    };
-
-    const enhancedStyles = {
-        ...styles,
-        inactiveBadge: {
-            backgroundColor: '#777',
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 4,
-            marginLeft: 10,
-        },
-        inactiveBadgeText: {
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 'bold',
-        },
-        contentRestrictions: {
-            marginTop: 8,
-            padding: 8,
-            backgroundColor: '#f5f5f5',
-            borderRadius: 4,
-        },
-        restrictionText: {
-            fontSize: 12,
-            color: '#555',
-        },
-        errorText: {
-            color: '#e74c3c',
-            fontSize: 12,
-            marginTop: -10,
-            marginBottom: 10,
-        },
-        previewButton: {
-            backgroundColor: '#D4AF37',
-            padding: 8,
-            borderRadius: 4,
-            marginBottom: 15,
-            alignItems: 'flex-start' as const,
-        },
-        previewButtonText: {
-            color: '#fff',
-            fontWeight: 'bold' as const,
-        },
-    };
-
-    if (loading && contents.length === 0) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#D4AF37" />
-            </View>
-        );
-    }
-
+    // Renderizado del componente
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Gestión de Contenido Educativo</Text>
-
-            {categories.length === 0 && (
-                <TouchableOpacity
-                    style={{
-                        backgroundColor: '#4CAF50',
-                        padding: 10,
-                        borderRadius: 6,
-                        alignSelf: 'flex-start',
-                        marginTop: 10,
-                        marginBottom: 5,
-                    }}
-                    onPress={async () => {
-                        try {
-                            const response = await EducationalService.createDefaultCategories();
-                            Alert.alert('Éxito', `${response.created} categorías creadas`);
-                            await fetchCategories(); // Recargar categorías luego de crearlas
-                        } catch (error) {
-                            console.error(error);
-                            Alert.alert('Error', 'No se pudieron crear las categorías por defecto');
-                        }
-                    }}
-                >
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                        Crear categorías por defecto
-                    </Text>
-                </TouchableOpacity>
-            )}
-
-            <View style={styles.tabsContainer}>
+            
+            {/* Tabs */}
+            <View style={styles.tabContainer}>
                 <TouchableOpacity
                     style={[styles.tab, activeTab === 'videos' && styles.activeTab]}
                     onPress={() => handleTabChange('videos')}
                 >
                     <Text style={[styles.tabText, activeTab === 'videos' && styles.activeTabText]}>
-                        Videos Tutoriales
+                        Videos
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -386,25 +461,111 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.contentList}>
-                {contents.length > 0 ? (
-                    contents.map(renderContentCard)
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Icon name="video-off" size={50} color="#999" />
-                        <Text style={styles.emptyText}>
-                            No hay {activeTab === 'videos' ? 'videos' : 'historias'} disponibles
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
-
+            {/* Botón agregar */}
             <TouchableOpacity style={styles.addButton} onPress={handleAddContent}>
+                <Icon name="plus" size={24} color="#1c1c1c" />
                 <Text style={styles.addButtonText}>
-                    <Icon name="plus" size={18} color="#fff" /> Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
+                    Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
                 </Text>
             </TouchableOpacity>
 
+            {/* Lista de contenido */}
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#D4AF37" />
+                    <Text style={styles.loadingText}>Cargando contenido...</Text>
+                </View>
+            ) : (
+                <ScrollView style={styles.contentList}>
+                    {contents.map((content) => (
+                        <View key={content.id} style={styles.videoCard}>
+                            {/* Header del video con título y acciones */}
+                            <View style={styles.videoHeader}>
+                                <View style={styles.videoTitleContainer}>
+                                    <Text style={styles.videoTitle}>{content.title}</Text>
+                                    <Text style={styles.videoSubtitle}>{content.description}</Text>
+                                </View>
+                                <View style={styles.videoActions}>
+                                    <TouchableOpacity
+                                        style={styles.videoActionButton}
+                                        onPress={() => handleEditContent(content)}
+                                    >
+                                        <Icon name="pencil" size={18} color="#D4AF37" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.videoActionButton, styles.deleteActionButton]}
+                                        onPress={() => handleDeleteContent(content)}
+                                    >
+                                        <Icon name="delete" size={18} color="#ff4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Información del video */}
+                            <View style={styles.videoInfo}>
+                                <View style={styles.videoMetrics}>
+                                    <View style={styles.metricItem}>
+                                        <Icon name="video" size={16} color="#D4AF37" />
+                                        <Text style={styles.metricText}>
+                                            {content.type === 'VIDEO' ? 'Video' : 'Historia'}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.metricItem}>
+                                        <Icon name="clock-outline" size={16} color="#D4AF37" />
+                                        <Text style={styles.metricText}>{content.duration} min</Text>
+                                    </View>
+                                    <View style={styles.metricItem}>
+                                        <Icon 
+                                            name={content.isPremium ? "crown" : "gift-outline"} 
+                                            size={16} 
+                                            color={content.isPremium ? "#FFD700" : "#4CAF50"} 
+                                        />
+                                        <Text style={[
+                                            styles.metricText,
+                                            content.isPremium ? styles.premiumText : styles.freeText
+                                        ]}>
+                                            {content.isPremium ? 'Premium' : 'Gratuito'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                
+                                {/* Estado del video */}
+                                <View style={styles.statusContainer}>
+                                    <View style={[
+                                        styles.statusBadge,
+                                        content.isActive ? styles.activeStatus : styles.inactiveStatus
+                                    ]}>
+                                        <Icon 
+                                            name={content.isActive ? "check-circle" : "pause-circle"} 
+                                            size={14} 
+                                            color={content.isActive ? "#ffffff" : "#ffffff"} 
+                                        />
+                                        <Text style={styles.statusText}>
+                                            {content.isActive ? 'Activo' : 'Inactivo'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Separador sutil */}
+                            <View style={styles.videoSeparator} />
+                        </View>
+                    ))}
+                    {contents.length === 0 && (
+                        <View style={styles.emptyContainer}>
+                            <Icon name="video-off" size={60} color="#666" />
+                            <Text style={styles.emptyText}>
+                                No hay {activeTab === 'videos' ? 'videos' : 'historias'} disponibles
+                            </Text>
+                            <Text style={styles.emptySubtext}>
+                                Agrega tu primer contenido usando el botón de arriba
+                            </Text>
+                        </View>
+                    )}
+                </ScrollView>
+            )}
+
+            {/* Modal para formulario */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"
@@ -413,115 +574,155 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>
-                            {isEditMode ? 'Editar Contenido' : 'Agregar Nuevo Contenido'}
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Título*"
-                            value={formData.title}
-                            onChangeText={text => handleFormChange('title', text)}
-                        />
-                        {formErrors.title && <Text style={enhancedStyles.errorText}>{formErrors.title}</Text>}
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Descripción*"
-                            multiline
-                            numberOfLines={3}
-                            value={formData.description}
-                            onChangeText={text => handleFormChange('description', text)}
-                        />
-                        {formErrors.description && <Text style={enhancedStyles.errorText}>{formErrors.description}</Text>}
-
-                        <Picker
-                            style={styles.picker}
-                            selectedValue={formData.categoryId}
-                            onValueChange={value => handleFormChange('categoryId', value)}
-                        >
-                            {categories.map(category => (
-                                <Picker.Item
-                                    key={category.id}
-                                    label={category.name}
-                                    value={category.id}
-                                />
-                            ))}
-                        </Picker>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="URL del video (YouTube)*"
-                            value={formData.videoUrl}
-                            onChangeText={text => handleFormChange('videoUrl', text)}
-                        />
-                        {formErrors.videoUrl && <Text style={enhancedStyles.errorText}>{formErrors.videoUrl}</Text>}
-
-                        <TouchableOpacity
-                            style={enhancedStyles.previewButton}
-                            onPress={previewVideo}
-                            disabled={!formData.videoUrl}
-                        >
-                            <Text style={enhancedStyles.previewButtonText}>
-                                <Icon name="play" size={14} color="#fff" /> Previsualizar Video
+                        <ScrollView>
+                            {/* Título */}
+                            <Text style={styles.modalTitle}>
+                                {isEditMode ? 'Editar' : 'Agregar'} {activeTab === 'videos' ? 'Video' : 'Historia'}
                             </Text>
-                        </TouchableOpacity>
 
-                        {formData.type === 'VIDEO' && (
-                            <>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Duración en minutos*"
-                                    keyboardType="numeric"
-                                    value={formData.duration.toString()}
-                                    onChangeText={text => handleFormChange('duration', parseInt(text) || 0)}
+                            {/* Campo título */}
+                            <Text style={styles.label}>Título *</Text>
+                            <TextInput
+                                style={[styles.input, formErrors.title && styles.inputError]}
+                                value={formData.title}
+                                onChangeText={(value) => handleFormChange('title', value)}
+                                placeholder="Título del contenido"
+                                placeholderTextColor="#666"
+                            />
+                            {formErrors.title && <Text style={styles.errorText}>{formErrors.title}</Text>}
+
+                            {/* Campo descripción */}
+                            <Text style={styles.label}>Descripción *</Text>
+                            <TextInput
+                                style={[styles.textArea, formErrors.description && styles.inputError]}
+                                value={formData.description}
+                                onChangeText={(value) => handleFormChange('description', value)}
+                                placeholder="Descripción del contenido"
+                                placeholderTextColor="#666"
+                                multiline
+                                numberOfLines={4}
+                            />
+                            {formErrors.description && <Text style={styles.errorText}>{formErrors.description}</Text>}
+
+                            {/* Selección de categoría */}
+                            <Text style={styles.label}>Categoría *</Text>
+                            <View style={styles.pickerContainer}>
+                                <Picker
+                                    selectedValue={formData.categoryId}
+                                    onValueChange={(value) => handleFormChange('categoryId', value)}
+                                    style={styles.picker}
+                                    dropdownIconColor="#D4AF37"
+                                >
+                                    {categories.map((category) => (
+                                        <Picker.Item
+                                            key={category.id}
+                                            label={category.name}
+                                            value={category.id}
+                                            color="#ffffff"
+                                        />
+                                    ))}
+                                </Picker>
+                            </View>
+                            {formErrors.categoryId && <Text style={styles.errorText}>{formErrors.categoryId}</Text>}
+
+                            {/* Campo duración */}
+                            <Text style={styles.label}>Duración (minutos) *</Text>
+                            <TextInput
+                                style={[styles.input, formErrors.duration && styles.inputError]}
+                                value={formData.duration.toString()}
+                                onChangeText={(value) => handleFormChange('duration', parseInt(value) || 0)}
+                                placeholder="Duración en minutos"
+                                placeholderTextColor="#666"
+                                keyboardType="numeric"
+                            />
+                            {formErrors.duration && <Text style={styles.errorText}>{formErrors.duration}</Text>}
+
+                            {/* Switch Premium */}
+                            <View style={styles.switchContainerNew}>
+                                <Text style={styles.label}>Contenido Premium</Text>
+                                <Switch
+                                    value={formData.isPremium}
+                                    onValueChange={(value) => handleFormChange('isPremium', value)}
+                                    trackColor={{ false: '#767577', true: '#D4AF37' }}
+                                    thumbColor={formData.isPremium ? '#1c1c1c' : '#f4f3f4'}
                                 />
-                                {formErrors.duration && <Text style={enhancedStyles.errorText}>{formErrors.duration}</Text>}
-                            </>
-                        )}
+                            </View>
 
-                        <View style={styles.switchContainer}>
-                            <Text style={styles.switchLabel}>Contenido Premium:</Text>
-                            <Switch
-                                value={formData.isPremium}
-                                onValueChange={value => handleFormChange('isPremium', value)}
-                                thumbColor={formData.isPremium ? '#D4AF37' : '#f4f3f4'}
-                                trackColor={{ false: '#767577', true: '#D4AF37' }}
-                            />
-                        </View>
+                            {/* Switch Activo */}
+                            <View style={styles.switchContainerNew}>
+                                <Text style={styles.label}>Activo</Text>
+                                <Switch
+                                    value={formData.isActive}
+                                    onValueChange={(value) => handleFormChange('isActive', value)}
+                                    trackColor={{ false: '#767577', true: '#D4AF37' }}
+                                    thumbColor={formData.isActive ? '#1c1c1c' : '#f4f3f4'}
+                                />
+                            </View>
 
-                        <View style={styles.switchContainer}>
-                            <Text style={styles.switchLabel}>Activo:</Text>
-                            <Switch
-                                value={formData.isActive}
-                                onValueChange={value => handleFormChange('isActive', value)}
-                                thumbColor={formData.isActive ? '#D4AF37' : '#f4f3f4'}
-                                trackColor={{ false: '#767577', true: '#D4AF37' }}
-                            />
-                        </View>
-
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => setModalVisible(false)}
-                                disabled={isSubmitting}
-                            >
-                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            {/* Selección de video */}
+                            <Text style={styles.label}>Video *</Text>
+                            <TouchableOpacity style={styles.videoButton} onPress={pickVideo}>
+                                <Icon name="video-plus" size={24} color="#D4AF37" />
+                                <Text style={styles.videoButtonText}>
+                                    {videoUri ? 'Cambiar Video' : 'Seleccionar Video'}
+                                </Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.saveButton]}
-                                onPress={handleSubmit}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.modalButtonText}>
-                                        {isEditMode ? 'Actualizar' : 'Guardar'}
+                            {formErrors.video && <Text style={styles.errorText}>{formErrors.video}</Text>}
+
+                            {/* Información del archivo de video */}
+                            {videoFileSize && (
+                                <Text style={styles.videoInfoText}>
+                                    Tamaño del archivo: {videoFileSize}
+                                </Text>
+                            )}
+
+                            {/* Progress de compresión */}
+                            {isCompressing && (
+                                <View style={styles.progressContainer}>
+                                    <Text style={styles.progressText}>
+                                        Comprimiendo video: {Math.round(compressionProgress)}%
                                     </Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                                    <View style={styles.progressBar}>
+                                        <View
+                                            style={[styles.progressBarFill, { width: `${compressionProgress}%` }]}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Progress de subida */}
+                            {uploadProgress > 0 && uploadProgress < 100 && !isCompressing && (
+                                <View style={styles.progressContainer}>
+                                    <Text style={styles.progressText}>
+                                        Subiendo: {Math.round(uploadProgress)}%
+                                    </Text>
+                                    <View style={styles.progressBar}>
+                                        <View
+                                            style={[styles.progressBarFill, { width: `${uploadProgress}%` }]}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Botones */}
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                                    onPress={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    <Text style={styles.submitButtonText}>
+                                        {isSubmitting ? 'Guardando...' : 'Guardar'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>

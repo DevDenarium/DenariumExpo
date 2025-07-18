@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EducationalContent, ContentCategory } from '../modules/educational/EducationalScreen.types';
 
+
 const API_BASE_URL = 'http://192.168.100.4:3000'; // Cambiar por tu URL de producción
 
 export const EducationalService = {
@@ -62,6 +63,7 @@ export const EducationalService = {
     }): Promise<EducationalContent> => {
         try {
             const token = await getAuthToken();
+            
             const response = await axios.post<EducationalContent>(
                 `${API_BASE_URL}/educational/content`,
                 contentData,
@@ -184,13 +186,33 @@ export const EducationalService = {
             handleApiError(error, 'Error al registrar la visualización');
             throw error;
         }
+    },
+
+    getSignedUrl: async (key: string): Promise<string> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.get<{ url: string }>(
+                `${API_BASE_URL}/educational/signed-url`,
+                {
+                    params: { key },
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data.url;
+        } catch (error) {
+            handleApiError(error, 'Error al obtener la URL del video');
+            throw error;
+        }
     }
 };
 
 
-const getAuthToken = async (): Promise<string> => {
+export const getAuthToken = async (): Promise<string> => {
     try {
-        const token = await AsyncStorage.getItem('@Auth:token');
+        const token = await AsyncStorage.getItem('token');
         if (!token) {
             throw new Error('No se encontró token de autenticación');
         }

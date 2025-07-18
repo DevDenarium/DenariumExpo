@@ -34,7 +34,8 @@
       "googleClientIdIos": "1065172753437-t37ak00d7cfj6jqotjsm8q7aq8agtumq.apps.googleusercontent.com"
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      "react-native-video"
     ]
   }
 }

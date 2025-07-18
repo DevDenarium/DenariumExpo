@@ -21,23 +21,46 @@ import {
 } from './EducationalScreen.types';
 import YoutubePlayerWrapper from '../../admin/content/YoutubePlayerWrapper';
 import StoryItem from '../../admin/content/StoryItem';
-
+import { SimpleWebVideoPlayer } from '../../components/SimpleWebVideoPlayer';
 const VideoItem = ({ item }: { item: EducationalContent }) => {
     const [error, setError] = useState<string | null>(null);
     const [hasAccess, setHasAccess] = useState<boolean>(false);
+    const [videoUrl, setVideoUrl] = useState<string>('');
 
     useEffect(() => {
+        console.log('ContentCard useEffect - item:', item.id, item.title, item.videoUrl);
         const checkAccess = async () => {
             try {
                 await EducationalService.checkContentAccess(item.id);
+                console.log('Access granted for content:', item.id);
                 setHasAccess(true);
+                
+                // Si el videoUrl parece ser una clave S3, obtener la URL firmada
+                if (item.videoUrl && !item.videoUrl.includes('youtube') && !item.videoUrl.includes('youtu.be')) {
+                    console.log('Getting signed URL for:', item.videoUrl);
+                    try {
+                        const signedUrl = await EducationalService.getSignedUrl(item.videoUrl);
+                        console.log('Signed URL obtained:', signedUrl);
+                        setVideoUrl(signedUrl);
+                    } catch (urlError) {
+                        console.error('Error obteniendo URL firmada:', urlError);
+                        setError('Error al cargar el video');
+                        // Como fallback, intentar usar la URL original
+                        console.log('Using original URL as fallback:', item.videoUrl);
+                        setVideoUrl(item.videoUrl || '');
+                    }
+                } else {
+                    console.log('Using direct video URL:', item.videoUrl);
+                    setVideoUrl(item.videoUrl || '');
+                }
             } catch (err) {
+                console.log('Access denied for content:', item.id, err);
                 setHasAccess(false);
                 setError('No tienes acceso a este contenido premium');
             }
         };
         checkAccess();
-    }, [item.id]);
+    }, [item.id, item.videoUrl]);
 
     if (!hasAccess) {
         return (
@@ -52,12 +75,21 @@ const VideoItem = ({ item }: { item: EducationalContent }) => {
         );
     }
 
+    // Determinar si es YouTube o video nativo
+    const isYouTubeUrl = (url: string) => {
+        return url.includes('youtube') || url.includes('youtu.be');
+    };
+
     return (
         <View style={styles.card}>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.description}>{item.description}</Text>
-            {item.videoUrl ? (
-                <YoutubePlayerWrapper url={item.videoUrl} />
+            {videoUrl ? (
+                isYouTubeUrl(videoUrl) ? (
+                    <YoutubePlayerWrapper url={videoUrl} />
+                ) : (
+                    <SimpleWebVideoPlayer videoUrl={videoUrl} />
+                )
             ) : (
                 <Text style={styles.errorText}>URL de video no disponible</Text>
             )}
@@ -184,12 +216,17 @@ const EducationalScreen: React.FC = () => {
             >
                 <View style={styles.fullscreenModal}>
                     {selectedStory?.videoUrl ? (
-                        <YoutubePlayerWrapper
-                            url={selectedStory.videoUrl}
-                            autoplay={true}
-                            fullscreen={true}
-                            controls={false}
-                        />
+                        // Determinar si es YouTube o video S3 para las historias también
+                        selectedStory.videoUrl.includes('youtube') || selectedStory.videoUrl.includes('youtu.be') ? (
+                            <YoutubePlayerWrapper
+                                url={selectedStory.videoUrl}
+                                autoplay={true}
+                                fullscreen={true}
+                                controls={false}
+                            />
+                        ) : (
+                            <SimpleWebVideoPlayer videoUrl={selectedStory.videoUrl} height={600} />
+                        )
                     ) : (
                         <View style={styles.storyModalPlaceholder}>
                             <Text style={styles.modalPlaceholderText}>Contenido no disponible</Text>
