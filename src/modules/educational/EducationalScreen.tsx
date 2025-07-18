@@ -19,9 +19,10 @@ import {
     EducationalCategory,
     ContentCategory
 } from './EducationalScreen.types';
-import YoutubePlayerWrapper from '../../admin/content/YoutubePlayerWrapper';
 import StoryItem from '../../admin/content/StoryItem';
 import { SimpleWebVideoPlayer } from '../../components/SimpleWebVideoPlayer';
+import StoryViewer from '../../components/StoryViewer';
+import SimpleStoryPlayer from '../../components/SimpleStoryPlayer';
 const VideoItem = ({ item }: { item: EducationalContent }) => {
     const [error, setError] = useState<string | null>(null);
     const [hasAccess, setHasAccess] = useState<boolean>(false);
@@ -35,8 +36,8 @@ const VideoItem = ({ item }: { item: EducationalContent }) => {
                 console.log('Access granted for content:', item.id);
                 setHasAccess(true);
                 
-                // Si el videoUrl parece ser una clave S3, obtener la URL firmada
-                if (item.videoUrl && !item.videoUrl.includes('youtube') && !item.videoUrl.includes('youtu.be')) {
+                // Obtener la URL firmada para S3
+                if (item.videoUrl) {
                     console.log('Getting signed URL for:', item.videoUrl);
                     try {
                         const signedUrl = await EducationalService.getSignedUrl(item.videoUrl);
@@ -49,9 +50,6 @@ const VideoItem = ({ item }: { item: EducationalContent }) => {
                         console.log('Using original URL as fallback:', item.videoUrl);
                         setVideoUrl(item.videoUrl || '');
                     }
-                } else {
-                    console.log('Using direct video URL:', item.videoUrl);
-                    setVideoUrl(item.videoUrl || '');
                 }
             } catch (err) {
                 console.log('Access denied for content:', item.id, err);
@@ -75,21 +73,12 @@ const VideoItem = ({ item }: { item: EducationalContent }) => {
         );
     }
 
-    // Determinar si es YouTube o video nativo
-    const isYouTubeUrl = (url: string) => {
-        return url.includes('youtube') || url.includes('youtu.be');
-    };
-
     return (
         <View style={styles.card}>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.description}>{item.description}</Text>
             {videoUrl ? (
-                isYouTubeUrl(videoUrl) ? (
-                    <YoutubePlayerWrapper url={videoUrl} />
-                ) : (
-                    <SimpleWebVideoPlayer videoUrl={videoUrl} />
-                )
+                <SimpleWebVideoPlayer videoUrl={videoUrl} />
             ) : (
                 <Text style={styles.errorText}>URL de video no disponible</Text>
             )}
@@ -106,6 +95,15 @@ const EducationalScreen: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedStory, setSelectedStory] = useState<EducationalContent | null>(null);
     const [isStoryModalVisible, setStoryModalVisible] = useState<boolean>(false);
+    
+    // Estados para StoryViewer
+    const [storyViewerVisible, setStoryViewerVisible] = useState<boolean>(false);
+    const [processedStories, setProcessedStories] = useState<EducationalContent[]>([]);
+    const [storyViewerIndex, setStoryViewerIndex] = useState<number>(0);
+    
+    // Estados para SimpleStoryPlayer (temporal para debugging)
+    const [simplePlayerVisible, setSimplePlayerVisible] = useState<boolean>(false);
+    const [currentStoryForPlayer, setCurrentStoryForPlayer] = useState<EducationalContent | null>(null);
 
     const fetchCategories = async () => {
         try {
@@ -150,9 +148,111 @@ const EducationalScreen: React.FC = () => {
         fetchContents(categoryId);
     };
 
-    const openStoryModal = (story: EducationalContent) => {
-        setSelectedStory(story);
-        setStoryModalVisible(true);
+    const openStoryModal = async (story: EducationalContent) => {
+        console.log('=== openStoryModal Debug ===');
+        console.log('Opening story modal with processed item:', story);
+        console.log('Story ID:', story.id);
+        console.log('Story title:', story.title);
+        console.log('Story videoUrl:', story.videoUrl);
+        console.log('Story type:', story.type);
+        
+        try {
+            // Obtener todas las historias
+            const allStories = contents.filter(item => item.type === 'STORY');
+            console.log('All stories found:', allStories.length);
+            const storyIndex = allStories.findIndex(s => s.id === story.id);
+            console.log('Story index:', storyIndex);
+            
+            if (storyIndex === -1) {
+                console.log('Story not found in list, using fallback modal');
+                // Fallback al modal tradicional
+                setSelectedStory(story);
+                setStoryModalVisible(true);
+                return;
+            }
+
+            // Procesar todas las historias para verificar acceso y obtener URLs firmadas
+            const processedStoriesData: EducationalContent[] = [];
+            
+            for (const storyItem of allStories) {
+                try {
+                    console.log(`Processing story: ${storyItem.title} (${storyItem.id})`);
+                    console.log(`Original URL: ${storyItem.videoUrl}`);
+                    
+                    // Verificar acceso
+                    await EducationalService.checkContentAccess(storyItem.id);
+                    console.log(`Access granted for: ${storyItem.title}`);
+                    
+                    let finalVideoUrl = storyItem.videoUrl || '';
+                    
+                    // Obtener URL firmada para S3
+                    if (storyItem.videoUrl) {
+                        console.log(`Getting signed URL for S3 file: ${storyItem.videoUrl}`);
+                        try {
+                            const signedUrl = await EducationalService.getSignedUrl(storyItem.videoUrl);
+                            console.log(`Signed URL obtained: ${signedUrl}`);
+                            finalVideoUrl = signedUrl;
+                        } catch (urlError) {
+                            console.error('Error obteniendo URL firmada para historia:', urlError);
+                            // Mantener la URL original como fallback
+                            finalVideoUrl = storyItem.videoUrl || '';
+                        }
+                    }
+                    
+                    const processedStory = {
+                        ...storyItem,
+                        videoUrl: finalVideoUrl
+                    };
+                    console.log(`Final processed story URL: ${processedStory.videoUrl}`);
+                    processedStoriesData.push(processedStory);
+                } catch (accessError) {
+                    console.log('Access denied for story:', storyItem.id, accessError);
+                    // No incluir historias sin acceso
+                }
+            }
+            
+            console.log(`Total processed stories: ${processedStoriesData.length}`);
+            
+            if (processedStoriesData.length > 0) {
+                // Encontrar el nuevo índice en la lista filtrada
+                const newIndex = processedStoriesData.findIndex(s => s.id === story.id);
+                console.log(`New index for selected story: ${newIndex}`);
+                
+                setProcessedStories(processedStoriesData);
+                setStoryViewerIndex(Math.max(0, newIndex));
+                
+                // Usar SimpleStoryPlayer para debugging
+                if (processedStoriesData[Math.max(0, newIndex)]) {
+                    setCurrentStoryForPlayer(processedStoriesData[Math.max(0, newIndex)]);
+                    setSimplePlayerVisible(true);
+                } else {
+                    setStoryViewerVisible(true);
+                }
+                
+                console.log('Opening StoryViewer...');
+            } else {
+                console.log('No accessible stories found');
+                Alert.alert('Error', 'No tienes acceso a ninguna historia');
+            }
+            
+        } catch (error) {
+            console.error('Error opening story:', error);
+            // Fallback al modal tradicional
+            setSelectedStory(story);
+            setStoryModalVisible(true);
+        }
+        console.log('=== End openStoryModal Debug ===');
+    };
+
+    const closeStoryViewer = () => {
+        setStoryViewerVisible(false);
+        setProcessedStories([]);
+        setStoryViewerIndex(0);
+    };
+
+    const closeSimplePlayer = () => {
+        setSimplePlayerVisible(false);
+        setCurrentStoryForPlayer(null);
     };
 
     const closeStoryModal = () => {
@@ -201,13 +301,39 @@ const EducationalScreen: React.FC = () => {
                             <StoryItem
                                 key={story.id}
                                 item={story}
-                                onPress={() => openStoryModal(story)}
+                                onPress={(processedStory) => openStoryModal(processedStory)}
                             />
                         ))}
                     </ScrollView>
                 </View>
             )}
 
+            {/* SimpleStoryPlayer Modal (temporal para debugging) */}
+            {simplePlayerVisible && currentStoryForPlayer && (
+                <Modal
+                    visible={simplePlayerVisible}
+                    transparent={false}
+                    animationType="slide"
+                    onRequestClose={closeSimplePlayer}
+                    statusBarTranslucent={true}
+                >
+                    <SimpleStoryPlayer
+                        videoUrl={currentStoryForPlayer.videoUrl || ''}
+                        title={currentStoryForPlayer.title}
+                        onClose={closeSimplePlayer}
+                    />
+                </Modal>
+            )}
+
+            {/* StoryViewer Modal */}
+            <StoryViewer
+                stories={processedStories}
+                initialIndex={storyViewerIndex}
+                visible={storyViewerVisible}
+                onClose={closeStoryViewer}
+            />
+
+            {/* Modal tradicional de historias (fallback) */}
             <Modal
                 visible={isStoryModalVisible}
                 transparent={true}
@@ -217,20 +343,19 @@ const EducationalScreen: React.FC = () => {
             >
                 <View style={styles.fullscreenModal}>
                     {selectedStory?.videoUrl ? (
-                        // Determinar si es YouTube o video S3 para las historias también
-                        selectedStory.videoUrl.includes('youtube') || selectedStory.videoUrl.includes('youtu.be') ? (
-                            <YoutubePlayerWrapper
-                                url={selectedStory.videoUrl}
-                                autoplay={true}
-                                fullscreen={true}
-                                controls={false}
-                            />
-                        ) : (
-                            <SimpleWebVideoPlayer videoUrl={selectedStory.videoUrl} height={600} />
-                        )
+                        <SimpleWebVideoPlayer 
+                            videoUrl={selectedStory.videoUrl} 
+                            height={600}
+                            autoplay={true}
+                            controls={false}
+                        />
                     ) : (
                         <View style={styles.storyModalPlaceholder}>
+                            <Icon name="video-off" size={50} color="#999" />
                             <Text style={styles.modalPlaceholderText}>Contenido no disponible</Text>
+                            <Text style={styles.modalPlaceholderSubtext}>
+                                No se pudo cargar el video de esta historia
+                            </Text>
                         </View>
                     )}
                     <TouchableOpacity

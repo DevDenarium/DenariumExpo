@@ -150,6 +150,14 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         textAlign: 'center',
     },
+    storyPremiumBadge: {
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        borderRadius: 10,
+        padding: 2,
+    },
 
     // Modal de historia
     storyModal: {
@@ -171,6 +179,12 @@ export const styles = StyleSheet.create({
     modalPlaceholderText: {
         color: '#FFF',
         fontSize: 18,
+    },
+    modalPlaceholderSubtext: {
+        color: '#999',
+        fontSize: 14,
+        marginTop: 8,
+        textAlign: 'center',
     },
     loader: {
         marginVertical: 40,
