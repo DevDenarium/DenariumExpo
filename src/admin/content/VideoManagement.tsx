@@ -49,6 +49,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         videoUrl: '',
         duration: 0,
         isPremium: false,
+        freeViewDuration: 2, // Default: 2 minutos para usuarios free
         isActive: true,
     });
     const [videoUri, setVideoUri] = useState<string | null>(null);
@@ -59,6 +60,34 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const [videoFileSize, setVideoFileSize] = useState<string>('');
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Función para obtener la duración de un video
+    const getVideoDuration = (videoUri: string): Promise<number> => {
+        return new Promise((resolve) => {
+            if (Platform.OS === 'web') {
+                const video = (globalThis as any).document.createElement('video');
+                video.preload = 'metadata';
+                
+                video.onloadedmetadata = () => {
+                    // Convertir duración de segundos a minutos y redondear
+                    const durationInMinutes = Math.round(video.duration / 60);
+                    resolve(durationInMinutes);
+                };
+                
+                video.onerror = () => {
+                    console.warn('No se pudo obtener la duración del video');
+                    resolve(0);
+                };
+                
+                video.src = videoUri;
+            } else {
+                // En móvil, usar la información del ImagePicker result si está disponible
+                // Por ahora resolver con 0 y el usuario puede editarlo manualmente
+                console.warn('Obtención automática de duración no disponible en móvil');
+                resolve(0);
+            }
+        });
+    };
 
     // Función para seleccionar video
     const pickVideo = async () => {
@@ -119,6 +148,17 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                     setVideoFileSize('Tamaño desconocido');
                 }
                 
+                // Obtener duración del video automáticamente
+                try {
+                    const duration = await getVideoDuration(videoUri);
+                    if (duration > 0) {
+                        handleFormChange('duration', duration);
+                        console.log(`Duración detectada: ${duration} minutos`);
+                    }
+                } catch (error) {
+                    console.warn('No se pudo obtener la duración del video:', error);
+                }
+                
                 // Generar thumbnail
                 const thumbnail = await generateThumbnail(videoUri);
                 setThumbnailUri(thumbnail);
@@ -162,6 +202,15 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
 
         if (formData.duration < 1 || formData.duration > 7200) {
             errors.duration = 'La duración debe ser entre 1 y 120 minutos';
+        }
+
+        // Validar freeViewDuration solo si es premium
+        if (formData.isPremium) {
+            if (!formData.freeViewDuration || formData.freeViewDuration < 0) {
+                errors.freeViewDuration = 'El tiempo de vista gratuita es requerido';
+            } else if (formData.freeViewDuration >= formData.duration) {
+                errors.freeViewDuration = 'El tiempo gratuito debe ser menor a la duración total';
+            }
         }
 
         setFormErrors(errors);
@@ -214,10 +263,15 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const fetchContents = async () => {
         try {
             setLoading(true);
+            console.log('Admin panel: Fetching contents with params:', {
+                type: activeTab === 'videos' ? 'VIDEO' : 'STORY'
+            });
             const response = await EducationalService.fetchContents({
                 type: activeTab === 'videos' ? 'VIDEO' : 'STORY',
-                isActive: true  // Solo mostrar contenido activo
+                // Eliminar filtro isActive para mostrar todos los videos en el panel de admin
             });
+            console.log('Admin panel: Received contents:', response.length, 'items');
+            console.log('Admin panel: First 3 items:', response.slice(0, 3));
             setContents(response);
         } catch (error) {
             console.error('Error fetching contents:', error);
@@ -265,6 +319,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             videoUrl: '',
             duration: 0,
             isPremium: false,
+            freeViewDuration: 2, // Default: 2 minutos
             isActive: true,
         });
         setVideoUri(null);
@@ -409,6 +464,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             videoUrl: content.videoUrl || '',
             duration: content.duration || 0,
             isPremium: content.isPremium,
+            freeViewDuration: content.freeViewDuration || 2,
             isActive: content.isActive,
         });
         setVideoUri(null);
@@ -692,6 +748,25 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                                         thumbColor={formData.isPremium ? '#1c1c1c' : '#f4f3f4'}
                                     />
                                 </View>
+
+                                {/* Campo condicional: Tiempo de vista gratuita (solo si es Premium) */}
+                                {formData.isPremium && (
+                                    <>
+                                        <Text style={styles.label}>Tiempo de Vista Gratuita (minutos) *</Text>
+                                        <TextInput
+                                            style={[styles.input, formErrors.freeViewDuration && styles.inputError]}
+                                            value={formData.freeViewDuration?.toString() || ''}
+                                            onChangeText={(value) => handleFormChange('freeViewDuration', parseInt(value) || 0)}
+                                            placeholder="Ej: 2 (minutos que usuarios free pueden ver)"
+                                            placeholderTextColor="#666"
+                                            keyboardType="numeric"
+                                        />
+                                        {formErrors.freeViewDuration && <Text style={styles.errorText}>{formErrors.freeViewDuration}</Text>}
+                                        <Text style={styles.videoInfoText}>
+                                            Los usuarios gratuitos podrán ver {formData.freeViewDuration || 0} minuto(s) de este video premium.
+                                        </Text>
+                                    </>
+                                )}
 
                                 {/* Switch Activo */}
                                 <View style={styles.switchContainerNew}>

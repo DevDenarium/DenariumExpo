@@ -6,6 +6,7 @@ export interface EducationalContent {
     type: 'VIDEO' | 'STORY';
     duration: number;
     isPremium: boolean;
+    freeViewDuration?: number; // Tiempo en minutos que usuarios free pueden ver
     category: {
         id: string;
         name: string;

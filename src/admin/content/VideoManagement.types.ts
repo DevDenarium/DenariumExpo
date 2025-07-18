@@ -7,6 +7,7 @@ export interface EducationalContent {
     videoUrl?: string;
     duration?: number;
     isPremium: boolean;
+    freeViewDuration?: number; // Tiempo en minutos que los usuarios free pueden ver
     isActive: boolean;
     createdById?: string;
     createdAt?: string;
@@ -30,6 +31,7 @@ export interface CreateContentForm {
     videoUrl: string;
     duration: number;
     isPremium: boolean;
+    freeViewDuration?: number; // Solo requerido si isPremium es true
     isActive: boolean;
 }
 
@@ -42,6 +44,7 @@ export interface UpdateContentForm {
     videoUrl?: string;
     duration?: number;
     isPremium?: boolean;
+    freeViewDuration?: number;
     isActive?: boolean;
 }
 

@@ -34,6 +34,8 @@ export const EducationalService = {
     }): Promise<EducationalContent[]> => {
         try {
             const token = await getAuthToken();
+            console.log('Fetching contents with params:', params);
+            console.log('Using token:', token ? 'Token present' : 'No token');
             const response = await axios.get<EducationalContent[]>(
                 `${API_BASE_URL}/educational/content`,
                 {
@@ -44,8 +46,10 @@ export const EducationalService = {
                     }
                 }
             );
+            console.log('Backend response:', response.data.length, 'items');
             return response.data;
         } catch (error) {
+            console.error('Error in fetchContents:', error);
             handleApiError(error, 'Error al cargar el contenido educativo');
             throw error;
         }
@@ -59,6 +63,7 @@ export const EducationalService = {
         videoUrl: string;
         duration: number;
         isPremium: boolean;
+        freeViewDuration?: number;
         isActive?: boolean;
     }): Promise<EducationalContent> => {
         try {
@@ -90,6 +95,7 @@ export const EducationalService = {
             videoUrl?: string;
             duration?: number;
             isPremium?: boolean;
+            freeViewDuration?: number;
             isActive?: boolean;
         }
     ): Promise<EducationalContent> => {

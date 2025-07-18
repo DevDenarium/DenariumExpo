@@ -128,7 +128,8 @@ const EducationalScreen: React.FC = () => {
             const params = {
                 categoryId,
                 isActive: true,
-                isPremium: user?.isPremium ? undefined : false
+                // Mostrar todos los videos (premium y gratuitos) para todos los usuarios
+                // La lógica de restricción se manejará en el reproductor de video
             };
             const res = await EducationalService.fetchContents(params);
             setContents(res);
