@@ -30,31 +30,10 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
     const [isPlaying, setIsPlaying] = useState(false);
     const webViewRef = useRef<any>(null);
 
-    // Función para enviar comandos al WebView
-    const sendCommand = (command: string) => {
-        if (webViewRef.current) {
-            webViewRef.current.postMessage(command);
-        }
-    };
-
-    // Funciones públicas para controlar el video
-    const playVideo = () => sendCommand('PLAY');
-    const pauseVideo = () => sendCommand('PAUSE');
-    const togglePlayPause = () => sendCommand('TOGGLE');
-
-    // Exponer funciones para uso externo (si se necesita)
-    React.useImperativeHandle(webViewRef, () => ({
-        play: playVideo,
-        pause: pauseVideo,
-        toggle: togglePlayPause,
-    }));
-
     // URL de prueba si no hay videoUrl válida
     const testVideoUrl = videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     
     console.log('SimpleWebVideoPlayer rendered with URL:', testVideoUrl);
-    console.log('Autoplay enabled:', autoplay);
-    console.log('Controls enabled:', controls);
 
     // HTML optimizado para autoplay
     const htmlContent = `
@@ -69,123 +48,102 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     width: 100vw;
                     background: #000; 
                     overflow: hidden;
-                    margin: 0;
-                    padding: 0;
-                    touch-action: manipulation;
-                }
-                .video-container {
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    background: #000;
                 }
                 video {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
                     background: #000;
-                    pointer-events: auto;
-                    -webkit-user-select: none;
-                    user-select: none;
-                }
-                .touch-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: ${controls ? '10' : '5'};
-                    background: transparent;
-                    cursor: pointer;
                 }
             </style>
         </head>
         <body>
-            <div class="video-container">
-                <video 
-                    id="video"
-                    ${controls ? 'controls' : ''} 
-                    preload="metadata" 
-                    ${autoplay ? 'autoplay muted' : ''}
-                    playsinline 
-                    webkit-playsinline
-                    x-webkit-airplay="allow"
-                >
-                    <source src="${testVideoUrl}" type="video/mp4">
-                    Video no compatible
-                </video>
-                ${!controls ? '<div class="touch-overlay" id="touchOverlay"></div>' : ''}
-            </div>
+            <video 
+                id="video"
+                ${controls ? 'controls' : ''} 
+                preload="auto" 
+                autoplay
+                muted
+                playsinline 
+                webkit-playsinline
+                x-webkit-airplay="allow"
+            >
+                <source src="${testVideoUrl}" type="video/mp4">
+                Video no compatible
+            </video>
             
             <script>
                 const video = document.getElementById('video');
-                const touchOverlay = document.getElementById('touchOverlay');
                 let isPlaying = false;
                 let duration = 0;
-                const hasControls = ${controls};
                 
-                // Configuración condicional para autoplay
-                video.autoplay = ${autoplay};
-                video.muted = ${autoplay}; // Solo mutear si hay autoplay
+                // Configuración agresiva para autoplay
+                video.autoplay = true;
+                video.muted = true;
                 video.playsInline = true;
                 
-                // Función optimizada para reproducir
-                function playVideo() {
-                    if (video.paused) {
-                        const playPromise = video.play();
-                        if (playPromise !== undefined) {
-                            playPromise.then(() => {
-                                isPlaying = true;
-                                window.ReactNativeWebView?.postMessage('playing');
-                            }).catch(error => {
-                                console.error('Play failed:', error);
-                                window.ReactNativeWebView?.postMessage('autoplay-failed');
-                            });
-                        }
+                // Función para intentar reproducir
+                function attemptPlay() {
+                    console.log('Attempting to play video...');
+                    const playPromise = video.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('Video started playing automatically');
+                            isPlaying = true;
+                            window.ReactNativeWebView?.postMessage('playing');
+                        }).catch(error => {
+                            console.error('Autoplay failed:', error);
+                            window.ReactNativeWebView?.postMessage('autoplay-failed');
+                            
+                            // Intentar de nuevo después de un pequeño delay
+                            setTimeout(() => {
+                                video.play().catch(e => {
+                                    console.error('Second attempt failed:', e);
+                                });
+                            }, 100);
+                        });
                     }
                 }
                 
-                // Función optimizada para pausar
-                function pauseVideo() {
-                    if (!video.paused) {
-                        video.pause();
-                        isPlaying = false;
-                        window.ReactNativeWebView?.postMessage('paused');
-                    }
-                }
-                
-                // Función para toggle play/pause
-                function togglePlayPause() {
-                    console.log('Toggle play/pause, current paused:', video.paused);
-                    if (video.paused) {
-                        playVideo();
-                        // Desmutear si estaba muted por autoplay
-                        if (video.muted && ${autoplay}) {
-                            video.muted = false;
-                        }
-                    } else {
-                        pauseVideo();
-                    }
-                }
-                
-                // Event listeners optimizados
                 video.addEventListener('loadedmetadata', () => {
                     duration = video.duration;
+                    console.log('Video metadata loaded, duration:', duration);
                     window.ReactNativeWebView?.postMessage('ready');
                     window.ReactNativeWebView?.postMessage('duration:' + duration);
-                    
-                    // Autoplay solo si está habilitado
+                });
+                
+                video.addEventListener('loadeddata', () => {
+                    console.log('Video data loaded');
                     if (${autoplay}) {
-                        setTimeout(playVideo, 50);
+                        attemptPlay();
+                    }
+                });
+                
+                video.addEventListener('canplay', () => {
+                    console.log('Video can play');
+                    window.ReactNativeWebView?.postMessage('ready');
+                    
+                    if (${autoplay} && video.paused) {
+                        attemptPlay();
+                    }
+                });
+                
+                video.addEventListener('canplaythrough', () => {
+                    console.log('Video can play through');
+                    if (${autoplay} && video.paused) {
+                        attemptPlay();
                     }
                 });
                 
                 video.addEventListener('play', () => {
+                    console.log('Video play event');
                     isPlaying = true;
                     window.ReactNativeWebView?.postMessage('playing');
                 });
                 
                 video.addEventListener('pause', () => {
+                    console.log('Video pause event');
                     isPlaying = false;
                     window.ReactNativeWebView?.postMessage('paused');
                 });
@@ -198,6 +156,7 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 });
                 
                 video.addEventListener('ended', () => {
+                    console.log('Video ended');
                     isPlaying = false;
                     window.ReactNativeWebView?.postMessage('ended');
                 });
@@ -207,64 +166,30 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     window.ReactNativeWebView?.postMessage('error:Video error');
                 });
                 
-                // Control táctil mejorado
-                function setupTouchControls() {
-                    // Si no hay controles nativos, usar overlay
-                    if (touchOverlay) {
-                        touchOverlay.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Touch overlay clicked');
-                            togglePlayPause();
-                        });
-                        
-                        touchOverlay.addEventListener('touchend', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Touch overlay touched');
-                            togglePlayPause();
-                        });
+                // Control táctil
+                video.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                        if (video.muted) {
+                            video.muted = false;
+                        }
                     } else {
-                        // Si hay controles nativos, interceptar clics en el video
-                        video.addEventListener('click', function(e) {
-                            // Solo interceptar si el clic no es en los controles nativos
-                            const rect = video.getBoundingClientRect();
-                            const clickY = e.clientY - rect.top;
-                            const videoHeight = rect.height;
-                            const controlsHeight = hasControls ? 40 : 0; // Altura aproximada de controles
-                            
-                            // Si el clic está en el área del video (no en controles)
-                            if (clickY < videoHeight - controlsHeight) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Video area clicked');
-                                togglePlayPause();
-                            }
-                        });
-                    }
-                }
-                
-                // Configurar controles cuando el DOM esté listo
-                document.addEventListener('DOMContentLoaded', setupTouchControls);
-                setTimeout(setupTouchControls, 100);
-                
-                // Escuchar comandos desde React Native
-                window.addEventListener('message', function(event) {
-                    const command = event.data;
-                    console.log('Received command:', command);
-                    
-                    switch(command) {
-                        case 'PLAY':
-                            playVideo();
-                            break;
-                        case 'PAUSE':
-                            pauseVideo();
-                            break;
-                        case 'TOGGLE':
-                            togglePlayPause();
-                            break;
+                        video.pause();
                     }
                 });
+                
+                // Intentar reproducir cuando el documento esté listo
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (${autoplay}) {
+                        setTimeout(attemptPlay, 100);
+                    }
+                });
+                
+                // Intentar reproducir inmediatamente también
+                if (${autoplay}) {
+                    setTimeout(attemptPlay, 50);
+                }
             </script>
         </body>
         </html>
@@ -346,15 +271,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 domStorageEnabled={true}
                 startInLoadingState={false}
                 scalesPageToFit={false}
-                cacheEnabled={false}
-                incognito={true}
-                onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
-                scrollEnabled={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                bounces={false}
-                overScrollMode="never"
             />
         </View>
     );
