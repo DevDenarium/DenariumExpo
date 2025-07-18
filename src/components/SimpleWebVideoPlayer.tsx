@@ -55,7 +55,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 video.autoplay = false;
                 video.muted = false;
                 
-                // Eventos de carga
                 video.addEventListener('loadstart', () => {
                     console.log('Video loading started');
                     window.ReactNativeWebView?.postMessage('loading');
@@ -74,15 +73,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 video.addEventListener('error', (e) => {
                     console.error('Video error:', e);
                     window.ReactNativeWebView?.postMessage('error:Video error');
-                });
-                
-                video.addEventListener('pause', () => {
-                    console.log('Video paused by browser policy or user');
-                });
-                
-                // Forzar que NO se reproduzca automáticamente
-                video.addEventListener('play', (e) => {
-                    console.log('Video play attempted');
                 });
             </script>
         </body>
