@@ -11,7 +11,9 @@ import {
     Alert,
     Linking,
     Platform,
-    Image
+    Image,
+    KeyboardAvoidingView,
+    Dimensions
 } from 'react-native';
 import { styles } from './VideoManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -597,157 +599,176 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 transparent={true}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <ScrollView>
-                            {/* Título */}
-                            <Text style={styles.modalTitle}>
+                <View style={styles.fullScreenModalOverlay}>
+                    <View style={styles.fullScreenModalContainer}>
+                        {/* Header del Modal con X para cerrar */}
+                        <View style={styles.editModalHeader}>
+                            <Text style={styles.editModalTitle}>
                                 {isEditMode ? 'Editar' : 'Agregar'} {activeTab === 'videos' ? 'Video' : 'Historia'}
                             </Text>
-
-                            {/* Campo título */}
-                            <Text style={styles.label}>Título *</Text>
-                            <TextInput
-                                style={[styles.input, formErrors.title && styles.inputError]}
-                                value={formData.title}
-                                onChangeText={(value) => handleFormChange('title', value)}
-                                placeholder="Título del contenido"
-                                placeholderTextColor="#666"
-                            />
-                            {formErrors.title && <Text style={styles.errorText}>{formErrors.title}</Text>}
-
-                            {/* Campo descripción */}
-                            <Text style={styles.label}>Descripción *</Text>
-                            <TextInput
-                                style={[styles.textArea, formErrors.description && styles.inputError]}
-                                value={formData.description}
-                                onChangeText={(value) => handleFormChange('description', value)}
-                                placeholder="Descripción del contenido"
-                                placeholderTextColor="#666"
-                                multiline
-                                numberOfLines={4}
-                            />
-                            {formErrors.description && <Text style={styles.errorText}>{formErrors.description}</Text>}
-
-                            {/* Selección de categoría */}
-                            <Text style={styles.label}>Categoría *</Text>
-                            <View style={styles.pickerContainer}>
-                                <Picker
-                                    selectedValue={formData.categoryId}
-                                    onValueChange={(value) => handleFormChange('categoryId', value)}
-                                    style={styles.picker}
-                                    dropdownIconColor="#D4AF37"
-                                >
-                                    {categories.map((category) => (
-                                        <Picker.Item
-                                            key={category.id}
-                                            label={category.name}
-                                            value={category.id}
-                                            color="#ffffff"
-                                        />
-                                    ))}
-                                </Picker>
-                            </View>
-                            {formErrors.categoryId && <Text style={styles.errorText}>{formErrors.categoryId}</Text>}
-
-                            {/* Campo duración */}
-                            <Text style={styles.label}>Duración (minutos) *</Text>
-                            <TextInput
-                                style={[styles.input, formErrors.duration && styles.inputError]}
-                                value={formData.duration.toString()}
-                                onChangeText={(value) => handleFormChange('duration', parseInt(value) || 0)}
-                                placeholder="Duración en minutos"
-                                placeholderTextColor="#666"
-                                keyboardType="numeric"
-                            />
-                            {formErrors.duration && <Text style={styles.errorText}>{formErrors.duration}</Text>}
-
-                            {/* Switch Premium */}
-                            <View style={styles.switchContainerNew}>
-                                <Text style={styles.label}>Contenido Premium</Text>
-                                <Switch
-                                    value={formData.isPremium}
-                                    onValueChange={(value) => handleFormChange('isPremium', value)}
-                                    trackColor={{ false: '#767577', true: '#D4AF37' }}
-                                    thumbColor={formData.isPremium ? '#1c1c1c' : '#f4f3f4'}
-                                />
-                            </View>
-
-                            {/* Switch Activo */}
-                            <View style={styles.switchContainerNew}>
-                                <Text style={styles.label}>Activo</Text>
-                                <Switch
-                                    value={formData.isActive}
-                                    onValueChange={(value) => handleFormChange('isActive', value)}
-                                    trackColor={{ false: '#767577', true: '#D4AF37' }}
-                                    thumbColor={formData.isActive ? '#1c1c1c' : '#f4f3f4'}
-                                />
-                            </View>
-
-                            {/* Selección de video */}
-                            <Text style={styles.label}>Video *</Text>
-                            <TouchableOpacity style={styles.videoButton} onPress={pickVideo}>
-                                <Icon name="video-plus" size={24} color="#D4AF37" />
-                                <Text style={styles.videoButtonText}>
-                                    {videoUri ? 'Cambiar Video' : 'Seleccionar Video'}
-                                </Text>
+                            <TouchableOpacity
+                                onPress={() => setModalVisible(false)}
+                                style={styles.editModalCloseButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
                             </TouchableOpacity>
-                            {formErrors.video && <Text style={styles.errorText}>{formErrors.video}</Text>}
+                        </View>
+                        
+                        <KeyboardAvoidingView 
+                            style={styles.keyboardAvoidingContainer}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                        >
+                            <ScrollView 
+                                style={styles.modalScrollView}
+                                showsVerticalScrollIndicator={true}
+                                keyboardShouldPersistTaps="handled"
+                                contentContainerStyle={styles.scrollContentContainer}
+                            >
+                                {/* Campo título */}
+                                <Text style={styles.label}>Título *</Text>
+                                <TextInput
+                                    style={[styles.input, formErrors.title && styles.inputError]}
+                                    value={formData.title}
+                                    onChangeText={(value) => handleFormChange('title', value)}
+                                    placeholder="Título del contenido"
+                                    placeholderTextColor="#666"
+                                />
+                                {formErrors.title && <Text style={styles.errorText}>{formErrors.title}</Text>}
 
-                            {/* Información del archivo de video */}
-                            {videoFileSize && (
-                                <Text style={styles.videoInfoText}>
-                                    Tamaño del archivo: {videoFileSize}
-                                </Text>
-                            )}
+                                {/* Campo descripción */}
+                                <Text style={styles.label}>Descripción *</Text>
+                                <TextInput
+                                    style={[styles.textArea, formErrors.description && styles.inputError]}
+                                    value={formData.description}
+                                    onChangeText={(value) => handleFormChange('description', value)}
+                                    placeholder="Descripción del contenido"
+                                    placeholderTextColor="#666"
+                                    multiline
+                                    numberOfLines={4}
+                                />
+                                {formErrors.description && <Text style={styles.errorText}>{formErrors.description}</Text>}
 
-                            {/* Progress de compresión */}
-                            {isCompressing && (
-                                <View style={styles.progressContainer}>
-                                    <Text style={styles.progressText}>
-                                        Comprimiendo video: {Math.round(compressionProgress)}%
-                                    </Text>
-                                    <View style={styles.progressBar}>
-                                        <View
-                                            style={[styles.progressBarFill, { width: `${compressionProgress}%` }]}
-                                        />
-                                    </View>
+                                {/* Selección de categoría */}
+                                <Text style={styles.label}>Categoría *</Text>
+                                <View style={styles.pickerContainer}>
+                                    <Picker
+                                        selectedValue={formData.categoryId}
+                                        onValueChange={(value) => handleFormChange('categoryId', value)}
+                                        style={styles.picker}
+                                        dropdownIconColor="#D4AF37"
+                                    >
+                                        {categories.map((category) => (
+                                            <Picker.Item
+                                                key={category.id}
+                                                label={category.name}
+                                                value={category.id}
+                                                color="#ffffff"
+                                            />
+                                        ))}
+                                    </Picker>
                                 </View>
-                            )}
+                                {formErrors.categoryId && <Text style={styles.errorText}>{formErrors.categoryId}</Text>}
 
-                            {/* Progress de subida */}
-                            {uploadProgress > 0 && uploadProgress < 100 && !isCompressing && (
-                                <View style={styles.progressContainer}>
-                                    <Text style={styles.progressText}>
-                                        Subiendo: {Math.round(uploadProgress)}%
-                                    </Text>
-                                    <View style={styles.progressBar}>
-                                        <View
-                                            style={[styles.progressBarFill, { width: `${uploadProgress}%` }]}
-                                        />
-                                    </View>
+                                {/* Campo duración */}
+                                <Text style={styles.label}>Duración (minutos) *</Text>
+                                <TextInput
+                                    style={[styles.input, formErrors.duration && styles.inputError]}
+                                    value={formData.duration.toString()}
+                                    onChangeText={(value) => handleFormChange('duration', parseInt(value) || 0)}
+                                    placeholder="Duración en minutos"
+                                    placeholderTextColor="#666"
+                                    keyboardType="numeric"
+                                />
+                                {formErrors.duration && <Text style={styles.errorText}>{formErrors.duration}</Text>}
+
+                                {/* Switch Premium */}
+                                <View style={styles.switchContainerNew}>
+                                    <Text style={styles.label}>Contenido Premium</Text>
+                                    <Switch
+                                        value={formData.isPremium}
+                                        onValueChange={(value) => handleFormChange('isPremium', value)}
+                                        trackColor={{ false: '#767577', true: '#D4AF37' }}
+                                        thumbColor={formData.isPremium ? '#1c1c1c' : '#f4f3f4'}
+                                    />
                                 </View>
-                            )}
 
-                            {/* Botones */}
-                            <View style={styles.buttonContainer}>
+                                {/* Switch Activo */}
+                                <View style={styles.switchContainerNew}>
+                                    <Text style={styles.label}>Activo</Text>
+                                    <Switch
+                                        value={formData.isActive}
+                                        onValueChange={(value) => handleFormChange('isActive', value)}
+                                        trackColor={{ false: '#767577', true: '#D4AF37' }}
+                                        thumbColor={formData.isActive ? '#1c1c1c' : '#f4f3f4'}
+                                    />
+                                </View>
+
+                                {/* Selección de video */}
+                                <Text style={styles.label}>Video *</Text>
+                                <TouchableOpacity style={styles.videoButton} onPress={pickVideo}>
+                                    <Icon name="video-plus" size={24} color="#D4AF37" />
+                                    <Text style={styles.videoButtonText}>
+                                        {videoUri ? 'Cambiar Video' : 'Seleccionar Video'}
+                                    </Text>
+                                </TouchableOpacity>
+                                {formErrors.video && <Text style={styles.errorText}>{formErrors.video}</Text>}
+
+                                {/* Información del archivo de video */}
+                                {videoFileSize && (
+                                    <Text style={styles.videoInfoText}>
+                                        Tamaño del archivo: {videoFileSize}
+                                    </Text>
+                                )}
+
+                                {/* Progress de compresión */}
+                                {isCompressing && (
+                                    <View style={styles.progressContainer}>
+                                        <Text style={styles.progressText}>
+                                            Comprimiendo video: {Math.round(compressionProgress)}%
+                                        </Text>
+                                        <View style={styles.progressBar}>
+                                            <View
+                                                style={[styles.progressBarFill, { width: `${compressionProgress}%` }]}
+                                            />
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Progress de subida */}
+                                {uploadProgress > 0 && uploadProgress < 100 && !isCompressing && (
+                                    <View style={styles.progressContainer}>
+                                        <Text style={styles.progressText}>
+                                            Subiendo: {Math.round(uploadProgress)}%
+                                        </Text>
+                                        <View style={styles.progressBar}>
+                                            <View
+                                                style={[styles.progressBarFill, { width: `${uploadProgress}%` }]}
+                                            />
+                                        </View>
+                                    </View>
+                                )}
+                            </ScrollView>
+
+                            {/* Botones - Fijos en la parte inferior */}
+                            <View style={styles.modalButtonContainer}>
                                 <TouchableOpacity
-                                    style={styles.cancelButton}
+                                    style={styles.modalCancelButton}
                                     onPress={() => setModalVisible(false)}
                                 >
-                                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                    <Text style={styles.modalCancelButtonText}>Cancelar</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                                    style={[styles.modalSubmitButton, isSubmitting && styles.modalSubmitButtonDisabled]}
                                     onPress={handleSubmit}
                                     disabled={isSubmitting}
                                 >
-                                    <Text style={styles.submitButtonText}>
+                                    <Text style={styles.modalSubmitButtonText}>
                                         {isSubmitting ? 'Guardando...' : 'Guardar'}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                        </ScrollView>
+                        </KeyboardAvoidingView>
                     </View>
                 </View>
             </Modal>
