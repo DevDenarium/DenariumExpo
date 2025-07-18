@@ -23,56 +23,23 @@ export const SimpleStoryPlayer: React.FC<SimpleStoryPlayerProps> = ({
     title,
     onClose
 }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     console.log('=== SimpleStoryPlayer Debug ===');
     console.log('Title:', title);
     console.log('Video URL:', videoUrl);
-    console.log('Is Playing:', isPlaying);
     console.log('Loading:', loading);
 
-    const handlePlayPress = () => {
-        console.log('=== Play Button Pressed ===');
-        console.log('Video URL to play:', videoUrl);
-        
-        setLoading(true);
-        setTimeout(() => {
-            console.log('Setting playing to true...');
-            setLoading(false);
-            setIsPlaying(true);
-        }, 500);
+    const handleVideoReady = () => {
+        setLoading(false);
+        setError(null);
     };
 
-    if (isPlaying) {
-        return (
-            <View style={styles.container}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.title} numberOfLines={1}>
-                        {title}
-                    </Text>
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={onClose}
-                    >
-                        <Icon name="close" size={24} color="#FFF" />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Video Player */}
-                <View style={styles.videoContainer}>
-                    <Text style={styles.debugText}>Loading S3 Video Player...</Text>
-                    <SimpleWebVideoPlayer
-                        videoUrl={videoUrl}
-                        height={SCREEN_HEIGHT}
-                        autoplay={true}
-                        controls={true}
-                    />
-                </View>
-            </View>
-        );
-    }
+    const handleVideoError = () => {
+        setLoading(false);
+        setError('Error al cargar el video');
+    };
 
     return (
         <View style={styles.container}>
@@ -89,32 +56,31 @@ export const SimpleStoryPlayer: React.FC<SimpleStoryPlayerProps> = ({
                 </TouchableOpacity>
             </View>
 
-            {/* Preview/Play Screen */}
-            <View style={styles.previewContainer}>
-                <View style={styles.placeholderContainer}>
-                    <Icon name="video" size={80} color="#D4AF37" />
+            {/* Loading Overlay */}
+            {loading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#D4AF37" />
+                    <Text style={styles.loadingText}>Cargando historia...</Text>
                 </View>
+            )}
 
-                {/* Play Button Overlay */}
-                <View style={styles.playOverlay}>
-                    {loading ? (
-                        <ActivityIndicator size="large" color="#D4AF37" />
-                    ) : (
-                        <TouchableOpacity 
-                            style={styles.playButton}
-                            onPress={handlePlayPress}
-                        >
-                            <Icon name="play" size={60} color="#FFF" />
-                        </TouchableOpacity>
-                    )}
+            {/* Error Overlay */}
+            {error && (
+                <View style={styles.errorOverlay}>
+                    <Icon name="alert-circle" size={50} color="#E74C3C" />
+                    <Text style={styles.errorText}>{error}</Text>
                 </View>
+            )}
 
-                {/* Instructions */}
-                <View style={styles.instructionsContainer}>
-                    <Text style={styles.instructionsText}>
-                        Toca para reproducir la historia
-                    </Text>
-                </View>
+            {/* Video Player - Siempre renderizado con autoplay */}
+            <View style={styles.videoContainer}>
+                <SimpleWebVideoPlayer
+                    videoUrl={videoUrl}
+                    height={SCREEN_HEIGHT}
+                    autoplay={true}
+                    controls={false}
+                    onVideoReady={handleVideoReady}
+                />
             </View>
         </View>
     );
@@ -154,20 +120,7 @@ const styles = StyleSheet.create({
     videoContainer: {
         flex: 1,
     },
-    previewContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    placeholderContainer: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#1a1a1a',
-    },
-    playOverlay: {
+    loadingOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
@@ -175,48 +128,31 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        zIndex: 15,
     },
-    playButton: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: 'rgba(212, 175, 55, 0.9)',
+    loadingText: {
+        color: '#FFF',
+        marginTop: 10,
+        fontSize: 16,
+    },
+    errorOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        zIndex: 15,
     },
-    instructionsContainer: {
-        position: 'absolute',
-        bottom: 100,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-    },
-    instructionsText: {
+    errorText: {
         color: '#FFF',
         fontSize: 16,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
         textAlign: 'center',
-    },
-    debugText: {
-        color: '#D4AF37',
-        fontSize: 14,
-        textAlign: 'center',
-        padding: 10,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        position: 'absolute',
-        top: 100,
-        left: 0,
-        right: 0,
-        zIndex: 10,
+        marginTop: 15,
+        paddingHorizontal: 30,
     },
 });
 

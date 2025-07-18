@@ -35,7 +35,7 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
     
     console.log('SimpleWebVideoPlayer rendered with URL:', testVideoUrl);
 
-    // HTML optimizado para autoplay
+    // HTML simple para reproductor de video
     const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -52,98 +52,54 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 video {
                     width: 100%;
                     height: 100%;
-                    object-fit: cover;
+                    object-fit: contain;
                     background: #000;
                 }
             </style>
         </head>
         <body>
             <video 
-                id="video"
                 ${controls ? 'controls' : ''} 
                 preload="auto" 
-                autoplay
-                muted
+                ${autoplay ? 'autoplay muted' : ''} 
                 playsinline 
                 webkit-playsinline
-                x-webkit-airplay="allow"
             >
                 <source src="${testVideoUrl}" type="video/mp4">
                 Video no compatible
             </video>
             
             <script>
-                const video = document.getElementById('video');
+                const video = document.querySelector('video');
                 let isPlaying = false;
                 let duration = 0;
                 
-                // Configuración agresiva para autoplay
-                video.autoplay = true;
-                video.muted = true;
-                video.playsInline = true;
-                
-                // Función para intentar reproducir
-                function attemptPlay() {
-                    console.log('Attempting to play video...');
-                    const playPromise = video.play();
-                    
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log('Video started playing automatically');
-                            isPlaying = true;
-                            window.ReactNativeWebView?.postMessage('playing');
-                        }).catch(error => {
-                            console.error('Autoplay failed:', error);
-                            window.ReactNativeWebView?.postMessage('autoplay-failed');
-                            
-                            // Intentar de nuevo después de un pequeño delay
-                            setTimeout(() => {
-                                video.play().catch(e => {
-                                    console.error('Second attempt failed:', e);
-                                });
-                            }, 100);
-                        });
-                    }
-                }
-                
                 video.addEventListener('loadedmetadata', () => {
                     duration = video.duration;
-                    console.log('Video metadata loaded, duration:', duration);
                     window.ReactNativeWebView?.postMessage('ready');
                     window.ReactNativeWebView?.postMessage('duration:' + duration);
                 });
                 
-                video.addEventListener('loadeddata', () => {
-                    console.log('Video data loaded');
-                    if (${autoplay}) {
-                        attemptPlay();
-                    }
-                });
-                
                 video.addEventListener('canplay', () => {
-                    console.log('Video can play');
                     window.ReactNativeWebView?.postMessage('ready');
                     
-                    if (${autoplay} && video.paused) {
-                        attemptPlay();
-                    }
-                });
-                
-                video.addEventListener('canplaythrough', () => {
-                    console.log('Video can play through');
-                    if (${autoplay} && video.paused) {
-                        attemptPlay();
+                    if (${autoplay}) {
+                        video.play().then(() => {
+                            isPlaying = true;
+                            window.ReactNativeWebView?.postMessage('playing');
+                        }).catch(err => {
+                            console.error('Autoplay failed:', err);
+                            window.ReactNativeWebView?.postMessage('autoplay-failed');
+                        });
                     }
                 });
                 
                 video.addEventListener('play', () => {
-                    console.log('Video play event');
                     isPlaying = true;
                     window.ReactNativeWebView?.postMessage('playing');
                 });
                 
                 video.addEventListener('pause', () => {
-                    console.log('Video pause event');
                     isPlaying = false;
                     window.ReactNativeWebView?.postMessage('paused');
                 });
@@ -156,7 +112,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 });
                 
                 video.addEventListener('ended', () => {
-                    console.log('Video ended');
                     isPlaying = false;
                     window.ReactNativeWebView?.postMessage('ended');
                 });
@@ -166,7 +121,7 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     window.ReactNativeWebView?.postMessage('error:Video error');
                 });
                 
-                // Control táctil
+                // Control táctil simple
                 video.addEventListener('click', (e) => {
                     e.preventDefault();
                     if (video.paused) {
@@ -178,18 +133,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                         video.pause();
                     }
                 });
-                
-                // Intentar reproducir cuando el documento esté listo
-                document.addEventListener('DOMContentLoaded', () => {
-                    if (${autoplay}) {
-                        setTimeout(attemptPlay, 100);
-                    }
-                });
-                
-                // Intentar reproducir inmediatamente también
-                if (${autoplay}) {
-                    setTimeout(attemptPlay, 50);
-                }
             </script>
         </body>
         </html>
@@ -236,8 +179,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                         onVideoReady?.();
                     } else if (message === 'playing') {
                         setIsPlaying(true);
-                        setLoading(false);
-                        setError(null);
                         onVideoPlaying?.();
                     } else if (message === 'paused') {
                         setIsPlaying(false);
@@ -267,10 +208,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 allowsInlineMediaPlayback={true}
                 mediaPlaybackRequiresUserAction={false}
                 mixedContentMode="compatibility"
-                allowsFullscreenVideo={true}
-                domStorageEnabled={true}
-                startInLoadingState={false}
-                scalesPageToFit={false}
             />
         </View>
     );

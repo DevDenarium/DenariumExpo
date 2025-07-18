@@ -32,8 +32,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const progressInterval = useRef<NodeJS.Timeout | null>(null);
     const [progress, setProgress] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+    const [showLeftTap, setShowLeftTap] = useState(false);
+    const [showRightTap, setShowRightTap] = useState(false);
 
     const currentStory = stories[currentIndex];
 
@@ -42,42 +45,46 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             setCurrentIndex(initialIndex);
             setProgress(0);
             setError(null);
-            setLoading(false);
-            startProgressBar();
+            setLoading(true);
+            setIsPlaying(false);
+            setIsPaused(false);
+            
+            // Configurar StatusBar para pantalla completa
+            StatusBar.setHidden(true, 'slide');
         } else {
-            stopProgressBar();
+            // Restaurar StatusBar cuando se cierre
+            StatusBar.setHidden(false, 'slide');
         }
-
+        
         return () => {
-            stopProgressBar();
+            StatusBar.setHidden(false, 'slide');
         };
     }, [visible, initialIndex]);
 
-    const startProgressBar = () => {
-        stopProgressBar();
-        setProgress(0);
-        
-        // Duración de cada historia (5 segundos por defecto)
-        const duration = 5000;
-        const interval = 50;
-        const increment = (interval / duration) * 100;
-
-        progressInterval.current = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) {
-                    goToNext();
-                    return 0;
-                }
-                return prev + increment;
-            });
-        }, interval);
+    // Callbacks para el reproductor de video
+    const handleVideoProgress = (videoProgress: number) => {
+        setProgress(videoProgress);
     };
 
-    const stopProgressBar = () => {
-        if (progressInterval.current) {
-            clearInterval(progressInterval.current);
-            progressInterval.current = null;
-        }
+    const handleVideoReady = () => {
+        setLoading(false);
+        setError(null);
+    };
+
+    const handleVideoPlaying = () => {
+        setIsPlaying(true);
+        setIsPaused(false);
+    };
+
+    const handleVideoPaused = () => {
+        setIsPlaying(false);
+        setIsPaused(true);
+    };
+
+    const handleVideoEnd = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        goToNext();
     };
 
     const goToNext = () => {
@@ -85,7 +92,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             setCurrentIndex(prev => prev + 1);
             setProgress(0);
             setError(null);
-            startProgressBar();
+            setLoading(true);
+            setIsPlaying(false);
+            setIsPaused(false);
         } else {
             onClose();
         }
@@ -96,18 +105,27 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             setCurrentIndex(prev => prev - 1);
             setProgress(0);
             setError(null);
-            startProgressBar();
+            setLoading(true);
+            setIsPlaying(false);
+            setIsPaused(false);
         }
     };
 
     const handleTapLeft = () => {
-        stopProgressBar();
+        setShowLeftTap(true);
+        setTimeout(() => setShowLeftTap(false), 200);
         goToPrevious();
     };
 
     const handleTapRight = () => {
-        stopProgressBar();
+        setShowRightTap(true);
+        setTimeout(() => setShowRightTap(false), 200);
         goToNext();
+    };
+
+    const handleTapCenter = () => {
+        // Esta función se puede usar para pausar/reanudar en el centro
+        // Por ahora el toque en el video maneja la pausa automáticamente
     };
 
     const renderStoryContent = () => {
@@ -161,6 +179,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 height={SCREEN_HEIGHT}
                 autoplay={true}
                 controls={false}
+                onProgress={handleVideoProgress}
+                onVideoEnd={handleVideoEnd}
+                onVideoReady={handleVideoReady}
+                onVideoPlaying={handleVideoPlaying}
+                onVideoPaused={handleVideoPaused}
             />
         );
     };
@@ -213,6 +236,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 {/* Contenido del video */}
                 <View style={styles.contentContainer}>
                     {renderStoryContent()}
+                    
+                    {/* Indicador de pausa */}
+                    {isPaused && (
+                        <View style={styles.pauseIndicator}>
+                            <Icon name="pause" size={60} color="rgba(255,255,255,0.8)" />
+                        </View>
+                    )}
                 </View>
 
                 {/* Controles táctiles invisibles */}
@@ -220,6 +250,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                     <TouchableOpacity 
                         style={styles.leftTouchArea} 
                         onPress={handleTapLeft}
+                        activeOpacity={0}
+                    />
+                    <TouchableOpacity 
+                        style={styles.centerTouchArea} 
+                        onPress={handleTapCenter}
                         activeOpacity={0}
                     />
                     <TouchableOpacity 
@@ -242,6 +277,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                         </View>
                     )}
                 </View>
+                
+                {/* Indicadores de tap */}
+                {showLeftTap && (
+                    <View style={styles.tapIndicatorLeft}>
+                        <Icon name="chevron-left" size={40} color="rgba(255,255,255,0.9)" />
+                    </View>
+                )}
+                {showRightTap && (
+                    <View style={styles.tapIndicatorRight}>
+                        <Icon name="chevron-right" size={40} color="rgba(255,255,255,0.9)" />
+                    </View>
+                )}
             </View>
         </Modal>
     );
@@ -287,7 +334,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 10,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(0,0,0,0.4)',
     },
     title: {
         color: '#FFF',
@@ -352,6 +399,9 @@ const styles = StyleSheet.create({
     leftTouchArea: {
         flex: 1,
     },
+    centerTouchArea: {
+        flex: 2, // Área central más grande
+    },
     rightTouchArea: {
         flex: 1,
     },
@@ -370,6 +420,45 @@ const styles = StyleSheet.create({
     },
     rightIndicator: {
         alignSelf: 'flex-end',
+    },
+    pauseIndicator: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -30 }, { translateY: -30 }],
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 50,
+        width: 60,
+        height: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 15,
+    },
+    tapIndicatorLeft: {
+        position: 'absolute',
+        top: '50%',
+        left: 50,
+        transform: [{ translateY: -20 }],
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 20,
+    },
+    tapIndicatorRight: {
+        position: 'absolute',
+        top: '50%',
+        right: 50,
+        transform: [{ translateY: -20 }],
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 20,
     },
 });
 
