@@ -98,7 +98,7 @@ const YoutubePlayerWrapper: React.FC<Props> = ({
                 play={autoplay}
                 webViewProps={{
                     allowsInlineMediaPlayback: true,
-                    mediaPlaybackRequiresUserAction: Platform.OS !== 'android',
+                    mediaPlaybackRequiresUserAction: false,
                 }}
                 webViewStyle={styles.webView}
                 initialPlayerParams={{

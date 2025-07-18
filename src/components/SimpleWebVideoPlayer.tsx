@@ -43,7 +43,7 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
             </style>
         </head>
         <body>
-            <video controls autoplay="false" preload="metadata">
+            <video controls preload="metadata">
                 <source src="${testVideoUrl}" type="video/mp4">
                 Video no compatible
             </video>
@@ -51,9 +51,19 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
             <script>
                 const video = document.querySelector('video');
                 
+                // Asegurar que NO haya autoplay
+                video.autoplay = false;
+                video.muted = false;
+                
+                // Eventos de carga
                 video.addEventListener('loadstart', () => {
                     console.log('Video loading started');
                     window.ReactNativeWebView?.postMessage('loading');
+                });
+                
+                video.addEventListener('loadedmetadata', () => {
+                    console.log('Video metadata loaded');
+                    window.ReactNativeWebView?.postMessage('ready');
                 });
                 
                 video.addEventListener('canplay', () => {
@@ -66,8 +76,14 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     window.ReactNativeWebView?.postMessage('error:Video error');
                 });
                 
-                // Mensaje inicial con la URL
-                window.ReactNativeWebView?.postMessage('url:${testVideoUrl}');
+                video.addEventListener('pause', () => {
+                    console.log('Video paused by browser policy or user');
+                });
+                
+                // Forzar que NO se reproduzca automáticamente
+                video.addEventListener('play', (e) => {
+                    console.log('Video play attempted');
+                });
             </script>
         </body>
         </html>
@@ -75,13 +91,6 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
 
     return (
         <View style={[styles.container, { height }]}>
-            {/* Mostrar URL para debug */}
-            <View style={styles.urlContainer}>
-                <Text style={styles.urlText} numberOfLines={2}>
-                    {testVideoUrl}
-                </Text>
-            </View>
-
             {loading && (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#D4AF37" />
@@ -142,20 +151,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         overflow: 'hidden',
         position: 'relative',
-    },
-    urlContainer: {
-        position: 'absolute',
-        top: 5,
-        left: 5,
-        right: 5,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        padding: 5,
-        borderRadius: 5,
-        zIndex: 10,
-    },
-    urlText: {
-        color: '#fff',
-        fontSize: 10,
     },
     webView: {
         flex: 1,
