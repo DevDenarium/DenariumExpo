@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navegation/Navegation.types';
 import {UserRole} from "./user.types";
-import SubscriptionsService from "../../services/subscription.service";
+import { SubscriptionsService } from "../../services/subscription.service";
 
 type RegisterPersonalScreenProps = {
     navigation: StackNavigationProp<RootStackParamList, 'RegisterPersonal'>;
@@ -197,10 +197,7 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
             });
 
             if (registerResponse.success && registerResponse.user) {
-                await SubscriptionsService.createDefaultSubscription(
-                    registerResponse.user.id,
-                    UserRole.PERSONAL
-                );
+                await SubscriptionsService.activateFreeSubscription('PERSONAL_FREE');
 
                 if (registerResponse.requiresVerification) {
                     navigation.navigate('Verification', {

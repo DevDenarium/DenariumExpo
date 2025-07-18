@@ -5,11 +5,15 @@ import { WebView } from 'react-native-webview';
 interface SimpleWebVideoPlayerProps {
     videoUrl: string;
     height?: number;
+    autoplay?: boolean;
+    controls?: boolean;
 }
 
 export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
     videoUrl,
     height = 200,
+    autoplay = false,
+    controls = true,
 }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -43,7 +47,7 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
             </style>
         </head>
         <body>
-            <video controls preload="metadata">
+            <video ${controls ? 'controls' : ''} preload="metadata" ${autoplay ? 'autoplay muted' : ''} playsinline>
                 <source src="${testVideoUrl}" type="video/mp4">
                 Video no compatible
             </video>
@@ -51,9 +55,9 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
             <script>
                 const video = document.querySelector('video');
                 
-                // Asegurar que NO haya autoplay
-                video.autoplay = false;
-                video.muted = false;
+                // Configurar propiedades según los parámetros
+                video.autoplay = ${autoplay};
+                video.muted = ${autoplay}; // Muted es necesario para autoplay en mobile
                 
                 video.addEventListener('loadstart', () => {
                     console.log('Video loading started');
@@ -68,11 +72,26 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 video.addEventListener('canplay', () => {
                     console.log('Video can play');
                     window.ReactNativeWebView?.postMessage('ready');
+                    
+                    // Si es autoplay, intentar reproducir inmediatamente
+                    if (${autoplay}) {
+                        video.play().catch(err => {
+                            console.error('Autoplay failed:', err);
+                            window.ReactNativeWebView?.postMessage('autoplay-failed');
+                        });
+                    }
                 });
                 
                 video.addEventListener('error', (e) => {
                     console.error('Video error:', e);
                     window.ReactNativeWebView?.postMessage('error:Video error');
+                });
+                
+                // Evento cuando el usuario toca el video (para desmutear en caso de autoplay)
+                video.addEventListener('click', () => {
+                    if (video.muted) {
+                        video.muted = false;
+                    }
                 });
             </script>
         </body>
