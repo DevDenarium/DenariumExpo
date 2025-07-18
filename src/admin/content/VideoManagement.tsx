@@ -459,7 +459,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     // Renderizado del componente
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Gestión de Contenido Educativo</Text>
+            <Text style={styles.header}>Administrar Videos</Text>
             
             {/* Tabs */}
             <View style={styles.tabContainer}>
@@ -483,7 +483,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
 
             {/* Botón agregar */}
             <TouchableOpacity style={styles.addButton} onPress={handleAddContent}>
-                <Icon name="plus" size={24} color="#1c1c1c" />
+                <Icon name="plus" size={24} color="#D4AF37" />
                 <Text style={styles.addButtonText}>
                     Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
                 </Text>

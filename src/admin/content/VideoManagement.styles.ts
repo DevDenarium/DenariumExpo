@@ -16,15 +16,11 @@ export const styles = StyleSheet.create({
 
     // Header styles
     header: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 24,
+        fontWeight: '600',
         marginBottom: 24,
         color: '#D4AF37',
-        textAlign: 'center',
-        letterSpacing: 0.5,
-        textShadowColor: 'rgba(212, 175, 55, 0.3)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
+        textAlign: 'left',
     },
 
     // Tab styles (updated existing)
@@ -151,24 +147,27 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
     },
     addButton: {
-        backgroundColor: '#D4AF37',
-        padding: 16,
+        backgroundColor: '#1c1c1c',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderRadius: 20,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
         marginBottom: 24,
+        borderWidth: 2,
+        borderColor: '#D4AF37',
         shadowColor: '#D4AF37',
         shadowOffset: {
             width: 0,
-            height: 6,
+            height: 2,
         },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 12,
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     addButtonText: {
-        color: '#1c1c1c',
+        color: '#D4AF37',
         fontSize: 18,
         fontWeight: '700',
         marginLeft: 8,
