@@ -169,6 +169,31 @@ export const EducationalService = {
         }
     },
 
+    cleanupInactiveContent: async (): Promise<{
+        success: boolean;
+        message: string;
+        deletedCount: number;
+        errorCount: number;
+        deletedItems: { id: string; title: string }[];
+    }> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.delete(
+                `${API_BASE_URL}/educational/cleanup/inactive`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            handleApiError(error, 'Error al limpiar contenido inactivo');
+            throw error;
+        }
+    },
+
     recordContentView: async (contentId: string): Promise<void> => {
         try {
             const token = await getAuthToken();

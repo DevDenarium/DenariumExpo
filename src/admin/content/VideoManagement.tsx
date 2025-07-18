@@ -214,7 +214,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             setLoading(true);
             const response = await EducationalService.fetchContents({
                 type: activeTab === 'videos' ? 'VIDEO' : 'STORY',
-                isActive: undefined
+                isActive: true  // Solo mostrar contenido activo
             });
             setContents(response);
         } catch (error) {
@@ -285,15 +285,15 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     // Función para eliminar todos los videos de prueba
     const handleDeleteAllTestVideos = async () => {
         Alert.alert(
-            'Eliminar Videos de Prueba',
-            '⚠️ ¿Estás seguro de que quieres eliminar TODOS los videos? Esta acción eliminará:\n\n• Todos los videos del tipo seleccionado\n• Los archivos de S3 asociados\n• Esta acción NO se puede deshacer\n\n¿Continuar?',
+            'Eliminar TODOS los Videos',
+            '⚠️ ¿Estás seguro de que quieres eliminar PERMANENTEMENTE TODOS los videos?\n\nEsta acción eliminará:\n• Todos los videos del tipo seleccionado\n• Los archivos de S3 asociados\n• Los registros de la base de datos\n• Esta acción NO se puede deshacer\n\n¿Continuar?',
             [
                 {
                     text: 'Cancelar',
                     style: 'cancel'
                 },
                 {
-                    text: 'Eliminar Todo',
+                    text: 'Eliminar Todo Permanentemente',
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -304,17 +304,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                             for (const content of contents) {
                                 try {
                                     await EducationalService.deleteContent(content.id);
-                                    
-                                    // También eliminar el archivo de S3 si existe
-                                    if (content.videoUrl && !content.videoUrl.includes('youtube') && !content.videoUrl.includes('youtu.be')) {
-                                        try {
-                                            const awsService = new AwsService();
-                                            await awsService.deleteFile(content.videoUrl);
-                                        } catch (deleteError) {
-                                            console.warn('No se pudo eliminar el archivo de S3:', deleteError);
-                                        }
-                                    }
-                                    
                                     deletedCount++;
                                 } catch (error) {
                                     console.error('Error eliminando contenido:', content.id, error);
@@ -340,34 +329,63 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         );
     };
 
-    // Función para eliminar contenido
-    const handleDeleteContent = async (content: EducationalContent) => {
+    // Función para limpiar videos inactivos
+    const handleCleanupInactiveVideos = async () => {
         Alert.alert(
-            'Confirmar Eliminación',
-            `¿Estás seguro de que deseas eliminar "${content.title}"? Esta acción no se puede deshacer.`,
+            'Limpiar Videos Inactivos',
+            '⚠️ Esta acción eliminará permanentemente todos los videos marcados como inactivos de la base de datos.\n\n¿Continuar?',
             [
                 {
                     text: 'Cancelar',
                     style: 'cancel'
                 },
                 {
-                    text: 'Eliminar',
+                    text: 'Limpiar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            
+                            // Usar el nuevo endpoint para limpiar contenido inactivo
+                            const result = await EducationalService.cleanupInactiveContent();
+
+                            Alert.alert(
+                                'Limpieza Completada',
+                                `✅ Videos eliminados: ${result.deletedCount}\n${result.errorCount > 0 ? `❌ Errores: ${result.errorCount}` : '🎉 Todos los videos inactivos fueron eliminados!'}\n\n${result.message}`
+                            );
+                            
+                            // Recargar la lista
+                            fetchContents();
+                        } catch (error) {
+                            console.error('Error en limpieza de videos inactivos:', error);
+                            Alert.alert('Error', 'Hubo un problema durante la limpieza');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Función para eliminar contenido
+    const handleDeleteContent = async (content: EducationalContent) => {
+        Alert.alert(
+            'Confirmar Eliminación',
+            `¿Estás seguro de que deseas eliminar PERMANENTEMENTE "${content.title}"?\n\n⚠️ Esta acción:\n• Eliminará el video de la base de datos\n• Eliminará el archivo de S3\n• NO se puede deshacer\n• El video ya no estará disponible para NINGÚN usuario`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Eliminar Permanentemente',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await EducationalService.deleteContent(content.id);
                             
-                            // También eliminar el archivo de S3 si existe
-                            if (content.videoUrl && !content.videoUrl.includes('youtube') && !content.videoUrl.includes('youtu.be')) {
-                                try {
-                                    const awsService = new AwsService();
-                                    await awsService.deleteFile(content.videoUrl);
-                                } catch (deleteError) {
-                                    console.warn('No se pudo eliminar el archivo de S3:', deleteError);
-                                }
-                            }
-                            
-                            Alert.alert('Éxito', 'Contenido eliminado correctamente');
+                            Alert.alert('Éxito', 'Contenido eliminado permanentemente');
                             fetchContents();
                         } catch (error) {
                             console.error('Error deleting content:', error);
@@ -466,6 +484,13 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 <Icon name="plus" size={24} color="#1c1c1c" />
                 <Text style={styles.addButtonText}>
                     Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
+                </Text>
+            </TouchableOpacity>
+
+            {/* Botón para limpiar videos inactivos */}
+            <TouchableOpacity style={styles.createCategoriesButton} onPress={handleCleanupInactiveVideos}>
+                <Text style={styles.createCategoriesButtonText}>
+                    🗑️ Limpiar Videos Inactivos
                 </Text>
             </TouchableOpacity>
 
