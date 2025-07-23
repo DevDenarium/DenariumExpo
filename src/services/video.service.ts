@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getAuthToken } from './educational.service';
 
 
-const API_BASE_URL = 'http://192.168.20.16:3000';
+const API_BASE_URL = 'http://192.168.100.4:3000';
 
 export const VideoService = {
     getSignedUrl: async (contentId: string): Promise<string> => {

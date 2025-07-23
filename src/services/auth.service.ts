@@ -7,7 +7,7 @@ import { User } from '@react-native-google-signin/google-signin';
 
 
 
-export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.16:3000';
+export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.100.4:3000';
 const API_URL = `${API_BASE_URL}/auth`;
 
 const axiosConfig = {
