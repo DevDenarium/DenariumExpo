@@ -110,11 +110,12 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     modalContainer: {
-        width: '90%',
-        maxHeight: '65%',
+        width: '85%',
+        maxWidth: 400,
         backgroundColor: '#2a2a2a',
         borderRadius: 10,
-        padding: 10,
+        padding: 20,
+        maxHeight: '50%',
     },
     modalTitle: {
         color: '#D4AF37',

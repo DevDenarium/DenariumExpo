@@ -275,9 +275,40 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             fullDate.setSeconds(0);
             fullDate.setMilliseconds(0);
 
-            // Precio según tipo de asesoría
-            const price = formData.isVirtual ? 10 : 25;
             const duration = parseInt(formData.duration) || 60;
+
+            const appointmentData = {
+                title: formData.title,
+                description: formData.description,
+                isVirtual: formData.isVirtual,
+                duration,
+                requestedDate: fullDate.toISOString(),
+            };
+
+            // Si es edición y la cita está en estado pendiente, actualizar directamente
+            if (actionType === 'edit' && selectedAppointment) {
+                const currentStatus = selectedAppointment.status;
+                if (currentStatus === 'PENDING_ADMIN_REVIEW' || currentStatus === 'RESCHEDULED') {
+                    try {
+                        await appointmentService.updatePendingAppointment(selectedAppointment.id, appointmentData);
+                        Alert.alert('Éxito', 'Cita actualizada correctamente');
+                        setShowModal(false);
+                        fetchAppointments();
+                        resetForm();
+                        return;
+                    } catch (error: any) {
+                        console.error('Error updating pending appointment:', error);
+                        Alert.alert('Error', error.message || 'No se pudo actualizar la cita');
+                        return;
+                    }
+                } else {
+                    Alert.alert('Error', 'Solo puedes editar citas que estén pendientes de revisión');
+                    return;
+                }
+            }
+
+            // Para nuevas citas, continuar con el flujo de pago normal
+            const price = formData.isVirtual ? 10 : 25;
 
             const advisoryPlan: SubscriptionPlan = {
                 id: `advisory_${Date.now()}`,
@@ -290,14 +321,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 ],
                 type: 'ADVISORY_SINGLE',
                 icon: 'account-cash',
-            };
-
-            const appointmentData = {
-                title: formData.title,
-                description: formData.description,
-                isVirtual: formData.isVirtual,
-                duration,
-                requestedDate: fullDate.toISOString(),
             };
 
             // Cerrar modal antes de navegar

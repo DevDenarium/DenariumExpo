@@ -239,6 +239,36 @@ class AppointmentService {
         }
     }
 
+    async updatePendingAppointment(
+        id: string,
+        dto: {
+            title: string;
+            description?: string;
+            requestedDate: string;
+            duration?: number;
+            isVirtual?: boolean;
+        }
+    ): Promise<ApiResponse<Appointment>> {
+        try {
+            const headers = await this.getHeaders();
+
+            const response = await axios.put(`${API_BASE_URL}/appointments/${id}/edit-pending`, dto, { headers });
+
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error updating pending appointment:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                config: error.config
+            });
+            throw new Error(error.response?.data?.message || 'No se pudo actualizar la cita pendiente');
+        }
+    }
+
     private async getAppointmentDetails(id: string): Promise<ApiResponse<Appointment>> {
         const headers = await this.getHeaders();
         const response = await axios.get(`${API_BASE_URL}/appointments/${id}`, { headers });

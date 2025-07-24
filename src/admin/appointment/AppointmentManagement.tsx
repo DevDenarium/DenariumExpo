@@ -221,7 +221,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
             if (user?.role === 'ADMIN') {
                 const response = await appointmentService.getAdminAppointments();
-                // Verificar que la respuesta tenga datos y sea un array
                 appointmentsData = Array.isArray(response?.data) ? response.data : [];
             } else {
                 const userResponse = await appointmentService.getUserAppointments();
@@ -235,7 +234,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 );
             }
 
-            console.log('Final appointments data:', appointmentsData);
             setAppointments(appointmentsData);
         } catch (error) {
             console.error('Error fetching appointments:', error);
@@ -249,21 +247,17 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const applyFilters = () => {
         let result = [...appointments];
         const now = new Date();
-        console.log('Applying filters. Initial appointments:', result);
-
         // Filtro por fecha (día o mes)
         if (filterType !== 'none' && filterDate) {
             if (filterType === 'day') {
                 result = result.filter(appointment =>
                     isSameDay(parseISO(appointment.requestedDate), filterDate)
                 );
-                console.log('After day filter:', result);
             } else if (filterType === 'month') {
                 result = result.filter(appointment =>
                     isSameMonth(parseISO(appointment.requestedDate), filterDate) &&
                     isSameYear(parseISO(appointment.requestedDate), filterDate)
                 );
-                console.log('After month filter:', result);
             }
         }
 
@@ -281,7 +275,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     const dateB = new Date(b.confirmedDate || b.requestedDate);
                     return dateA.getTime() - dateB.getTime();
                 });
-                console.log('After upcoming filter:', result);
                 break;
 
             case 'pending':
@@ -290,7 +283,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 ).sort((a, b) =>
                     new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime()
                 );
-                console.log('After pending filter:', result);
                 break;
 
             case 'cancelled':
@@ -299,7 +291,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 ).sort((a, b) =>
                     new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime()
                 );
-                console.log('After cancelled filter:', result);
                 break;
 
             case 'past':
@@ -313,16 +304,13 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     new Date(b.confirmedDate || b.requestedDate).getTime() -
                     new Date(a.confirmedDate || a.requestedDate).getTime()
                 );
-                console.log('After past filter:', result);
                 break;
 
             case 'all':
             default:
-                console.log('No status filter applied');
                 break;
         }
 
-        console.log('Final filtered appointments:', result);
         setFilteredAppointments(result);
     };
 
@@ -340,11 +328,8 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         if (!selectedAppointment) return;
 
         try {
-            const confirmedDate = new Date(selectedDate);
-            if (selectedTime) {
-                const [hours, minutes] = selectedTime.split(':').map(Number);
-                confirmedDate.setHours(hours, minutes, 0, 0);
-            }
+            // Usar la fecha solicitada original de la cita
+            const confirmedDate = new Date(selectedAppointment.requestedDate);
 
             const response = await appointmentService.confirmAppointment(
                 selectedAppointment.id,
@@ -433,6 +418,16 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         return format(date, "dd/MM/yyyy HH:mm", { locale: es });
     };
 
+    const formatDateOnly = (dateString: string) => {
+        const date = new Date(dateString);
+        return format(date, "dd/MM/yyyy", { locale: es });
+    };
+
+    const formatTime12Hour = (dateString: string) => {
+        const date = new Date(dateString);
+        return format(date, "h:mm a", { locale: es });
+    };
+
     const formatMonth = (date: Date) => {
         return format(date, "MMMM yyyy", { locale: es });
     };
@@ -500,19 +495,25 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                             <Text style={styles.cardDate}>
                                 <Text style={{fontWeight: 'bold'}}>Email:</Text> {item.user.email}
                             </Text>
-                            {item.user.phone && (
-                                <Text style={styles.cardDate}>
-                                    <Text style={{fontWeight: 'bold'}}>Teléfono:</Text> {item.user.phone}
-                                </Text>
-                            )}
+                            <Text style={styles.cardDate}>
+                                <Text style={{fontWeight: 'bold'}}>Teléfono:</Text> {item.user.phone || 'No disponible'}
+                            </Text>
                         </>
                     )}
-                    {item.description && (
-                        <Text style={styles.cardDescription}>{item.description}</Text>
-                    )}
                     <Text style={styles.cardDate}>
-                        <Text style={{ fontWeight: 'bold' }}>Solicitada:</Text> {formatDate(item.requestedDate)}
+                        <Text style={{ fontWeight: 'bold' }}>Fecha solicitada:</Text> {format(parseISO(item.requestedDate), 'dd/MM/yyyy', { locale: es })}
                     </Text>
+                    <Text style={styles.cardDate}>
+                        <Text style={{ fontWeight: 'bold' }}>Hora solicitada:</Text> {formatTime12Hour(item.requestedDate)}
+                    </Text>
+                    <Text style={styles.cardDate}>
+                        <Text style={{ fontWeight: 'bold' }}>Duración:</Text> {item.duration} minutos
+                    </Text>
+                    {item.description && (
+                        <Text style={styles.cardDate}>
+                            <Text style={{fontWeight: 'bold'}}>Descripción:</Text> {item.description}
+                        </Text>
+                    )}
                     {item.suggestedDate && (
                         <Text style={styles.cardDate}>
                             <Text style={{ fontWeight: 'bold' }}>Sugerida:</Text> {formatDate(item.suggestedDate)}
@@ -776,16 +777,75 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 }}
             >
                 <View style={styles.modalOverlay}>
-                    <ScrollView style={styles.modalContainer}>
+                    <View style={[
+                        styles.modalContainer,
+                        actionType === 'confirm' && {
+                            width: '85%',
+                            maxHeight: 'auto',
+                            minHeight: 'auto',
+                            paddingVertical: 20,
+                            paddingHorizontal: 20
+                        }
+                    ]}>
                         <Text style={styles.modalTitle}>
                             {actionType === 'confirm' ? 'Confirmar Cita' :
                                 actionType === 'reschedule' ? 'Reagendar Cita' : 'Cancelar Cita'}
                         </Text>
 
-                        {(actionType === 'confirm' || actionType === 'reschedule') && (
+                        {actionType === 'confirm' && selectedAppointment && (
+                            <View style={{marginVertical: 15, paddingHorizontal: 10}}>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 16, marginBottom: 15}}>
+                                    ¿Estás seguro que deseas confirmar la cita?
+                                </Text>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Cliente:</Text> {selectedAppointment.user?.firstName} {selectedAppointment.user?.lastName}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Email:</Text> {selectedAppointment.user?.email}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Teléfono:</Text> {selectedAppointment.user?.phone || 'No disponible'}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Tema:</Text> {selectedAppointment.title}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Fecha:</Text> {formatDateOnly(selectedAppointment.requestedDate)}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Hora:</Text> {formatTime12Hour(selectedAppointment.requestedDate)}
+                                    </Text>
+                                </View>
+                                
+                                <View style={{marginBottom: 10}}>
+                                    <Text style={{color: '#FFFFFF', fontSize: 14}}>
+                                        <Text style={{fontWeight: 'bold'}}>Duración:</Text> {selectedAppointment.duration} minutos
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {actionType === 'reschedule' && (
                             <>
                                 <Text style={styles.modalSubtitle}>
-                                    {actionType === 'reschedule' && showTimeSlots
+                                    {showTimeSlots
                                         ? 'Selecciona un horario'
                                         : 'Selecciona una fecha'}
                                 </Text>
@@ -796,19 +856,19 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                             <WebDatePicker
                                                 value={selectedDate}
                                                 onChange={handleDateChange}
-                                                mode={actionType === 'reschedule' ? 'datetime' : 'date'}
+                                                mode="datetime"
                                             />
                                         ) : (
                                             <MobileDatePicker
                                                 value={selectedDate}
                                                 onChange={handleDateChange}
-                                                mode={actionType === 'reschedule' ? 'datetime' : 'date'}
+                                                mode="datetime"
                                             />
                                         )}
                                     </View>
                                 )}
 
-                                {actionType === 'reschedule' && showTimeSlots && (
+                                {showTimeSlots && (
                                     <View style={styles.timeSlotsContainer}>
                                         {timeSlots.map((time, index) => (
                                             <TouchableOpacity
@@ -866,14 +926,14 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 }}
                             >
                                 <Text style={styles.modalButtonText}>
-                                    {actionType === 'confirm' ? 'Confirmar' :
+                                    {actionType === 'confirm' ? 'Confirmar Cita' :
                                         actionType === 'reschedule' ?
                                             (showTimeSlots ? 'Reagendar' : 'Siguiente') :
                                             'Cancelar Cita'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </ScrollView>
+                    </View>
                 </View>
             </Modal>
 
