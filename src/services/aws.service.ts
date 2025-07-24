@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import { VideoCompressionService } from './video-compression.service';
 import { Platform } from 'react-native';
 
-const API_BASE_URL = 'http://192.168.100.4:3000';
+const API_BASE_URL = 'http://192.168.20.13:3000';
 
 export class AwsService {
     // Función para validar y preparar el video antes de subirlo
