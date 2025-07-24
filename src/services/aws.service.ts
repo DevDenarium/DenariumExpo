@@ -117,14 +117,12 @@ export class AwsService {
                             }
                         );
 
-                        console.log('Upload response:', response.data);
                         const s3Key = response.data.key;
                         
                         if (!s3Key) {
                             throw new Error('No se recibió la clave S3 del servidor');
                         }
                         
-                        console.log('Video uploaded with S3 key:', s3Key);
                         resolve(s3Key);
                     } catch (error) {
                         console.error('Error in upload request:', error);

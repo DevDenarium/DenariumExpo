@@ -218,17 +218,13 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         try {
             setLoading(true);
             let appointmentsData: Appointment[] = [];
-            console.log('Fetching appointments for user:', user?.role);
 
             if (user?.role === 'ADMIN') {
                 const response = await appointmentService.getAdminAppointments();
-                console.log('Admin appointments response:', response);
                 // Verificar que la respuesta tenga datos y sea un array
                 appointmentsData = Array.isArray(response?.data) ? response.data : [];
-                console.log('Processed admin appointments:', appointmentsData);
             } else {
                 const userResponse = await appointmentService.getUserAppointments();
-                console.log('User appointments response:', userResponse);
                 appointmentsData = Array.isArray(userResponse?.data) ? userResponse.data : [];
             }
 

@@ -229,7 +229,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 setUploadProgress(progress);
             });
 
-            console.log('Video uploaded successfully with key:', s3Key);
             return s3Key;
         } catch (error) {
             setIsCompressing(false);

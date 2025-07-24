@@ -34,8 +34,6 @@ export const EducationalService = {
     }): Promise<EducationalContent[]> => {
         try {
             const token = await getAuthToken();
-            console.log('Fetching contents with params:', params);
-            console.log('Using token:', token ? 'Token present' : 'No token');
             const response = await axios.get<EducationalContent[]>(
                 `${API_BASE_URL}/educational/content`,
                 {
@@ -46,7 +44,6 @@ export const EducationalService = {
                     }
                 }
             );
-            console.log('Backend response:', response.data.length, 'items');
             return response.data;
         } catch (error) {
             console.error('Error in fetchContents:', error);

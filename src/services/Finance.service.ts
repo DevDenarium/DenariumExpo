@@ -103,7 +103,6 @@ export const FinanceService = {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Respuesta del backend:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating finance entry:', error);
@@ -141,7 +140,6 @@ export const FinanceService = {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Respuesta de actualización:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error updating entry:', error);
@@ -164,7 +162,6 @@ export const FinanceService = {
 
     async calculateBalance() {
         const token = await this.getToken();
-        console.log("Token:", token);
 
         try {
             const response = await axios.get(`${API_BASE_URL}/finance/balance`, {
@@ -173,7 +170,6 @@ export const FinanceService = {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log("Balance response:", response.data);
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -189,17 +185,14 @@ export const FinanceService = {
 
     async getCategories() {
         const token = await this.getToken();
-        console.log('Token being sent:', token);
 
         try {
-            console.log('Making request to:', `${API_BASE_URL}/finance/categories`);
             const response = await axios.get(`${API_BASE_URL}/finance/categories`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Categories response:', response.data);
             return response.data;
         } catch (error) {
             if (error instanceof Error) {
@@ -262,7 +255,6 @@ export const FinanceService = {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Tag creado:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating tag:', error);

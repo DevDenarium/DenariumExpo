@@ -248,8 +248,6 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
         const platform = Platform.OS === 'ios' ? 'ios' :
             Platform.OS === 'android' ? 'android' : 'web';
 
-        console.log('Sending Google token to:', `${API_URL}/google/${platform}`);
-
         const response = await axios.post<AuthResponse>(
             `${API_URL}/google/${platform}`,
             { token },
@@ -261,8 +259,6 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
                 timeout: 10000
             }
         );
-
-        console.log('Google login response:', response.data);
 
         if (!response.data.access_token) {
             throw new Error('No access token received');
