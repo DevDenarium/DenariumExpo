@@ -29,11 +29,11 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             if (idToken) {
                 handleGoogleLogin(idToken);
             } else {
-                console.error('Missing Google ID token:', response);
+                console.error('Token de Google ID faltante:', response);
                 setError('No se pudo obtener el token de Google. Por favor intenta nuevamente.');
             }
         } else if (response?.type === 'error') {
-            console.error('Google auth error:', response.error);
+            console.error('Error de autenticación de Google:', response.error);
             setError(`Error al autenticar con Google: ${response.error}`);
         }
     }, [response]);
@@ -55,13 +55,13 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                     await signIn(result);
                     redirectUserBasedOnType(result.user);
                 } else {
-                    throw new Error('Auth context is not properly initialized');
+                    throw new Error('El contexto de autenticación no está inicializado correctamente');
                 }
             } else {
-                throw new Error('Invalid user data received from Google login');
+                throw new Error('Datos de usuario inválidos recibidos del login de Google');
             }
         } catch (err) {
-            console.error('Google login error:', err);
+            console.error('Error de login con Google:', err);
             const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión con Google';
             setError(errorMessage);
             Alert.alert('Error', errorMessage);
@@ -121,7 +121,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             await signIn(result);
             redirectUserBasedOnType(result.user);
         } catch (err) {
-            console.error('Login error:', err);
+            console.error('Error de login:', err);
 
             let errorMessage = 'Error al iniciar sesión';
 

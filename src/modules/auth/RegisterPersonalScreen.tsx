@@ -57,7 +57,7 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
                 setCountries(countriesData);
                 setFilteredCountries(countriesData);
             } catch (error) {
-                console.error('Error loading countries:', error);
+                console.error('Error cargando países:', error);
                 Alert.alert('Error', 'No se pudieron cargar los países. Por favor intenta nuevamente.');
             }
         };
@@ -70,7 +70,7 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
                 const provincesData = await getProvinces();
                 setProvinces(provincesData);
             } catch (error) {
-                console.error('Error loading provinces:', error);
+                console.error('Error cargando provincias:', error);
                 Alert.alert('Error', 'No se pudieron cargar las provincias. Por favor intenta nuevamente.');
             }
         };
@@ -96,7 +96,7 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
                     const cantonsData = await getCantons(selectedProvinceId);
                     setCantons(cantonsData);
                 } catch (error) {
-                    console.error('Error loading cantons:', error);
+                    console.error('Error cargando cantones:', error);
                     Alert.alert('Error', 'No se pudieron cargar los cantones. Por favor intenta nuevamente.');
                 }
             }
@@ -112,7 +112,7 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
                     const districtsData = await getDistricts(selectedCantonId);
                     setDistricts(districtsData);
                 } catch (error) {
-                    console.error('Error loading districts:', error);
+                    console.error('Error cargando distritos:', error);
                     Alert.alert('Error', 'No se pudieron cargar los distritos. Por favor intenta nuevamente.');
                 }
             }

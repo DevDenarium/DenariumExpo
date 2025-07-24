@@ -60,7 +60,7 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, rou
         setModalVisible(false);
         if (isSuccess && modalMessage.includes('verificado correctamente')) {
             navigation.navigate('Login', {
-                message: 'Email verified successfully. Please login.'
+                message: 'Correo verificado exitosamente. Por favor inicia sesión.'
             });
         }
     };

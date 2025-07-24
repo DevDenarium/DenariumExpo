@@ -20,9 +20,9 @@ import {
     ContentCategory
 } from './EducationalScreen.types';
 import StoryItem from '../../admin/content/StoryItem';
-import { SimpleWebVideoPlayer } from '../../components/SimpleWebVideoPlayer';
-import StoryViewer from '../../components/StoryViewer';
-import SimpleStoryPlayer from '../../components/SimpleStoryPlayer';
+import { SimpleWebVideoPlayer } from './components/SimpleWebVideoPlayer';
+import StoryViewer from './components/StoryViewer';
+import SimpleStoryPlayer from './components/SimpleStoryPlayer';
 const VideoItem = ({ item }: { item: EducationalContent }) => {
     const [error, setError] = useState<string | null>(null);
     const [hasAccess, setHasAccess] = useState<boolean>(false);

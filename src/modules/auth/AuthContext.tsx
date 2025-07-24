@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const signIn = async (authData: AuthResponse) => {
         try {
             axios.defaults.headers.common['Authorization'] =
-                `Bearer ${authData.access_token}`;          // <‑‑ NUEVO
+                `Bearer ${authData.access_token}`;          
             
             // Extraer datos de ubicación del usuario
             const locationData = authData.user.personalUser?.location || 
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
             await AsyncStorage.setItem('@Auth:token', authData.access_token);
         } catch (error) {
-            console.error('Error saving auth data:', error);
+            console.error('Error guardando datos de autenticación:', error);
             throw error;
         }
     };
@@ -73,10 +73,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await AsyncStorage.removeItem('@Auth:token');
             setUser(null);
         } catch (error) {
-            console.error('Error signing out:', error);
+            console.error('Error cerrando sesión:', error);
             throw error;
         }
-    }, []); // Dependencias vacías para que no cambie entre renderizados
+    }, []); 
 
     const updateUser = async (userData: Partial<UserResponse>) => {
         if (!user) return;
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(updatedUser);
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(updatedUser));
         } catch (error) {
-            console.error('Error updating user:', error);
+            console.error('Error actualizando usuario:', error);
             throw error;
         }
     };
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export function useAuth(): AuthContextData {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error('useAuth debe ser usado dentro de un AuthProvider');
     }
     return context;
 }

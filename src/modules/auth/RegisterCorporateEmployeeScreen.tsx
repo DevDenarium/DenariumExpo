@@ -67,7 +67,7 @@ const RegisterCorporateEmployeeScreen = ({ navigation }: RegisterCorporateEmploy
                 setCorporates(corporatesData);
                 setFilteredCorporates(corporatesData);
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('Error cargando datos:', error);
                 Alert.alert('Error', 'No se pudieron cargar los datos. Por favor intenta nuevamente.');
             }
         };
@@ -80,7 +80,7 @@ const RegisterCorporateEmployeeScreen = ({ navigation }: RegisterCorporateEmploy
                 const provincesData = await getProvinces();
                 setProvinces(provincesData);
             } catch (error) {
-                console.error('Error loading provinces:', error);
+                console.error('Error cargando provincias:', error);
                 Alert.alert('Error', 'No se pudieron cargar las provincias. Por favor intenta nuevamente.');
             }
         };
@@ -106,7 +106,7 @@ const RegisterCorporateEmployeeScreen = ({ navigation }: RegisterCorporateEmploy
                     const cantonsData = await getCantons(selectedProvinceId);
                     setCantons(cantonsData);
                 } catch (error) {
-                    console.error('Error loading cantons:', error);
+                    console.error('Error cargando cantones:', error);
                     Alert.alert('Error', 'No se pudieron cargar los cantones. Por favor intenta nuevamente.');
                 }
             }
@@ -122,7 +122,7 @@ const RegisterCorporateEmployeeScreen = ({ navigation }: RegisterCorporateEmploy
                     const districtsData = await getDistricts(selectedCantonId);
                     setDistricts(districtsData);
                 } catch (error) {
-                    console.error('Error loading districts:', error);
+                    console.error('Error cargando distritos:', error);
                     Alert.alert('Error', 'No se pudieron cargar los distritos. Por favor intenta nuevamente.');
                 }
             }

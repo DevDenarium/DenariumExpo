@@ -11,7 +11,7 @@ import {
     Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { EducationalContent } from '../modules/educational/EducationalScreen.types';
+import { EducationalContent } from '../EducationalScreen.types';
 import { SimpleWebVideoPlayer } from './SimpleWebVideoPlayer';
 
 interface StoryViewerProps {
