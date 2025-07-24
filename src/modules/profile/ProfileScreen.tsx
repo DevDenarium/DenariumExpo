@@ -50,7 +50,13 @@ const ProfileScreen = () => {
     const [showCantonPicker, setShowCantonPicker] = useState(false);
     const [showDistrictPicker, setShowDistrictPicker] = useState(false);
     const [filteredCountries, setFilteredCountries] = useState<Array<{name: string, code: string}>>([]);
+    const [filteredProvinces, setFilteredProvinces] = useState<LocationItem[]>([]);
+    const [filteredCantons, setFilteredCantons] = useState<LocationItem[]>([]);
+    const [filteredDistricts, setFilteredDistricts] = useState<LocationItem[]>([]);
     const [searchText, setSearchText] = useState('');
+    const [provinceSearchText, setProvinceSearchText] = useState('');
+    const [cantonSearchText, setCantonSearchText] = useState('');
+    const [districtSearchText, setDistrictSearchText] = useState('');
     const [selectedProvinceId, setSelectedProvinceId] = useState<string | null>(null);
     const [selectedCantonId, setSelectedCantonId] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -137,6 +143,7 @@ const ProfileScreen = () => {
                 try {
                     const provincesData = await getProvinces();
                     setProvinces(provincesData);
+                    setFilteredProvinces(provincesData); // Inicializar lista filtrada
                     setHasLoadedProvinces(true);
                 } catch (error) {
                     console.error('Error loading provinces:', error);
@@ -146,8 +153,11 @@ const ProfileScreen = () => {
             fetchProvinces();
         } else if (user.country !== 'Costa Rica') {
             setProvinces([]);
+            setFilteredProvinces([]);
             setCantons([]);
+            setFilteredCantons([]);
             setDistricts([]);
+            setFilteredDistricts([]);
             setHasLoadedProvinces(false);
             // Solo limpiar ubicación si cambia de Costa Rica a otro país
             if (user.country && user.country !== 'Costa Rica') {
@@ -167,11 +177,13 @@ const ProfileScreen = () => {
                 try {
                     const cantonsData = await getCantons(selectedProvinceId);
                     setCantons(cantonsData);
+                    setFilteredCantons(cantonsData); // Inicializar lista filtrada
                     setLoadedCantonForProvince(selectedProvinceId);
                     
                     // Solo limpiar si no es la carga inicial
                     if (!isInitialLoad) {
                         setDistricts([]);
+                        setFilteredDistricts([]);
                         setSelectedCantonId(null);
                     }
                 } catch (error) {
@@ -189,6 +201,7 @@ const ProfileScreen = () => {
                 try {
                     const districtsData = await getDistricts(selectedCantonId);
                     setDistricts(districtsData);
+                    setFilteredDistricts(districtsData); // Inicializar lista filtrada
                     setLoadedDistrictForCanton(selectedCantonId);
                     
                     // Solo limpiar si no es la carga inicial
@@ -306,6 +319,42 @@ const ProfileScreen = () => {
         }
     };
 
+    const handleProvinceSearch = (text: string) => {
+        setProvinceSearchText(text);
+        if (text === '') {
+            setFilteredProvinces(provinces);
+        } else {
+            const filtered = provinces.filter(province =>
+                province.name.toLowerCase().includes(text.toLowerCase())
+            );
+            setFilteredProvinces(filtered);
+        }
+    };
+
+    const handleCantonSearch = (text: string) => {
+        setCantonSearchText(text);
+        if (text === '') {
+            setFilteredCantons(cantons);
+        } else {
+            const filtered = cantons.filter(canton =>
+                canton.name.toLowerCase().includes(text.toLowerCase())
+            );
+            setFilteredCantons(filtered);
+        }
+    };
+
+    const handleDistrictSearch = (text: string) => {
+        setDistrictSearchText(text);
+        if (text === '') {
+            setFilteredDistricts(districts);
+        } else {
+            const filtered = districts.filter(district =>
+                district.name.toLowerCase().includes(text.toLowerCase())
+            );
+            setFilteredDistricts(filtered);
+        }
+    };
+
     const handleCountrySelect = (countryName: string) => {
         console.log('País seleccionado:', countryName);
         setUser({ ...user, country: countryName, province: '', canton: '', district: '' });
@@ -329,6 +378,8 @@ const ProfileScreen = () => {
         setSelectedProvinceId(province.id);
         setSelectedCantonId(null);
         setShowProvincePicker(false);
+        setProvinceSearchText(''); // Limpiar búsqueda
+        setFilteredProvinces(provinces); // Resetear lista filtrada
         setIsInitialLoad(false); // Marcar que ya no es carga inicial
         setLoadedCantonForProvince(null); // Resetear para cargar cantones de la nueva provincia
         setLoadedDistrictForCanton(null); // Resetear distritos
@@ -339,6 +390,8 @@ const ProfileScreen = () => {
         setUser({ ...user, canton: canton.name, district: '' });
         setSelectedCantonId(canton.id);
         setShowCantonPicker(false);
+        setCantonSearchText(''); // Limpiar búsqueda
+        setFilteredCantons(cantons); // Resetear lista filtrada
         setIsInitialLoad(false); // Marcar que ya no es carga inicial
         setLoadedDistrictForCanton(null); // Resetear para cargar distritos del nuevo cantón
     };
@@ -347,6 +400,8 @@ const ProfileScreen = () => {
         console.log('Distrito seleccionado:', district.name);
         setUser({ ...user, district: district.name });
         setShowDistrictPicker(false);
+        setDistrictSearchText(''); // Limpiar búsqueda
+        setFilteredDistricts(districts); // Resetear lista filtrada
         setIsInitialLoad(false); // Marcar que ya no es carga inicial
     };
 
@@ -511,9 +566,11 @@ const ProfileScreen = () => {
             const formData = new FormData();
             formData.append('image', {
                 uri,
-                name: 'profile.jpg',
+                name: `profile-${Date.now()}.jpg`,
                 type: 'image/jpeg',
             } as any);
+
+            console.log('Uploading profile image...');
 
             const response = await axios.put(
                 `${API_BASE_URL}/auth/profile/picture`,
@@ -523,6 +580,7 @@ const ProfileScreen = () => {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
                     },
+                    timeout: 60000, // 60 segundos de timeout
                     onUploadProgress: (progressEvent) => {
                         if (progressEvent.total) {
                             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -532,7 +590,13 @@ const ProfileScreen = () => {
                 }
             );
 
+            console.log('Profile image upload successful:', response.data);
+
             const updatedUser = response.data;
+            
+            if (!updatedUser.profilePicture) {
+                throw new Error('El servidor no devolvió una URL de imagen válida');
+            }
             
             // Actualizar el estado local
             setUser(prev => ({
@@ -548,14 +612,18 @@ const ProfileScreen = () => {
             console.error('Error uploading image:', error);
             let errorMessage = 'Error al subir la imagen';
             
-            if (error instanceof Error) {
-                if (error.message.includes('demasiado grande') || error.message.includes('413')) {
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 413) {
                     errorMessage = 'La imagen es demasiado grande. El tamaño máximo permitido es 5MB.';
-                } else if (error.message.includes('formato') || error.message.includes('Only image files')) {
-                    errorMessage = 'Formato de imagen no válido. Usa JPG, PNG o GIF.';
-                } else {
-                    errorMessage = error.message;
+                } else if (error.response?.status === 400) {
+                    errorMessage = error.response.data?.message || 'Formato de imagen no válido. Usa JPG, PNG o GIF.';
+                } else if (error.code === 'ECONNABORTED') {
+                    errorMessage = 'Tiempo de espera agotado. Verifica tu conexión e intenta nuevamente.';
+                } else if (error.response?.data?.message) {
+                    errorMessage = error.response.data.message;
                 }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
             }
             
             setError(errorMessage);
@@ -811,8 +879,18 @@ const ProfileScreen = () => {
                                 <Icon name="close" size={24} color="#D4AF37" />
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.searchContainer}>
+                            <Icon name="magnify" size={20} color="#555555" style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Buscar provincia..."
+                                placeholderTextColor="#555555"
+                                value={provinceSearchText}
+                                onChangeText={handleProvinceSearch}
+                            />
+                        </View>
                         <ScrollView style={styles.countryList}>
-                            {provinces.map((province) => (
+                            {filteredProvinces.map((province) => (
                                 <TouchableOpacity
                                     key={province.id}
                                     style={styles.countryItem}
@@ -844,8 +922,18 @@ const ProfileScreen = () => {
                                 <Icon name="close" size={24} color="#D4AF37" />
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.searchContainer}>
+                            <Icon name="magnify" size={20} color="#555555" style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Buscar cantón..."
+                                placeholderTextColor="#555555"
+                                value={cantonSearchText}
+                                onChangeText={handleCantonSearch}
+                            />
+                        </View>
                         <ScrollView style={styles.countryList}>
-                            {cantons.map((canton) => (
+                            {filteredCantons.map((canton) => (
                                 <TouchableOpacity
                                     key={canton.id}
                                     style={styles.countryItem}
@@ -877,8 +965,18 @@ const ProfileScreen = () => {
                                 <Icon name="close" size={24} color="#D4AF37" />
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.searchContainer}>
+                            <Icon name="magnify" size={20} color="#555555" style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Buscar distrito..."
+                                placeholderTextColor="#555555"
+                                value={districtSearchText}
+                                onChangeText={handleDistrictSearch}
+                            />
+                        </View>
                         <ScrollView style={styles.countryList}>
-                            {districts.map((district) => (
+                            {filteredDistricts.map((district) => (
                                 <TouchableOpacity
                                     key={district.id}
                                     style={styles.countryItem}
