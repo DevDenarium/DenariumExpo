@@ -34,6 +34,9 @@ export interface UserResponse {
     lastName?: string;
     phone?: string;
     country?: string;
+    province?: string;
+    canton?: string;
+    district?: string;
     profilePicture?: string;
     subscriptionType?: SubscriptionPlanType;
     personalUser?: PersonalUser;

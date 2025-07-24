@@ -180,4 +180,22 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
     },
+    // Estilos para los modales de provincia, cantón y distrito
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333333',
+    },
+    modalHeaderText: {
+        color: '#D4AF37',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    modalCloseButton: {
+        padding: 5,
+    },
 });

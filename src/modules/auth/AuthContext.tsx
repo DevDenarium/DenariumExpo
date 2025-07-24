@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserResponse, AuthResponse } from './user.types';
 import axios from "axios";
+import { API_BASE_URL } from '../../services/auth.service';
 
 export interface AuthContextData {
     user: UserResponse | null;
@@ -42,8 +43,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             axios.defaults.headers.common['Authorization'] =
                 `Bearer ${authData.access_token}`;          // <‑‑ NUEVO
-            setUser(authData.user);
-            await AsyncStorage.setItem('@Auth:user', JSON.stringify(authData.user));
+            
+            // Extraer datos de ubicación del usuario
+            const locationData = authData.user.personalUser?.location || 
+                                 authData.user.corporateUser?.location || 
+                                 authData.user.corporateEmployee?.location;
+
+            // Crear usuario con datos de ubicación extraídos
+            const userWithLocation = {
+                ...authData.user,
+                country: locationData?.country || authData.user.country,
+                province: locationData?.province?.name,
+                canton: locationData?.canton?.name,
+                district: locationData?.district?.name
+            };
+            
+            setUser(userWithLocation);
+            await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
             await AsyncStorage.setItem('@Auth:token', authData.access_token);
         } catch (error) {
             console.error('Error saving auth data:', error);
@@ -66,7 +82,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!user) return;
 
         try {
-            const updatedUser = { ...user, ...userData };
+            // Extraer datos de ubicación de la respuesta del backend
+            const locationData = userData.personalUser?.location || 
+                                 userData.corporateUser?.location || 
+                                 userData.corporateEmployee?.location;
+
+            // Crear el usuario actualizado manteniendo la estructura del contexto
+            const updatedUser = { 
+                ...user, 
+                ...userData,
+                // Actualizar campos específicos con los datos de ubicación
+                country: locationData?.country || userData.country || user.country,
+                province: locationData?.province?.name || user.province,
+                canton: locationData?.canton?.name || user.canton,
+                district: locationData?.district?.name || user.district
+            };
             setUser(updatedUser);
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(updatedUser));
         } catch (error) {
@@ -81,12 +111,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) throw new Error('Token no encontrado');
 
-            const response = await axios.get<UserResponse>('http://192.168.100.4:3000/auth/me', {
+            const response = await axios.get<UserResponse>(`${API_BASE_URL}/auth/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            setUser(response.data);
-            await AsyncStorage.setItem('@Auth:user', JSON.stringify(response.data));
+            // Extraer datos de ubicación de la respuesta
+            const locationData = response.data.personalUser?.location || 
+                                 response.data.corporateUser?.location || 
+                                 response.data.corporateEmployee?.location;
+
+            // Crear el usuario con datos de ubicación extraídos
+            const userWithLocation = {
+                ...response.data,
+                country: locationData?.country || response.data.country,
+                province: locationData?.province?.name,
+                canton: locationData?.canton?.name,
+                district: locationData?.district?.name
+            };
+
+            setUser(userWithLocation);
+            await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
         } catch (error) {
             console.error('Error actualizando el usuario desde el backend:', error);
         }
@@ -97,12 +141,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) return false;
 
-            const response = await axios.get('http://192.168.100.4:3000/auth/me', {
+            const response = await axios.get(`${API_BASE_URL}/auth/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            await AsyncStorage.setItem('@Auth:user', JSON.stringify(response.data));
-            setUser(response.data);
+            // Extraer datos de ubicación de la respuesta
+            const locationData = response.data.personalUser?.location || 
+                                 response.data.corporateUser?.location || 
+                                 response.data.corporateEmployee?.location;
+
+            // Crear el usuario con datos de ubicación extraídos
+            const userWithLocation = {
+                ...response.data,
+                country: locationData?.country || response.data.country,
+                province: locationData?.province?.name,
+                canton: locationData?.canton?.name,
+                district: locationData?.district?.name
+            };
+
+            await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
+            setUser(userWithLocation);
             return true;
         } catch (error) {
             await signOut();
