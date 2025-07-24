@@ -386,45 +386,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         );
     };
 
-    // Función para limpiar videos inactivos
-    const handleCleanupInactiveVideos = async () => {
-        Alert.alert(
-            'Limpiar Videos Inactivos',
-            '⚠️ Esta acción eliminará permanentemente todos los videos marcados como inactivos de la base de datos.\n\n¿Continuar?',
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Limpiar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            setLoading(true);
-                            
-                            // Usar el nuevo endpoint para limpiar contenido inactivo
-                            const result = await EducationalService.cleanupInactiveContent();
-
-                            Alert.alert(
-                                'Limpieza Completada',
-                                `✅ Videos eliminados: ${result.deletedCount}\n${result.errorCount > 0 ? `❌ Errores: ${result.errorCount}` : '🎉 Todos los videos inactivos fueron eliminados!'}\n\n${result.message}`
-                            );
-                            
-                            // Recargar la lista
-                            fetchContents();
-                        } catch (error) {
-                            console.error('Error en limpieza de videos inactivos:', error);
-                            Alert.alert('Error', 'Hubo un problema durante la limpieza');
-                        } finally {
-                            setLoading(false);
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
     // Función para eliminar contenido
     const handleDeleteContent = async (content: EducationalContent) => {
         Alert.alert(
@@ -542,13 +503,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 <Icon name="plus" size={24} color="#D4AF37" />
                 <Text style={styles.addButtonText}>
                     Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
-                </Text>
-            </TouchableOpacity>
-
-            {/* Botón para limpiar videos inactivos */}
-            <TouchableOpacity style={styles.createCategoriesButton} onPress={handleCleanupInactiveVideos}>
-                <Text style={styles.createCategoriesButtonText}>
-                    🗑️ Limpiar Videos Inactivos
                 </Text>
             </TouchableOpacity>
 
