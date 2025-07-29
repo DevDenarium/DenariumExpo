@@ -23,10 +23,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyContainer: {
-        flex: 1,
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         alignItems: 'center',
         paddingTop: 70,
+        minHeight: 200,
     },
     emptyText: {
         color: '#AAAAAA',
@@ -35,6 +35,13 @@ export const styles = StyleSheet.create({
     },
     listContainer: {
         flex: 1,
+    },
+    scrollContainer: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingBottom: 20,
+        flexGrow: 1,
     },
     appointmentCard: {
         backgroundColor: '#2a2a2a',
@@ -354,7 +361,7 @@ export const styles = StyleSheet.create({
     },
     filterContainer: {
         padding: 10,
-        backgroundColor: '#1E1E1E',
+        backgroundColor: '#1c1c1c',
     },
     dateFilterRow: {
         flexDirection: 'row',

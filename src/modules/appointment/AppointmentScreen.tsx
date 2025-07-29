@@ -106,11 +106,13 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         isVirtual: false
     });
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-    const [actionType, setActionType] = useState<'create' | 'edit' | 'cancel'>('create');
+    const [actionType, setActionType] = useState<'create' | 'edit' | 'cancel' | 'reschedule'>('create');
     const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([]);
     const [showTimeSlots, setShowTimeSlots] = useState(false);
     const [timeSlots, setTimeSlots] = useState<Date[]>([]);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [showFinalCancelConfirmation, setShowFinalCancelConfirmation] = useState(false);
+    const [showRescheduleModal, setShowRescheduleModal] = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterType>('upcoming');
 
     useEffect(() => {
@@ -169,7 +171,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 filtered = filtered.filter(appt => {
                     const apptDate = new Date(appt.confirmedDate || appt.requestedDate);
                     return (
-                        (appt.status === 'CONFIRMED' || appt.status === 'RESCHEDULED') &&
+                        appt.status === 'CONFIRMED' &&
                         isAfter(apptDate, now)
                     );
                 });
@@ -251,14 +253,38 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     };
 
     const handleRejectReschedule = async (appointment: Appointment) => {
-        try {
-            await appointmentService.rejectReschedule(appointment.id);
-            Alert.alert('Éxito', 'Has rechazado la propuesta de reagendamiento');
-            fetchAppointments();
-        } catch (error: any) {
-            console.error('Error rejecting reschedule:', error);
-            Alert.alert('Error', error.message || 'No se pudo rechazar el reagendamiento');
-        }
+        Alert.alert(
+            'Rechazar Reagendamiento',
+            '¿Deseas rechazar esta propuesta y solicitar una nueva fecha?',
+            [
+                {
+                    text: 'Solo Rechazar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await appointmentService.rejectReschedule(appointment.id);
+                            Alert.alert('Éxito', 'Has rechazado la propuesta de reagendamiento');
+                            fetchAppointments();
+                        } catch (error: any) {
+                            console.error('Error rejecting reschedule:', error);
+                            Alert.alert('Error', error.message || 'No se pudo rechazar el reagendamiento');
+                        }
+                    }
+                },
+                {
+                    text: 'Proponer Nueva Fecha',
+                    onPress: () => {
+                        setSelectedAppointment(appointment);
+                        setActionType('reschedule');
+                        setShowRescheduleModal(true);
+                    }
+                },
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                }
+            ]
+        );
     };
 
     const handleCreateAppointment = async () => {
@@ -348,11 +374,34 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             Alert.alert('Éxito', 'Cita cancelada correctamente');
             setShowModal(false);
             setShowDeleteConfirmation(false);
+            setShowFinalCancelConfirmation(false);
             fetchAppointments();
             resetForm();
         } catch (error: any) {
             console.error('Error canceling appointment:', error);
             Alert.alert('Error', error.message || 'No se pudo cancelar la cita');
+        }
+    };
+
+    const handleClientReschedule = async () => {
+        if (!selectedAppointment || !selectedDate) {
+            Alert.alert('Error', 'Selecciona fecha y hora');
+            return;
+        }
+
+        try {
+            await appointmentService.proposeReschedule(
+                selectedAppointment.id,
+                selectedDate.toISOString()
+            );
+
+            Alert.alert('Éxito', 'Solicitud de reagendamiento enviada. El administrador revisará tu propuesta.');
+            setShowRescheduleModal(false);
+            resetForm();
+            fetchAppointments();
+        } catch (error: any) {
+            console.error('Error rescheduling:', error);
+            Alert.alert('Error', 'No se pudo enviar la solicitud de reagendamiento');
         }
     };
 
@@ -368,6 +417,10 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         setSelectedAppointment(null);
         setActionType('create');
         setShowTimeSlots(false);
+        setShowDeleteConfirmation(false);
+        setShowFinalCancelConfirmation(false);
+        setShowRescheduleModal(false);
+        setShowMobileDatePicker(false);
     };
 
     const formatDate = (dateString: string) => {
@@ -557,16 +610,24 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                         <Text style={styles.cardDescription}>{item.description}</Text>
                     )}
                     <Text style={styles.cardDate}>
-                        <Text style={{fontWeight: 'bold'}}>Solicitada:</Text> {formatDate(item.requestedDate)}
+                        <Text style={{fontWeight: 'bold'}}>Fecha solicitada:</Text> {formatDate(item.requestedDate)}
                     </Text>
-                    {item.suggestedDate && (
+                    <Text style={styles.cardDate}>
+                        <Text style={{fontWeight: 'bold'}}>Modalidad:</Text> {item.isVirtual ? 'Virtual' : 'Presencial'}
+                    </Text>
+                    {item.status === 'RESCHEDULED' && item.suggestedDate && (
                         <Text style={styles.cardDate}>
-                            <Text style={{fontWeight: 'bold'}}>Sugerida:</Text> {formatDate(item.suggestedDate)}
+                            <Text style={{fontWeight: 'bold'}}>Fecha sugerida:</Text> {formatDate(item.suggestedDate)}
+                        </Text>
+                    )}
+                    {item.status !== 'RESCHEDULED' && item.suggestedDate && (
+                        <Text style={styles.cardDate}>
+                            <Text style={{fontWeight: 'bold'}}>Fecha sugerida:</Text> {formatDate(item.suggestedDate)}
                         </Text>
                     )}
                     {item.confirmedDate && (
                         <Text style={styles.cardDate}>
-                            <Text style={{fontWeight: 'bold'}}>Confirmada:</Text> {formatDate(item.confirmedDate)}
+                            <Text style={{fontWeight: 'bold'}}>Fecha confirmada:</Text> {formatDate(item.confirmedDate)}
                         </Text>
                     )}
                     {item.admin && (
@@ -598,25 +659,48 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             </>
                         )}
 
-                        {(item.status === 'PENDING_ADMIN_REVIEW' || item.status === 'RESCHEDULED') && (
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.editButton]}
-                                onPress={() => handleEditAppointment(item)}
-                            >
-                                <Icon name="pencil" size={20} color="#FFFFFF"/>
-                            </TouchableOpacity>
+                        {item.status === 'PENDING_ADMIN_REVIEW' && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.editButton]}
+                                    onPress={() => handleEditAppointment(item)}
+                                >
+                                    <Icon name="pencil" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.deleteButton]}
+                                    onPress={() => {
+                                        setSelectedAppointment(item);
+                                        setShowFinalCancelConfirmation(true);
+                                    }}
+                                >
+                                    <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                            </>
                         )}
 
-                        {(item.status === 'PENDING_ADMIN_REVIEW' || item.status === 'RESCHEDULED' || item.status === 'CONFIRMED') && (
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.deleteButton]}
-                                onPress={() => {
-                                    setSelectedAppointment(item);
-                                    setShowDeleteConfirmation(true);
-                                }}
-                            >
-                                <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
-                            </TouchableOpacity>
+                        {item.status === 'CONFIRMED' && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.rescheduleButton]}
+                                    onPress={() => {
+                                        setSelectedAppointment(item);
+                                        setActionType('reschedule');
+                                        setShowRescheduleModal(true);
+                                    }}
+                                >
+                                    <Icon name="calendar-edit" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.actionButton, styles.deleteButton]}
+                                    onPress={() => {
+                                        setSelectedAppointment(item);
+                                        setShowDeleteConfirmation(true);
+                                    }}
+                                >
+                                    <Icon name="trash-can-outline" size={20} color="#FFFFFF"/>
+                                </TouchableOpacity>
+                            </>
                         )}
                     </View>
                 )}
@@ -700,12 +784,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     </Text>
                 </View>
             ) : (
-                <FlatList
-                    data={filteredAppointments}
-                    renderItem={renderAppointmentCard}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContainer}
-                />
+                <ScrollView 
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <FlatList
+                        data={filteredAppointments}
+                        renderItem={renderAppointmentCard}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.listContainer}
+                        scrollEnabled={false}
+                        nestedScrollEnabled={true}
+                    />
+                </ScrollView>
             )}
 
             <Modal
@@ -808,9 +900,9 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Confirmar Cancelación</Text>
+                        <Text style={styles.modalTitle}>Cancelar Cita</Text>
                         <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
-                            ¿Estás seguro que deseas cancelar esta cita?
+                            ¿Estás seguro que deseas cancelar esta cita? Recuerda que puedes reagendar.
                         </Text>
                         <View style={styles.modalButtonContainer}>
                             <TouchableOpacity
@@ -821,9 +913,131 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.confirmButton]}
+                                onPress={() => {
+                                    setShowDeleteConfirmation(false);
+                                    setShowFinalCancelConfirmation(true);
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar Cita</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showFinalCancelConfirmation}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowFinalCancelConfirmation(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Confirmar Cancelación</Text>
+                        <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
+                            Si cancelas la cita debes comunicarte con Denarium Capital para el reintegro del dinero, se cobrará un 10% del costo de la cita por cancelación.
+                        </Text>
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setShowFinalCancelConfirmation(false)}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.confirmButton]}
                                 onPress={handleCancelAppointment}
                             >
-                                <Text style={styles.modalButtonText}>Sí, Cancelar</Text>
+                                <Text style={styles.modalButtonText}>Confirmar Cancelación</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showRescheduleModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowRescheduleModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Reagendar Cita</Text>
+                        <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
+                            Selecciona la nueva fecha y hora para tu cita:
+                        </Text>
+                        
+                        {Platform.OS === 'web' ? (
+                            ReactDatePicker ? (
+                                <ReactDatePicker
+                                    selected={selectedDate}
+                                    onChange={(date: Date) => setSelectedDate(date)}
+                                    showTimeSelect={true}
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    dateFormat="dd/MM/yyyy HH:mm"
+                                    locale="es"
+                                    minDate={new Date()}
+                                    inline
+                                />
+                            ) : (
+                                <TextInput
+                                    style={[styles.modalInput, {marginBottom: 15}]}
+                                    value={selectedDate ? format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es }) : 'Seleccionar fecha'}
+                                    placeholder="Seleccionar fecha"
+                                    editable={false}
+                                />
+                            )
+                        ) : (
+                            <View>
+                                <TouchableOpacity
+                                    style={styles.modalInput}
+                                    onPress={() => setShowMobileDatePicker(true)}
+                                >
+                                    <Text style={{color: '#FFFFFF'}}>
+                                        {selectedDate ? format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es }) : 'Seleccionar fecha y hora'}
+                                    </Text>
+                                </TouchableOpacity>
+                                
+                                {showMobileDatePicker && DateTimePicker && (
+                                    <DateTimePicker
+                                        value={selectedDate || new Date()}
+                                        mode="datetime"
+                                        display="default"
+                                        onChange={(event: any, date?: Date) => {
+                                            setShowMobileDatePicker(false);
+                                            if (date) {
+                                                setSelectedDate(date);
+                                            }
+                                        }}
+                                        minimumDate={new Date()}
+                                    />
+                                )}
+                            </View>
+                        )}
+
+                        {selectedDate && (
+                            <Text style={{color: '#D4AF37', textAlign: 'center', marginTop: 15, marginBottom: 15}}>
+                                Nueva fecha y hora: {format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es })}
+                            </Text>
+                        )}
+
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => {
+                                    setShowRescheduleModal(false);
+                                    resetForm();
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.confirmButton]}
+                                onPress={handleClientReschedule}
+                            >
+                                <Text style={styles.modalButtonText}>Solicitar Reagendamiento</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment, AppointmentStatus } from '../modules/navegation/Navegation.types';
 
-const API_BASE_URL = 'http://192.168.20.13:3000';
+const API_BASE_URL = 'http://192.168.100.4:3000';
 
 interface ApiResponse<T> {
     data: T;
@@ -283,7 +283,7 @@ class AppointmentService {
             const headers = await this.getHeaders();
             const response = await axios.put(
                 `${API_BASE_URL}/appointments/${id}/reschedule`,
-                { date: suggestedDate },
+                { newDate: suggestedDate },
                 { headers }
             );
             return {
@@ -319,23 +319,25 @@ class AppointmentService {
             throw new Error(error.response?.data?.message || 'Error al confirmar la cita');
         }
     }
-    async processRefund(appointmentId: string): Promise<ApiResponse<Appointment>> {
-        try {
-            const headers = await this.getHeaders();
-            const response = await axios.post(
-                `${API_BASE_URL}/appointments/${appointmentId}/refund`,
-                {},
-                { headers }
-            );
-            return {
-                data: response.data,
-                status: response.status
-            };
-        } catch (error: any) {
-            console.error('Error processing refund:', error);
-            throw new Error(error.response?.data?.message || 'Error al procesar el reembolso');
-        }
-    }
+    
+    // TODO: Implementar endpoint de reembolso en el backend
+    // async processRefund(appointmentId: string): Promise<ApiResponse<Appointment>> {
+    //     try {
+    //         const headers = await this.getHeaders();
+    //         const response = await axios.post(
+    //             `${API_BASE_URL}/appointments/${appointmentId}/refund`,
+    //             {},
+    //             { headers }
+    //         );
+    //         return {
+    //             data: response.data,
+    //             status: response.status
+    //         };
+    //     } catch (error: any) {
+    //         console.error('Error processing refund:', error);
+    //         throw new Error(error.response?.data?.message || 'Error al procesar el reembolso');
+    //     }
+    // }
 
     async acceptReschedule(id: string): Promise<ApiResponse<Appointment>> {
         try {

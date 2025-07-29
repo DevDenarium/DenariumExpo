@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
         borderRadius: 20,
     } as ViewStyle,
     listContainer: {
-        flex: 1,
+        paddingBottom: 20,
     } as ViewStyle,
     emptyContainer: {
         flex: 1,
@@ -93,6 +93,9 @@ export const styles = StyleSheet.create({
     } as ViewStyle,
     editButton: {
         backgroundColor: '#2196F3',
+    } as ViewStyle,
+    rescheduleButton: {
+        backgroundColor: '#FF9800',
     } as ViewStyle,
     deleteButton: {
         backgroundColor: '#F44336',
@@ -284,4 +287,10 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: 'bold',
     },
+    scrollContainer: {
+        flex: 1,
+    } as ViewStyle,
+    scrollContent: {
+        flexGrow: 1,
+    } as ViewStyle,
 });
