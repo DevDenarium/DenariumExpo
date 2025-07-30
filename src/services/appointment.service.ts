@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment, AppointmentStatus } from '../modules/navegation/Navegation.types';
 
-const API_BASE_URL = 'http://192.168.100.4:3000';
+const API_BASE_URL = 'http://192.168.20.13:3000';
 
 interface ApiResponse<T> {
     data: T;
@@ -305,7 +305,6 @@ class AppointmentService {
                 { headers }
             );
 
-            // Asegurarse de que la respuesta incluye todos los datos necesarios
             if (!response.data?.id) {
                 throw new Error('Respuesta inválida del servidor');
             }
@@ -320,25 +319,6 @@ class AppointmentService {
         }
     }
     
-    // TODO: Implementar endpoint de reembolso en el backend
-    // async processRefund(appointmentId: string): Promise<ApiResponse<Appointment>> {
-    //     try {
-    //         const headers = await this.getHeaders();
-    //         const response = await axios.post(
-    //             `${API_BASE_URL}/appointments/${appointmentId}/refund`,
-    //             {},
-    //             { headers }
-    //         );
-    //         return {
-    //             data: response.data,
-    //             status: response.status
-    //         };
-    //     } catch (error: any) {
-    //         console.error('Error processing refund:', error);
-    //         throw new Error(error.response?.data?.message || 'Error al procesar el reembolso');
-    //     }
-    // }
-
     async acceptReschedule(id: string): Promise<ApiResponse<Appointment>> {
         try {
             const headers = await this.getHeaders();
@@ -408,8 +388,5 @@ class AppointmentService {
         }
     }
 }
-
-
-
 
 export const appointmentService = new AppointmentService();

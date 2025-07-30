@@ -3,53 +3,10 @@ import { Alert, Keyboard, Modal, Platform, Pressable, Text, TextInput, Touchable
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FinanceService } from '../../services/Finance.service';
 import { CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag, FinanceEntry } from './FinanceScreen.types';
-import { registerLocale, setDefaultLocale } from "react-datepicker";
-import { es } from 'date-fns/locale';
 import { styles } from './FinanceEntryForm.styles';
 import ColorPickerModal from './ColorPickerModal';
+import { CustomCalendar } from '../../common';
 import axios from "axios";
-
-registerLocale('es', es);
-setDefaultLocale('es');
-
-type DateTimePickerProps = {
-    value: Date;
-    mode: 'date' | 'time' | 'datetime';
-    display: 'default' | 'spinner' | 'compact' | 'inline';
-    onChange: (event: any, date?: Date) => void;
-    locale?: string;
-    textColor?: string;
-    themeVariant?: 'light' | 'dark';
-};
-
-type ReactDatePickerProps = {
-    selected: Date;
-    onChange: (date: Date) => void;
-    dateFormat: string;
-    className?: string;
-    customInput?: React.ReactElement;
-    popperPlacement?: string;
-    popperModifiers?: any;
-    locale?: string;
-};
-
-let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
-let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
-
-if (Platform.OS === 'web') {
-    try {
-        ReactDatePicker = require('react-datepicker').default;
-        require('react-datepicker/dist/react-datepicker.css');
-    } catch (error) {
-        console.error('Error loading react-datepicker:', error);
-    }
-} else {
-    try {
-        DateTimePicker = require('@react-native-community/datetimepicker').default;
-    } catch (error) {
-        console.error('Error loading DateTimePicker:', error);
-    }
-}
 
 interface FinanceEntryFormProps {
     onEntryAdded: () => void;
@@ -178,7 +135,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         }
     };
 
-    // En FinanceEntryForm.tsx
     const handleUpdateTag = async () => {
         if (!newTagName || !editingTagId) return;
         try {
@@ -312,17 +268,6 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         });
     };
 
-    const handleDateChange = (event: any, selectedDate?: Date) => {
-        if (Platform.OS === 'web') return;
-        const currentDate = selectedDate || formData.date;
-        setShowDatePicker(Platform.OS === 'ios');
-        setFormData({ ...formData, date: currentDate });
-    };
-
-    const handleWebDateChange = (date: Date) => {
-        setFormData({ ...formData, date });
-    };
-
     const handleCreateCategory = async () => {
         if (!newCategoryName) return;
         try {
@@ -388,41 +333,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
         setShowColorPickerModal(false);
     };
 
-    const WebDatePicker = () => {
-        if (!ReactDatePicker) {
-            return (
-                <View style={styles.dateInputContainer}>
-                    <TextInput
-                        style={[styles.input, styles.dateInput]}
-                        value={formatDate(formData.date)}
-                        placeholder="Seleccionar fecha"
-                        editable={false}
-                    />
-                </View>
-            );
-        }
-
-        return (
-            <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
-                <ReactDatePicker
-                    selected={formData.date}
-                    onChange={handleWebDateChange}
-                    dateFormat="dd/MM/yyyy"
-                    locale="es"
-                    customInput={
-                        <TextInput
-                            style={[styles.input, styles.dateInput]}
-                            value={formatDate(formData.date)}
-                            placeholder="Seleccionar fecha"
-                        />
-                    }
-                    popperPlacement="bottom-start"
-                />
-            </View>
-        );
-    };
-
-    const MobileDatePicker = () => {
+    const DatePicker = () => {
         return (
             <View style={[styles.datePickerContainer, styles.dateInputContainer]}>
                 <TouchableOpacity
@@ -437,28 +348,16 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                     </View>
                 </TouchableOpacity>
 
-                {showDatePicker && DateTimePicker && (
-                    <View style={styles.datePickerWrapper}>
-                        <DateTimePicker
-                            value={formData.date}
-                            mode="date"
-                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                            onChange={handleDateChange}
-                            locale="es-ES"
-                            textColor="#FFFFFF"
-                            themeVariant="dark"
-                        />
-                    </View>
-                )}
-
-                {Platform.OS === 'ios' && showDatePicker && (
-                    <TouchableOpacity
-                        style={styles.datePickerButton}
-                        onPress={toggleDatePicker}
-                    >
-                        <Text style={styles.datePickerButtonText}>Listo</Text>
-                    </TouchableOpacity>
-                )}
+                <CustomCalendar
+                    visible={showDatePicker}
+                    onClose={() => setShowDatePicker(false)}
+                    onDateSelect={(date) => {
+                        setFormData({ ...formData, date });
+                        setShowDatePicker(false);
+                    }}
+                    selectedDate={formData.date}
+                    title="Seleccionar Fecha"
+                />
             </View>
         );
     };
@@ -982,7 +881,7 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                         initialColor={colorPickerFor === 'category' ? newCategoryColor : newTagColor}
                     />
 
-                    {Platform.OS === 'web' ? <WebDatePicker /> : <MobileDatePicker />}
+                    <DatePicker />
 
                     <View style={styles.inputGroup}>
                         <Icon name="text" size={20} color="#D4AF37" style={styles.inputIcon} />

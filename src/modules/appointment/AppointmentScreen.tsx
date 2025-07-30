@@ -8,16 +8,14 @@ import {
     TextInput,
     ActivityIndicator,
     Alert,
-    StyleSheet,
     ScrollView,
     ViewStyle,
-    Platform,
-    Button
+    Platform
 } from 'react-native';
 import {styles} from './AppointmentScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {appointmentService} from '../../services/appointment.service';
-import {format, isBefore, parse, setHours, setMinutes, addDays, isAfter} from 'date-fns';
+import {format, isBefore, isAfter} from 'date-fns';
 import {es} from 'date-fns/locale';
 import {Appointment, AppointmentScreenProps, AppointmentStatus} from '../../modules/navegation/Navegation.types';
 import {SubscriptionPlan} from "../subscriptions/SubscriptionsScreen.types";
@@ -25,9 +23,9 @@ import {registerLocale, setDefaultLocale} from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {PaymentsStackParamList, RootStackParamList} from '../navegation/Navegation.types';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {SubscriptionsService} from '../../services/subscription.service';
 import {useAuth} from '../auth/AuthContext';
-import {CommonActions, useNavigation} from "@react-navigation/native";
+import {useNavigation} from "@react-navigation/native";
+import { CustomCalendar } from '../../common';
 
 type PaymentsNavigationProp = StackNavigationProp<RootStackParamList, 'PaymentsScreen'>;
 registerLocale('es', es);
@@ -87,7 +85,7 @@ interface TimeSlot {
     end: Date;
 }
 
-type FilterType = 'upcoming' | 'pending' | 'past' | 'cancelled';
+type FilterType = 'all' | 'upcoming' | 'pending' | 'past' | 'cancelled';
 
 const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const {user} = useAuth();
@@ -113,7 +111,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [showFinalCancelConfirmation, setShowFinalCancelConfirmation] = useState(false);
     const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<FilterType>('upcoming');
+    const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
     useEffect(() => {
         fetchAppointments();
@@ -128,24 +126,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             setLoading(true);
             let appointmentsData: Appointment[] = [];
 
-            // Obtener citas del usuario
             const userResponse = await appointmentService.getUserAppointments();
             appointmentsData = [...userResponse.data];
 
-            // Si es admin, obtener también citas pendientes y confirmadas
             if (user?.role === 'ADMIN') {
                 const pendingResponse = await appointmentService.getPendingAppointments();
-                const confirmedResponse = await appointmentService.getUserAppointments(); // Obtener también confirmadas
+                const confirmedResponse = await appointmentService.getUserAppointments();
 
                 const allAppointments = [...pendingResponse.data, ...confirmedResponse.data];
                 const pendingIds = new Set(appointmentsData.map(a => a.id));
 
-                // Filtrar para evitar duplicados y mantener solo las no existentes
                 const uniquePending = allAppointments.filter(a => !pendingIds.has(a.id));
                 appointmentsData = [...appointmentsData, ...uniquePending];
             }
 
-            // Ordenar por fecha y asegurar que todas tienen estado definido
             appointmentsData = appointmentsData.map(appt => ({
                 ...appt,
                 status: appt.status || 'PENDING_ADMIN_REVIEW'
@@ -167,6 +161,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         let filtered = [...appointments];
 
         switch (activeFilter) {
+            case 'all':
+                break;
             case 'upcoming':
                 filtered = filtered.filter(appt => {
                     const apptDate = new Date(appt.confirmedDate || appt.requestedDate);
@@ -205,7 +201,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 break;
         }
 
-        // Ordenar por fecha más cercana primero
         filtered.sort((a, b) => {
             const dateA = new Date(a.confirmedDate || a.requestedDate);
             const dateB = new Date(b.confirmedDate || b.requestedDate);
@@ -294,7 +289,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 return;
             }
 
-            // Combinar fecha y hora seleccionadas
             const fullDate = new Date(selectedDate);
             fullDate.setHours(selectedTime.getHours());
             fullDate.setMinutes(selectedTime.getMinutes());
@@ -311,7 +305,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 requestedDate: fullDate.toISOString(),
             };
 
-            // Si es edición y la cita está en estado pendiente, actualizar directamente
             if (actionType === 'edit' && selectedAppointment) {
                 const currentStatus = selectedAppointment.status;
                 if (currentStatus === 'PENDING_ADMIN_REVIEW' || currentStatus === 'RESCHEDULED') {
@@ -333,7 +326,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 }
             }
 
-            // Para nuevas citas, continuar con el flujo de pago normal
             const price = formData.isVirtual ? 10 : 25;
 
             const advisoryPlan: SubscriptionPlan = {
@@ -349,14 +341,12 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 icon: 'account-cash',
             };
 
-            // Cerrar modal antes de navegar
             setShowModal(false);
 
             navigation.navigate('PaymentsScreen', {
                 plan: advisoryPlan,
                 metadata: { appointmentData: JSON.stringify(appointmentData) },
                 onSuccess: async () => {
-                    // Refrescar citas después de pago exitoso
                     await fetchAppointments();
                 },
             });
@@ -514,33 +504,32 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const MobileDatePicker = () => {
         return (
-            <View style={styles.datePickerContainer}>
-                <TouchableOpacity
-                    style={styles.modalInput}
-                    onPress={() => setShowMobileDatePicker(true)}
-                >
-                    <Text style={{color: '#FFFFFF'}}>
-                        {selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
-                    </Text>
-                </TouchableOpacity>
+            <>
+                <View style={styles.datePickerContainer}>
+                    <TouchableOpacity
+                        style={styles.modalInput}
+                        onPress={() => setShowMobileDatePicker(true)}
+                    >
+                        <Text style={{color: '#FFFFFF'}}>
+                            {selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
-                {showMobileDatePicker && DateTimePicker && (
-                    <DateTimePicker
-                        value={selectedDate || new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={(event, date) => {
-                            setShowMobileDatePicker(false);
-                            if (date) {
-                                setSelectedDate(date);
-                                setSelectedTime(null);
-                                fetchAvailability(date);
-                            }
-                        }}
-                        minimumDate={new Date()}
-                    />
-                )}
-            </View>
+                <CustomCalendar
+                    visible={showMobileDatePicker}
+                    onClose={() => setShowMobileDatePicker(false)}
+                    onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedTime(null);
+                        fetchAvailability(date);
+                        setShowMobileDatePicker(false);
+                    }}
+                    selectedDate={selectedDate}
+                    title="Seleccionar Fecha para Cita"
+                    minDate={new Date()}
+                />
+            </>
         );
     };
 
@@ -738,6 +727,15 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 <TouchableOpacity
                     style={[
                         styles.filterButton,
+                        activeFilter === 'all' ? styles.activeFilterButton : {}
+                    ]}
+                    onPress={() => setActiveFilter('all')}
+                >
+                    <Text style={styles.filterButtonText}>Todas</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButton,
                         activeFilter === 'upcoming' ? styles.activeFilterButton : {}
                     ]}
                     onPress={() => setActiveFilter('upcoming')}
@@ -777,6 +775,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 <View style={styles.emptyContainer}>
                     <Icon name="calendar-remove" size={60} color="#AAAAAA"/>
                     <Text style={styles.emptyText}>
+                        {activeFilter === 'all' && 'No tienes citas registradas'}
                         {activeFilter === 'upcoming' && 'No tienes citas próximas'}
                         {activeFilter === 'pending' && 'No tienes citas pendientes'}
                         {activeFilter === 'past' && 'No tienes citas pasadas'}
@@ -795,7 +794,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listContainer}
                         scrollEnabled={false}
-                        nestedScrollEnabled={true}
                     />
                 </ScrollView>
             )}

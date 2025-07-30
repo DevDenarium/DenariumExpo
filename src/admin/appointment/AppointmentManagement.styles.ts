@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: '600',
-        color: '#D4AF37',
+        color: '#ddb636ff',
     },
     loadingContainer: {
         flex: 1,

@@ -17,53 +17,9 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FinanceService } from '../../services/Finance.service';
 import { CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag, FinanceEntry, SortOption, FilterOption, MonthYear } from './FinanceScreen.types';
-import { registerLocale, setDefaultLocale } from "react-datepicker";
-import { es } from 'date-fns/locale';
 import ColorPicker from 'react-native-wheel-color-picker';
 import { styles } from './FinanceList.styles';
 import FinanceEntryForm from "./FinanceEntryForm";
-
-registerLocale('es', es);
-setDefaultLocale('es');
-
-type DateTimePickerProps = {
-    value: Date;
-    mode: 'date' | 'time' | 'datetime';
-    display: 'default' | 'spinner' | 'compact' | 'inline';
-    onChange: (event: any, date?: Date) => void;
-    locale?: string;
-    textColor?: string;
-    themeVariant?: 'light' | 'dark';
-};
-
-type ReactDatePickerProps = {
-    selected: Date;
-    onChange: (date: Date) => void;
-    dateFormat: string;
-    className?: string;
-    customInput?: React.ReactElement;
-    popperPlacement?: string;
-    popperModifiers?: any;
-    locale?: string;
-};
-
-let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
-let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | null = null;
-
-if (Platform.OS === 'web') {
-    try {
-        ReactDatePicker = require('react-datepicker').default;
-        require('react-datepicker/dist/react-datepicker.css');
-    } catch (error) {
-        console.error('Error loading react-datepicker:', error);
-    }
-} else {
-    try {
-        DateTimePicker = require('@react-native-community/datetimepicker').default;
-    } catch (error) {
-        console.error('Error loading DateTimePicker:', error);
-    }
-}
 
 interface FinanceListProps {
     refreshTrigger: boolean;
@@ -102,8 +58,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
     const [showEditModal, setShowEditModal] = useState(false);
     const [editData, setEditData] = useState<Partial<FinanceEntry>>({});
     const [editLoading, setEditLoading] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [editDate, setEditDate] = useState<Date>(new Date());
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [allTags, setAllTags] = useState<FinanceTag[]>([]);
     const [rawAmount, setRawAmount] = useState('');
@@ -151,18 +105,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
             month: '2-digit',
             year: 'numeric'
         });
-    };
-
-    const handleDateChange = (event: any, selectedDate?: Date) => {
-        if (Platform.OS === 'web') return;
-        const currentDate = selectedDate || editDate;
-        setShowDatePicker(Platform.OS === 'ios');
-        setEditDate(currentDate);
-        setEditData({ ...editData, date: currentDate.toISOString() });
-    };
-
-    const toggleDatePicker = () => {
-        setShowDatePicker(!showDatePicker);
     };
 
     const filterEntries = (entries: FinanceEntry[], filter: FilterOption): FinanceEntry[] => {
@@ -262,7 +204,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
             date: selectedEntry.date,
             categoryId: selectedEntry.categoryId
         });
-        setEditDate(new Date(selectedEntry.date));
         setSelectedTags(selectedEntry.tags?.map(tag => tag.id) || []);
         setRawAmount(selectedEntry.amount.toString().replace('.', '').replace(',', ''));
         setShowEditModal(true);
@@ -343,7 +284,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 }
             />
 
-            {/* Modal de Detalles */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -458,7 +398,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
-            {/* Modal de Confirmación de Eliminación */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -494,7 +433,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
                 </View>
             </Modal>
 
-            {/* Modal de Edición */}
             <Modal
                 visible={showEditModal}
                 animationType="slide"
@@ -520,7 +458,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             }}
                             categories={categories}
                             tags={allTags}
-                            setCategories={setCategories}  // Usando la prop recibida
+                            setCategories={setCategories}  
                             setTags={setAllTags}
                             initialData={{
                                 ...selectedEntry,

@@ -3,74 +3,26 @@ import {
     View,
     Text,
     TouchableOpacity,
-    FlatList,
     Modal,
     TextInput,
     ActivityIndicator,
     Alert,
-    StyleSheet,
     ScrollView,
-    ViewStyle,
     Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { styles } from './AppointmentManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { registerLocale, setDefaultLocale } from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import {appointmentService} from "../../services/appointment.service";
 import { useAuth } from '../../modules/auth/AuthContext';
 import { Appointment, AppointmentStatus } from '../../modules/navegation/Navegation.types';
 import {AppointmentManagementProps} from "./AppointmentManagement.types";
-
-registerLocale('es', es);
-setDefaultLocale('es');
-
-type DateTimePickerProps = {
-    value: Date;
-    mode: 'date' | 'time' | 'datetime';
-    display: 'default' | 'spinner' | 'compact' | 'inline';
-    onChange: (event: any, date?: Date) => void;
-    minimumDate?: Date;
-};
-
-type ReactDatePickerProps = {
-    selected?: Date | null;
-    onChange: (date: Date) => void;
-    showTimeSelect?: boolean;
-    timeFormat?: string;
-    timeIntervals?: number;
-    dateFormat?: string;
-    locale?: string;
-    minDate?: Date;
-    inline?: boolean;
-    customInput?: React.ReactElement;
-};
-
-let DateTimePicker: React.ComponentType<DateTimePickerProps> | null = null;
-let ReactDatePicker: React.ComponentType<ReactDatePickerProps> | undefined;
-
-if (Platform.OS === 'web') {
-    try {
-        const rdp = require('react-datepicker');
-        ReactDatePicker = rdp.default;
-    } catch (error) {
-        console.error('Error al cargar react-datepicker:', error);
-    }
-} else {
-    try {
-        const dtp = require('@react-native-community/datetimepicker');
-        DateTimePicker = dtp.default;
-    } catch (error) {
-        console.error('Error al cargar DateTimePicker:', error);
-    }
-}
+import { CustomCalendar } from '../../common';
 
 type FilterType = 'day' | 'month' | 'none';
-type StatusFilter = 'upcoming' | 'pending' | 'cancelled' | 'all' | 'past';
+type StatusFilter = 'all' | 'upcoming' | 'pending' | 'past' | 'cancelled';
 
 const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigation }) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -88,6 +40,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [showCalendar, setShowCalendar] = useState(false);
+    const [showMobileDatePicker, setShowMobileDatePicker] = useState(false);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -97,81 +50,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     useEffect(() => {
         applyFilters();
     }, [appointments, filterType, filterDate, statusFilter]);
-
-    const WebDatePicker = ({ value, onChange, mode = 'date' }: { value: Date, onChange: (date: Date) => void, mode?: 'date' | 'datetime' }) => {
-        if (!ReactDatePicker) {
-            return (
-                <TextInput
-                    style={[styles.modalInput, { marginBottom: 15 }]}
-                    value={value ? format(value, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
-                    placeholder="Seleccionar fecha"
-                    editable={false}
-                />
-            );
-        }
-
-        const DatePickerComponent = ReactDatePicker;
-
-        return (
-            <View style={{ marginBottom: 15 }}>
-                <TouchableOpacity
-                    style={styles.dateDisplayButton}
-                    onPress={() => setShowCalendar(!showCalendar)}
-                >
-                    <Text style={styles.dateDisplayText}>
-                        {value ? format(value, mode === 'datetime' ? "dd/MM/yyyy hh:mm a" : "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
-                    </Text>
-                    <Icon name="calendar" size={20} color="#D4AF37" />
-                </TouchableOpacity>
-                {showCalendar && (
-                    <DatePickerComponent
-                        selected={value}
-                        onChange={(date: Date) => {
-                            onChange(date);
-                            setShowCalendar(false);
-                        }}
-                        showTimeSelect={false}
-                        timeFormat="HH:mm"
-                        timeIntervals={15}
-                        dateFormat="dd/MM/yyyy"
-                        locale="es"
-                        minDate={new Date()}
-                        inline
-                    />
-                )}
-            </View>
-        );
-    };
-
-    const MobileDatePicker = ({ value, onChange, mode = 'date' }: { value: Date, onChange: (date: Date) => void, mode?: 'date' | 'datetime' }) => {
-        return (
-            <View style={styles.datePickerContainer}>
-                <TouchableOpacity
-                    style={styles.modalInput}
-                    onPress={() => setShowDatePicker(true)}
-                >
-                    <Text style={{ color: '#FFFFFF' }}>
-                        {value ? format(value, mode === 'datetime' ? "dd/MM/yyyy hh:mm a" : "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
-                    </Text>
-                </TouchableOpacity>
-
-                {showDatePicker && DateTimePicker && (
-                    <DateTimePicker
-                        value={value}
-                        mode={mode}
-                        display="default"
-                        onChange={(event, date) => {
-                            setShowDatePicker(false);
-                            if (date) {
-                                onChange(date);
-                            }
-                        }}
-                        minimumDate={new Date()}
-                    />
-                )}
-            </View>
-        );
-    };
 
     const handleMonthSelect = (month: number) => {
         setSelectedMonth(month);
@@ -200,7 +78,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 appointmentsData = Array.isArray(userResponse?.data) ? userResponse.data : [];
             }
 
-            // Ordenar solo si hay datos
             if (appointmentsData.length > 0) {
                 appointmentsData = appointmentsData.sort((a, b) =>
                     new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime()
@@ -220,7 +97,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const applyFilters = () => {
         let result = [...appointments];
         const now = new Date();
-        // Filtro por fecha (día o mes)
+        
         if (filterType !== 'none' && filterDate) {
             if (filterType === 'day') {
                 result = result.filter(appointment =>
@@ -234,7 +111,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
             }
         }
 
-        // Filtro por estado
         switch (statusFilter) {
             case 'upcoming':
                 result = result.filter(appointment => {
@@ -266,7 +142,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 );
                 break;
 
-            case 'past':
+            case 'past': 
                 result = result.filter(appointment => {
                     const apptDate = new Date(appointment.confirmedDate || appointment.requestedDate);
                     return (
@@ -301,7 +177,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         if (!selectedAppointment) return;
 
         try {
-            // Usar la fecha solicitada original de la cita
             const confirmedDate = new Date(selectedAppointment.requestedDate);
 
             const response = await appointmentService.confirmAppointment(
@@ -318,7 +193,8 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
             await fetchAppointments();
         } catch (error) {
             console.error('Error confirming appointment:', error);
-            Alert.alert('Error', 'No se pudo confirmar la cita');
+            Alert.alert('Error', 'No se pudo confirmar la cita'); 
+
         }
     };
 
@@ -335,7 +211,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
             );
 
             Alert.alert('Éxito', 'Propuesta de reagendamiento enviada al cliente');
-            setShowModal(false);
+            setShowModal(false); 
             resetForm();
             fetchAppointments();
         } catch (error) {
@@ -356,12 +232,11 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     text: 'Sí, cancelar',
                     onPress: async () => {
                         try {
-                            await appointmentService.cancelAppointment(selectedAppointment.id);
+                            await appointmentService.cancelAppointment(selectedAppointment.id); 
 
                             setShowModal(false);
                             fetchAppointments();
 
-                            // Mostrar recordatorio para reembolso si la cita estaba confirmada
                             if (selectedAppointment.status === 'CONFIRMED') {
                                 const clientName = selectedAppointment.user?.firstName || 'Cliente';
                                 const clientLastName = selectedAppointment.user?.lastName || '';
@@ -588,6 +463,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 setFilterDate(null);
                             }
                             setShowCalendar(false);
+                            setShowMobileDatePicker(false);
                         }}
                     >
                         <Text style={styles.filterButtonText}>Día</Text>
@@ -605,19 +481,22 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 setFilterDate(null);
                             }
                             setShowCalendar(false);
+                            setShowMobileDatePicker(false);
                         }}
                     >
                         <Text style={styles.filterButtonText}>Mes</Text>
                     </TouchableOpacity>
 
-                    {filterType !== 'none' && filterDate && (
+                    {filterType !== 'none' && filterDate && !showMobileDatePicker && (
                         <TouchableOpacity
                             style={styles.dateDisplayButton}
                             onPress={() => {
                                 if (filterType === 'month') {
                                     setShowMonthPicker(true);
-                                } else {
+                                } else if (Platform.OS === 'web') {
                                     setShowCalendar(!showCalendar);
+                                } else {
+                                    setShowMobileDatePicker(true);
                                 }
                             }}
                         >
@@ -631,22 +510,13 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     )}
                 </View>
 
-                {filterType === 'day' && showCalendar && Platform.OS === 'web' && ReactDatePicker && (
-                    <View style={styles.webDatePickerContainer}>
-                        <ReactDatePicker
-                            selected={filterDate}
-                            onChange={(date: Date) => {
-                                handleFilterDateChange(date);
-                                setShowCalendar(false);
-                            }}
-                            showTimeSelect={false}
-                            dateFormat="dd/MM/yyyy"
-                            locale="es"
-                            minDate={new Date()}
-                            inline
-                        />
-                    </View>
-                )}
+                <CustomCalendar
+                    visible={showMobileDatePicker}
+                    onClose={() => setShowMobileDatePicker(false)}
+                    onDateSelect={handleFilterDateChange}
+                    selectedDate={filterDate}
+                    title="Seleccionar Fecha para Filtrar"
+                />
 
                 <ScrollView
                     horizontal
@@ -673,36 +543,34 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                         <Text style={styles.statusFilterButtonText}>Pendientes</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.statusFilterButton, statusFilter === 'cancelled' && styles.activeStatusFilter]}
-                        onPress={() => setStatusFilter('cancelled')}
-                    >
-                        <Text style={styles.statusFilterButtonText}>Canceladas</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
                         style={[styles.statusFilterButton, statusFilter === 'past' && styles.activeStatusFilter]}
                         onPress={() => setStatusFilter('past')}
                     >
                         <Text style={styles.statusFilterButtonText}>Pasadas</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.statusFilterButton, statusFilter === 'cancelled' && styles.activeStatusFilter]}
+                        onPress={() => setStatusFilter('cancelled')}
+                    >
+                        <Text style={styles.statusFilterButtonText}>Canceladas</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </View>
 
-            {/* Lista de citas con ScrollView */}
             <ScrollView 
                 style={styles.scrollContainer}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={true}
-                bounces={true}
             >
                 {filteredAppointments.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Icon name="calendar-remove" size={60} color="#AAAAAA" />
                         <Text style={styles.emptyText}>
+                            {statusFilter === 'all' && 'No hay citas con los filtros actuales'}
                             {statusFilter === 'upcoming' && 'No hay citas próximas'}
                             {statusFilter === 'pending' && 'No hay citas pendientes'}
-                            {statusFilter === 'cancelled' && 'No hay citas canceladas'}
                             {statusFilter === 'past' && 'No hay citas pasadas'}
-                            {statusFilter === 'all' && 'No hay citas con los filtros actuales'}
+                            {statusFilter === 'cancelled' && 'No hay citas canceladas'}
                         </Text>
                     </View>
                 ) : (
@@ -844,19 +712,14 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                 </Text>
 
                                 <View style={styles.datePickerContainer}>
-                                    {Platform.OS === 'web' ? (
-                                        <WebDatePicker
-                                            value={selectedDate}
-                                            onChange={setSelectedDate}
-                                            mode="datetime"
-                                        />
-                                    ) : (
-                                        <MobileDatePicker
-                                            value={selectedDate}
-                                            onChange={setSelectedDate}
-                                            mode="datetime"
-                                        />
-                                    )}
+                                    <TouchableOpacity
+                                        style={styles.modalInput}
+                                        onPress={() => setShowDatePicker(true)}
+                                    >
+                                        <Text style={{ color: '#FFFFFF' }}>
+                                            {format(selectedDate, 'dd/MM/yyyy hh:mm a', { locale: es })}
+                                        </Text>
+                                    </TouchableOpacity>
                                 </View>
                                 
                                 <View style={{marginTop: 15, padding: 10, backgroundColor: '#2a2a2a', borderRadius: 8}}>
@@ -909,82 +772,19 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                 </View>
             </Modal>
 
-            {Platform.OS === 'web' && (
-                <style>
-                    {`
-                        .react-datepicker-wrapper {
-                            width: 100%;
-                            display: block !important;
+            {showDatePicker && (
+                <DateTimePicker
+                    value={selectedDate}
+                    mode="datetime"
+                    display="default"
+                    onChange={(event: any, date?: Date) => {
+                        setShowDatePicker(false);
+                        if (date) {
+                            setSelectedDate(date);
                         }
-                        .react-datepicker__input-container {
-                            width: 100%;
-                            display: block !important;
-                        }
-                        .react-datepicker {
-                            font-family: inherit;
-                            background-color: #2a2a2a;
-                            border: 1px solid #444;
-                            position: relative !important;
-                            top: auto !important;
-                            left: auto !important;
-                            z-index: 10000 !important;
-                            margin-top: 10px;
-                        }
-                        .react-datepicker-popper {
-                            z-index: 10000 !important;
-                            position: relative !important;
-                        }
-                        .react-datepicker__triangle {
-                            display: none;
-                        }
-                        .react-datepicker__header {
-                            background-color: #333;
-                            border-bottom: 1px solid #444;
-                        }
-                        .react-datepicker__current-month,
-                        .react-datepicker__day-name,
-                        .react-datepicker__day {
-                            color: white;
-                        }
-                        .react-datepicker__day:hover {
-                            background-color: #444;
-                        }
-                        .react-datepicker__day--selected {
-                            background-color: #D4AF37;
-                            color: black;
-                        }
-                        .react-datepicker__navigation-icon::before {
-                            border-color: white;
-                        }
-                        .react-datepicker-time__header {
-                            color: white;
-                        }
-                        .react-datepicker__time-container {
-                            background-color: #2a2a2a;
-                            border-left: 1px solid #444;
-                        }
-                        .react-datepicker__time-list-item {
-                            color: white;
-                        }
-                        .react-datepicker__time-list-item:hover {
-                            background-color: #444;
-                        }
-                        .react-datepicker__time-list-item--selected {
-                            background-color: #D4AF37;
-                            color: black;
-                        }
-                        .react-datepicker__month-container {
-                            float: none;
-                        }
-                        .react-datepicker__time-container {
-                            float: none;
-                            width: 100%;
-                        }
-                        .react-datepicker__time-box {
-                            width: 100%;
-                        }
-                    `}
-                </style>
+                    }}
+                    minimumDate={new Date()}
+                />
             )}
         </View>
     );

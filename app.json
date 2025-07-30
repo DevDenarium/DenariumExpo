@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.denarium.app"
+      "bundleIdentifier": "com.denarium.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta aplicación necesita acceso a la cámara para tomar fotos de perfil.",
+        "NSPhotoLibraryUsageDescription": "Esta aplicación necesita acceso a la galería de fotos para seleccionar imágenes."
+      }
     },
     "android": {
       "adaptiveIcon": {
