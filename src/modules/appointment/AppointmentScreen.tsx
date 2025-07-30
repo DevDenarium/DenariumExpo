@@ -724,51 +724,57 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             </View>
 
             <View style={styles.filterContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.filterButton,
-                        activeFilter === 'all' ? styles.activeFilterButton : {}
-                    ]}
-                    onPress={() => setActiveFilter('all')}
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterScrollView}
                 >
-                    <Text style={styles.filterButtonText}>Todas</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.filterButton,
-                        activeFilter === 'upcoming' ? styles.activeFilterButton : {}
-                    ]}
-                    onPress={() => setActiveFilter('upcoming')}
-                >
-                    <Text style={styles.filterButtonText}>Próximas</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.filterButton,
-                        activeFilter === 'pending' ? styles.activeFilterButton : {}
-                    ]}
-                    onPress={() => setActiveFilter('pending')}
-                >
-                    <Text style={styles.filterButtonText}>Pendientes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.filterButton,
-                        activeFilter === 'past' ? styles.activeFilterButton : {}
-                    ]}
-                    onPress={() => setActiveFilter('past')}
-                >
-                    <Text style={styles.filterButtonText}>Pasadas</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.filterButton,
-                        activeFilter === 'cancelled' ? styles.activeFilterButton : {}
-                    ]}
-                    onPress={() => setActiveFilter('cancelled')}
-                >
-                    <Text style={styles.filterButtonText}>Canceladas</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            activeFilter === 'all' ? styles.activeFilterButton : {}
+                        ]}
+                        onPress={() => setActiveFilter('all')}
+                    >
+                        <Text style={styles.filterButtonText}>Todas</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            activeFilter === 'upcoming' ? styles.activeFilterButton : {}
+                        ]}
+                        onPress={() => setActiveFilter('upcoming')}
+                    >
+                        <Text style={styles.filterButtonText}>Próximas</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            activeFilter === 'pending' ? styles.activeFilterButton : {}
+                        ]}
+                        onPress={() => setActiveFilter('pending')}
+                    >
+                        <Text style={styles.filterButtonText}>Pendientes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            activeFilter === 'past' ? styles.activeFilterButton : {}
+                        ]}
+                        onPress={() => setActiveFilter('past')}
+                    >
+                        <Text style={styles.filterButtonText}>Pasadas</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            activeFilter === 'cancelled' ? styles.activeFilterButton : {}
+                        ]}
+                        onPress={() => setActiveFilter('cancelled')}
+                    >
+                        <Text style={styles.filterButtonText}>Canceladas</Text>
+                    </TouchableOpacity>
+                </ScrollView>
             </View>
 
             {filteredAppointments.length === 0 ? (

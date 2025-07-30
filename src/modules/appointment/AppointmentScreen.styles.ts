@@ -234,17 +234,20 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
     } as TextStyle,
     filterContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         marginBottom: 15,
     } as ViewStyle,
+    filterScrollView: {
+        flexDirection: 'row',
+    } as ViewStyle,
     filterButton: {
-        flex: 1,
-        marginHorizontal: 5,
-        paddingVertical: 10,
-        borderRadius: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        marginRight: 10,
+        borderRadius: 25,
         backgroundColor: '#333333',
         alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 100,
     } as ViewStyle,
     activeFilterButton: {
         backgroundColor: '#D4AF37',
@@ -252,6 +255,8 @@ export const styles = StyleSheet.create({
     filterButtonText: {
         color: '#FFFFFF',
         fontWeight: '500',
+        fontSize: 14,
+        textAlign: 'center',
     } as TextStyle,
     acceptButton: {
         backgroundColor: '#4CAF50',
