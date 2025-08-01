@@ -19,8 +19,6 @@ import {format, isBefore, isAfter} from 'date-fns';
 import {es} from 'date-fns/locale';
 import {Appointment, AppointmentScreenProps, AppointmentStatus} from '../../modules/navegation/Navegation.types';
 import {SubscriptionPlan} from "../subscriptions/SubscriptionsScreen.types";
-import {registerLocale, setDefaultLocale} from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import {PaymentsStackParamList, RootStackParamList} from '../navegation/Navegation.types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {useAuth} from '../auth/AuthContext';
@@ -28,8 +26,6 @@ import {useNavigation} from "@react-navigation/native";
 import { CustomCalendar } from '../../common';
 
 type PaymentsNavigationProp = StackNavigationProp<RootStackParamList, 'PaymentsScreen'>;
-registerLocale('es', es);
-setDefaultLocale('es');
 
 type DateTimePickerProps = {
     value: Date;
@@ -97,6 +93,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<Date | null>(null);
     const [showMobileDatePicker, setShowMobileDatePicker] = useState(false);
+    const [showRescheduleDatePicker, setShowRescheduleDatePicker] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -269,9 +266,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 {
                     text: 'Proponer Nueva Fecha',
                     onPress: () => {
-                        setSelectedAppointment(appointment);
-                        setActionType('reschedule');
-                        setShowRescheduleModal(true);
+                        openRescheduleModal(appointment);
                     }
                 },
                 {
@@ -280,6 +275,22 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 }
             ]
         );
+    };
+
+    const openRescheduleModal = (appointment: Appointment) => {
+        setSelectedAppointment(appointment);
+        setActionType('reschedule');
+        
+        // Usar la fecha confirmada de la cita como fecha inicial
+        const appointmentDate = new Date(appointment.confirmedDate || appointment.requestedDate);
+        
+        setSelectedDate(appointmentDate);
+        setSelectedTime(null);
+        
+        // Generar horarios disponibles automáticamente para la fecha de la cita
+        generateTimeSlots(appointmentDate);
+        
+        setShowRescheduleModal(true);
     };
 
     const handleCreateAppointment = async () => {
@@ -374,15 +385,19 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     };
 
     const handleClientReschedule = async () => {
-        if (!selectedAppointment || !selectedDate) {
+        if (!selectedAppointment || !selectedDate || !selectedTime) {
             Alert.alert('Error', 'Selecciona fecha y hora');
             return;
         }
 
         try {
+            // Combinar fecha y hora seleccionadas
+            const combinedDateTime = new Date(selectedDate);
+            combinedDateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+
             await appointmentService.proposeReschedule(
                 selectedAppointment.id,
-                selectedDate.toISOString()
+                combinedDateTime.toISOString()
             );
 
             Alert.alert('Éxito', 'Solicitud de reagendamiento enviada. El administrador revisará tu propuesta.');
@@ -411,6 +426,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         setShowFinalCancelConfirmation(false);
         setShowRescheduleModal(false);
         setShowMobileDatePicker(false);
+        setShowRescheduleDatePicker(false);
+        setTimeSlots([]);
     };
 
     const formatDate = (dateString: string) => {
@@ -527,6 +544,40 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     }}
                     selectedDate={selectedDate}
                     title="Seleccionar Fecha para Cita"
+                    minDate={new Date()}
+                />
+            </>
+        );
+    };
+
+    const MobileRescheduleDatePicker = () => {
+        return (
+            <>
+                <View style={styles.datePickerContainer}>
+                    <TouchableOpacity
+                        style={[styles.modalInput, {marginBottom: 10}]}
+                        onPress={() => setShowRescheduleDatePicker(true)}
+                    >
+                        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <Text style={{color: '#FFFFFF'}}>
+                                {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                            </Text>
+                            <Icon name="calendar-edit" size={20} color="#D4AF37" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                <CustomCalendar
+                    visible={showRescheduleDatePicker}
+                    onClose={() => setShowRescheduleDatePicker(false)}
+                    onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedTime(null);
+                        generateTimeSlots(date);
+                        setShowRescheduleDatePicker(false);
+                    }}
+                    selectedDate={selectedDate}
+                    title="Seleccionar Nueva Fecha"
                     minDate={new Date()}
                 />
             </>
@@ -673,9 +724,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                                 <TouchableOpacity
                                     style={[styles.actionButton, styles.rescheduleButton]}
                                     onPress={() => {
-                                        setSelectedAppointment(item);
-                                        setActionType('reschedule');
-                                        setShowRescheduleModal(true);
+                                        openRescheduleModal(item);
                                     }}
                                 >
                                     <Icon name="calendar-edit" size={20} color="#FFFFFF"/>
@@ -968,62 +1017,23 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Reagendar Cita</Text>
-                        <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 20}}>
-                            Selecciona la nueva fecha y hora para tu cita:
+                        <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 10}}>
+                            Fecha actual de tu cita:
                         </Text>
                         
-                        {Platform.OS === 'web' ? (
-                            ReactDatePicker ? (
-                                <ReactDatePicker
-                                    selected={selectedDate}
-                                    onChange={(date: Date) => setSelectedDate(date)}
-                                    showTimeSelect={true}
-                                    timeFormat="HH:mm"
-                                    timeIntervals={15}
-                                    dateFormat="dd/MM/yyyy HH:mm"
-                                    locale="es"
-                                    minDate={new Date()}
-                                    inline
-                                />
-                            ) : (
-                                <TextInput
-                                    style={[styles.modalInput, {marginBottom: 15}]}
-                                    value={selectedDate ? format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es }) : 'Seleccionar fecha'}
-                                    placeholder="Seleccionar fecha"
-                                    editable={false}
-                                />
-                            )
-                        ) : (
-                            <View>
-                                <TouchableOpacity
-                                    style={styles.modalInput}
-                                    onPress={() => setShowMobileDatePicker(true)}
-                                >
-                                    <Text style={{color: '#FFFFFF'}}>
-                                        {selectedDate ? format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es }) : 'Seleccionar fecha y hora'}
-                                    </Text>
-                                </TouchableOpacity>
-                                
-                                {showMobileDatePicker && DateTimePicker && (
-                                    <DateTimePicker
-                                        value={selectedDate || new Date()}
-                                        mode="datetime"
-                                        display="default"
-                                        onChange={(event: any, date?: Date) => {
-                                            setShowMobileDatePicker(false);
-                                            if (date) {
-                                                setSelectedDate(date);
-                                            }
-                                        }}
-                                        minimumDate={new Date()}
-                                    />
-                                )}
-                            </View>
-                        )}
+                        {/* Usar el mismo patrón que crear cita pero para reagendar */}
+                        <MobileRescheduleDatePicker />
 
-                        {selectedDate && (
+                        <Text style={{color: '#AAAAAA', textAlign: 'center', marginBottom: 20, fontSize: 12}}>
+                            Toca la fecha para cambiarla o selecciona una nueva hora:
+                        </Text>
+
+                        {/* Siempre mostrar los time slots si hay fecha seleccionada */}
+                        {renderTimeSlots()}
+
+                        {selectedDate && selectedTime && (
                             <Text style={{color: '#D4AF37', textAlign: 'center', marginTop: 15, marginBottom: 15}}>
-                                Nueva fecha y hora: {format(selectedDate, "dd/MM/yyyy hh:mm a", { locale: es })}
+                                Nueva fecha y hora: {format(selectedDate, "dd/MM/yyyy", { locale: es })} a las {format(selectedTime, "hh:mm a", { locale: es })}
                             </Text>
                         )}
 
@@ -1038,8 +1048,13 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                                 <Text style={styles.modalButtonText}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
+                                style={[
+                                    styles.modalButton, 
+                                    styles.confirmButton,
+                                    (!selectedDate || !selectedTime) && styles.disabledButton
+                                ]}
                                 onPress={handleClientReschedule}
+                                disabled={!selectedDate || !selectedTime}
                             >
                                 <Text style={styles.modalButtonText}>Solicitar Reagendamiento</Text>
                             </TouchableOpacity>
@@ -1048,83 +1063,6 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                 </View>
             </Modal>
 
-            {Platform.OS === 'web' && (
-                <style>
-                    {`
-                        .react-datepicker-wrapper {
-                            width: 100%;
-                            display: block !important;
-                        }
-                        .react-datepicker__input-container {
-                            width: 100%;
-                            display: block !important;
-                        }
-                        .react-datepicker {
-                            font-family: inherit;
-                            background-color: #2a2a2a;
-                            border: 1px solid #444;
-                            position: relative !important;
-                            top: auto !important;
-                            left: auto !important;
-                            z-index: 10000 !important;
-                            margin-top: 10px;
-                        }
-                        .react-datepicker-popper {
-                            z-index: 10000 !important;
-                            position: relative !important;
-                        }
-                        .react-datepicker__triangle {
-                            display: none;
-                        }
-                        .react-datepicker__header {
-                            background-color: #333;
-                            border-bottom: 1px solid #444;
-                        }
-                        .react-datepicker__current-month,
-                        .react-datepicker__day-name,
-                        .react-datepicker__day {
-                            color: white;
-                        }
-                        .react-datepicker__day:hover {
-                            background-color: #444;
-                        }
-                        .react-datepicker__day--selected {
-                            background-color: #D4AF37;
-                            color: black;
-                        }
-                        .react-datepicker__navigation-icon::before {
-                            border-color: white;
-                        }
-                        .react-datepicker-time__header {
-                            color: white;
-                        }
-                        .react-datepicker__time-container {
-                            background-color: #2a2a2a;
-                            border-left: 1px solid #444;
-                        }
-                        .react-datepicker__time-list-item {
-                            color: white;
-                        }
-                        .react-datepicker__time-list-item:hover {
-                            background-color: #444;
-                        }
-                        .react-datepicker__time-list-item--selected {
-                            background-color: #D4AF37;
-                            color: black;
-                        }
-                        .react-datepicker__month-container {
-                            float: none;
-                        }
-                        .react-datepicker__time-container {
-                            float: none;
-                            width: 100%;
-                        }
-                        .react-datepicker__time-box {
-                            width: 100%;
-                        }
-                    `}
-                </style>
-            )}
         </View>
     );
 };
