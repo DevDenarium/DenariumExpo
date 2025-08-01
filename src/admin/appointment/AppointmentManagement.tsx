@@ -10,7 +10,6 @@ import {
     ScrollView,
     Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { styles } from './AppointmentManagement.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, isBefore, isSameDay, isSameMonth, isSameYear, parseISO, isAfter } from 'date-fns';
@@ -29,7 +28,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [actionType, setActionType] = useState<'confirm' | 'reschedule' | 'cancel'>('confirm');
@@ -41,6 +39,10 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [showCalendar, setShowCalendar] = useState(false);
     const [showMobileDatePicker, setShowMobileDatePicker] = useState(false);
+    const [showRescheduleDatePicker, setShowRescheduleDatePicker] = useState(false);
+    const [timeSlots, setTimeSlots] = useState<Date[]>([]);
+    const [showTimeSlots, setShowTimeSlots] = useState(false);
+    const [selectedTime, setSelectedTime] = useState<Date | null>(null);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -173,6 +175,21 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         }
     };
 
+    const generateTimeSlots = (date: Date) => {
+        const slots: Date[] = [];
+        const startHour = 9;
+        const endHour = 21;
+
+        for (let hour = startHour; hour < endHour; hour++) {
+            const slot = new Date(date);
+            slot.setHours(hour, 0, 0, 0);
+            slots.push(slot);
+        }
+
+        setTimeSlots(slots);
+        setShowTimeSlots(true);
+    };
+
     const handleConfirmAppointment = async () => {
         if (!selectedAppointment) return;
 
@@ -275,6 +292,10 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
         setSelectedDate(new Date());
         setSelectedAppointment(null);
         setActionType('confirm');
+        setShowRescheduleDatePicker(false);
+        setTimeSlots([]);
+        setShowTimeSlots(false);
+        setSelectedTime(null);
     };
 
     const formatDate = (dateString: string) => {
@@ -409,8 +430,11 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                                     style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
                                     onPress={() => {
                                         setSelectedAppointment(item);
-                                        setSelectedDate(new Date(item.requestedDate));
+                                        const appointmentDate = new Date(item.requestedDate);
+                                        setSelectedDate(appointmentDate);
+                                        setSelectedTime(appointmentDate);
                                         setActionType('reschedule');
+                                        generateTimeSlots(appointmentDate);
                                         setShowModal(true);
                                     }}
                                 >
@@ -432,6 +456,74 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                         )}
                     </View>
                 )}
+            </View>
+        );
+    };
+
+    const AdminMobileRescheduleDatePicker = () => {
+        return (
+            <>
+                <View style={styles.datePickerContainer}>
+                    <TouchableOpacity
+                        style={[styles.modalInput, {marginBottom: 10}]}
+                        onPress={() => setShowRescheduleDatePicker(true)}
+                    >
+                        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <Text style={{color: '#FFFFFF'}}>
+                                {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                            </Text>
+                            <Icon name="calendar-edit" size={20} color="#D4AF37" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                <CustomCalendar
+                    visible={showRescheduleDatePicker}
+                    onClose={() => setShowRescheduleDatePicker(false)}
+                    onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedTime(null);
+                        generateTimeSlots(date);
+                        setShowRescheduleDatePicker(false);
+                    }}
+                    selectedDate={selectedDate}
+                    title="Seleccionar Nueva Fecha"
+                    minDate={new Date()}
+                />
+            </>
+        );
+    };
+
+    const renderTimeSlots = () => {
+        if (!showTimeSlots || !selectedDate) return null;
+
+        return (
+            <View style={{marginBottom: 10}}>
+                <Text style={{color: '#FFFFFF', marginBottom: 10}}>
+                    Horarios disponibles para {format(selectedDate, "dd/MM/yyyy", { locale: es })}:
+                </Text>
+                <View style={styles.timeSlotsContainer}>
+                    {timeSlots.map((time, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.timeSlot,
+                                selectedTime && selectedTime.getTime() === time.getTime() ? styles.selectedTimeSlot : {}
+                            ]}
+                            onPress={() => {
+                                setSelectedTime(time);
+                                // Combinar fecha seleccionada con hora seleccionada
+                                const newDateTime = new Date(selectedDate);
+                                newDateTime.setHours(time.getHours(), time.getMinutes(), 0, 0);
+                                setSelectedDate(newDateTime);
+                            }}
+                        >
+                            <Text style={styles.timeSlotText}>
+                                {format(time, 'hh:mm a', { locale: es })}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
         );
     };
@@ -707,27 +799,23 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
 
                         {actionType === 'reschedule' && (
                             <>
-                                <Text style={styles.modalSubtitle}>
-                                    Selecciona nueva fecha y hora
+                                <Text style={{color: '#FFFFFF', textAlign: 'center', marginBottom: 10}}>
+                                    Fecha actual de la cita:
+                                </Text>
+                                
+                                <AdminMobileRescheduleDatePicker />
+
+                                <Text style={{color: '#AAAAAA', textAlign: 'center', marginBottom: 15, fontSize: 12}}>
+                                    Toca la fecha para cambiarla o selecciona una nueva hora:
                                 </Text>
 
-                                <View style={styles.datePickerContainer}>
-                                    <TouchableOpacity
-                                        style={styles.modalInput}
-                                        onPress={() => setShowDatePicker(true)}
-                                    >
-                                        <Text style={{ color: '#FFFFFF' }}>
-                                            {format(selectedDate, 'dd/MM/yyyy hh:mm a', { locale: es })}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                                
-                                <View style={{marginTop: 15, padding: 10, backgroundColor: '#2a2a2a', borderRadius: 8}}>
-                                    <Text style={{color: '#FFFFFF', fontSize: 14, textAlign: 'center'}}>
-                                        <Text style={{fontWeight: 'bold'}}>Nueva fecha y hora:</Text>{'\n'}
-                                        {format(selectedDate, 'dd/MM/yyyy hh:mm a', { locale: es })}
+                                {renderTimeSlots()}
+
+                                {selectedDate && selectedTime && (
+                                    <Text style={{color: '#D4AF37', textAlign: 'center', marginTop: 10, marginBottom: 5}}>
+                                        Nueva fecha y hora: {format(selectedDate, "dd/MM/yyyy", { locale: es })} a las {format(selectedTime, "hh:mm a", { locale: es })}
                                     </Text>
-                                </View>
+                                )}
                             </>
                         )}
 
@@ -763,7 +851,7 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                             >
                                 <Text style={styles.modalButtonText}>
                                     {actionType === 'confirm' ? 'Confirmar Cita' :
-                                        actionType === 'reschedule' ? 'Reagendar' :
+                                        actionType === 'reschedule' ? 'Solicitar Reagendamiento' :
                                             'Cancelar Cita'}
                                 </Text>
                             </TouchableOpacity>
@@ -771,21 +859,6 @@ const AppointmentManagement: React.FC<AppointmentManagementProps> = ({ navigatio
                     </View>
                 </View>
             </Modal>
-
-            {showDatePicker && (
-                <DateTimePicker
-                    value={selectedDate}
-                    mode="datetime"
-                    display="default"
-                    onChange={(event: any, date?: Date) => {
-                        setShowDatePicker(false);
-                        if (date) {
-                            setSelectedDate(date);
-                        }
-                    }}
-                    minimumDate={new Date()}
-                />
-            )}
         </View>
     );
 };

@@ -122,7 +122,7 @@ export const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderRadius: 10,
         padding: 20,
-        maxHeight: '50%',
+        maxHeight: '80%',
     },
     modalTitle: {
         color: '#D4AF37',
@@ -151,10 +151,12 @@ export const styles = StyleSheet.create({
     },
     modalButton: {
         flex: 1,
-        padding: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         borderRadius: 20,
         marginHorizontal: 5,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     cancelButton: {
         backgroundColor: '#555555',
@@ -168,6 +170,9 @@ export const styles = StyleSheet.create({
     modalButtonText: {
         color: '#000000',
         fontWeight: 'bold',
+        fontSize: 12,
+        textAlign: 'center',
+        flexWrap: 'wrap',
     },
     statusPending: {
         backgroundColor: 'rgba(255, 193, 7, 0.2)',
