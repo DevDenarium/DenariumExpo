@@ -1221,45 +1221,31 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                                 )}
                             </View>
                         </View>
-                    </ScrollView>
 
-                    {/* Botones */}
-                    <View style={{
-                        flexDirection: 'row',
-                        gap: 12,
-                        paddingTop: 20,
-                        paddingBottom: 20
-                    }}>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                backgroundColor: '#2a2a2a',
-                                padding: 15,
-                                borderRadius: 8,
-                                alignItems: 'center'
-                            }}
-                            onPress={() => setCategoryFormModalVisible(false)}
-                        >
-                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                                Cancelar
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                backgroundColor: isCategorySubmitting ? '#666' : '#D4AF37',
-                                padding: 15,
-                                borderRadius: 8,
-                                alignItems: 'center'
-                            }}
-                            onPress={handleSubmitCategory}
-                            disabled={isCategorySubmitting}
-                        >
-                            <Text style={{ color: '#1c1c1c', fontSize: 16, fontWeight: '700' }}>
-                                {isCategorySubmitting ? 'Guardando...' : 'Guardar'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                        {/* Botones al final del scroll */}
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={styles.modalCancelButton}
+                                onPress={() => setCategoryFormModalVisible(false)}
+                            >
+                                <Text style={styles.modalCancelButtonText}>
+                                    Cancelar
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.modalSubmitButton,
+                                    isCategorySubmitting && styles.modalSubmitButtonDisabled
+                                ]}
+                                onPress={handleSubmitCategory}
+                                disabled={isCategorySubmitting}
+                            >
+                                <Text style={styles.modalSubmitButtonText}>
+                                    {isCategorySubmitting ? 'Guardando...' : 'Guardar'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
                 </View>
             </View>
             </Modal>

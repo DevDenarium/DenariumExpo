@@ -247,15 +247,15 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const handleRejectReschedule = async (appointment: Appointment) => {
         Alert.alert(
             'Rechazar Reagendamiento',
-            '¿Deseas rechazar esta propuesta y solicitar una nueva fecha?',
+            '¿Confirmas que quieres rechazar esta propuesta y cancelar la cita? Recuerda que puedes proponer una nueva fecha.',
             [
                 {
-                    text: 'Solo Rechazar',
+                    text: 'Rechazar',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await appointmentService.rejectReschedule(appointment.id);
-                            Alert.alert('Éxito', 'Has rechazado la propuesta de reagendamiento');
+                            Alert.alert('Contacto para Rembolso', 'Contacte a Denarium Capital para el rembolso total de la cita por reagendamiento por parte de Denarium');
                             fetchAppointments();
                         } catch (error: any) {
                             console.error('Error rejecting reschedule:', error);
@@ -886,24 +886,47 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
                         <View style={styles.typeSelectorContainer}>
                             <Text style={styles.typeLabel}>Tipo de asesoría:</Text>
+                            {actionType === 'edit' && (
+                                <Text style={{color: '#D4AF37', fontSize: 10, marginBottom: 5, textAlign: 'center'}}>
+                                    Para cambiar la modalidad, contacta con Denarium Capital
+                                </Text>
+                            )}
                             <View style={styles.typeButtonsContainer}>
                                 <TouchableOpacity
                                     style={[
                                         styles.typeButton,
-                                        formData.isVirtual && styles.typeButtonSelected
+                                        formData.isVirtual && styles.typeButtonSelected,
+                                        actionType === 'edit' && styles.disabledButton
                                     ]}
-                                    onPress={() => setFormData({...formData, isVirtual: true})}
+                                    onPress={() => {
+                                        if (actionType !== 'edit') {
+                                            setFormData({...formData, isVirtual: true});
+                                        }
+                                    }}
+                                    disabled={actionType === 'edit'}
                                 >
-                                    <Text style={styles.typeButtonText}>Virtual ($10)</Text>
+                                    <Text style={[
+                                        styles.typeButtonText,
+                                        actionType === 'edit' && {color: '#888888'}
+                                    ]}>Virtual ($10)</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={[
                                         styles.typeButton,
-                                        !formData.isVirtual && styles.typeButtonSelected
+                                        !formData.isVirtual && styles.typeButtonSelected,
+                                        actionType === 'edit' && styles.disabledButton
                                     ]}
-                                    onPress={() => setFormData({...formData, isVirtual: false})}
+                                    onPress={() => {
+                                        if (actionType !== 'edit') {
+                                            setFormData({...formData, isVirtual: false});
+                                        }
+                                    }}
+                                    disabled={actionType === 'edit'}
                                 >
-                                    <Text style={styles.typeButtonText}>Presencial ($25)</Text>
+                                    <Text style={[
+                                        styles.typeButtonText,
+                                        actionType === 'edit' && {color: '#888888'}
+                                    ]}>Presencial ($25)</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

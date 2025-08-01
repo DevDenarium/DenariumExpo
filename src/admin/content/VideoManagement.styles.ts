@@ -438,15 +438,15 @@ export const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         justifyContent: 'flex-end',
-        paddingTop: '25%', // Comienza a un cuarto de la pantalla
+        paddingTop: '10%', // Comienza más arriba en la pantalla
     },
     fullScreenModalContainer: {
         backgroundColor: '#1c1c1c',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        maxHeight: '75%', // Ocupa máximo tres cuartos de la pantalla
-        height: '75%',
+        maxHeight: '85%', // Ocupa más espacio de la pantalla
+        height: '85%',
         width: '100%',
     },
     editModalHeader: {
@@ -488,14 +488,16 @@ export const styles = StyleSheet.create({
     modalButtonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingTop: 15,
-        paddingBottom: 20,
+        paddingTop: 25,
+        paddingBottom: 30,
+        paddingHorizontal: 5,
         borderTopWidth: 1,
         borderTopColor: '#3a3a3a',
-        marginTop: 10,
+        marginTop: 30, // Más espacio superior cuando está dentro del scroll
+        backgroundColor: '#1c1c1c', // Asegurar fondo consistente
     },
     modalCancelButton: {
-        backgroundColor: '#e74c3c',
+        backgroundColor: '#2a2a2a',
         paddingVertical: 14,
         paddingHorizontal: 20,
         borderRadius: 8,
