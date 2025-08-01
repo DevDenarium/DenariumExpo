@@ -6,12 +6,13 @@ import { EducationalContent, ContentCategory } from '../modules/educational/Educ
 const API_BASE_URL = 'http://192.168.100.4:3000'; // Cambiar por tu URL de producción
 
 export const EducationalService = {
-    fetchCategories: async (): Promise<ContentCategory[]> => {
+    fetchCategories: async (activeOnly: boolean = true): Promise<ContentCategory[]> => {
         try {
             const token = await getAuthToken();
             const response = await axios.get<ContentCategory[]>(
                 `${API_BASE_URL}/educational/categories`,
                 {
+                    params: { activeOnly },
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -232,6 +233,103 @@ export const EducationalService = {
             return response.data.url;
         } catch (error) {
             handleApiError(error, 'Error al obtener la URL del video');
+            throw error;
+        }
+    },
+
+    // Funciones para gestión de categorías
+    createCategory: async (categoryData: {
+        name: string;
+        description?: string;
+        icon: string;
+        color: string;
+    }): Promise<ContentCategory> => {
+        try {
+            const token = await getAuthToken();
+            console.log('📡 Enviando petición de creación de categoría:', {
+                url: `${API_BASE_URL}/educational/categories`,
+                data: categoryData,
+                headers: {
+                    'Authorization': `Bearer ${token ? 'Token presente' : 'No token'}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const response = await axios.post<ContentCategory>(
+                `${API_BASE_URL}/educational/categories`,
+                categoryData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            console.log('✅ Respuesta exitosa del servidor:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Error en createCategory:', error);
+            
+            // Log más detallado del error
+            if (axios.isAxiosError(error)) {
+                console.error('Detalles del error Axios:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    url: error.config?.url,
+                    method: error.config?.method
+                });
+            }
+            
+            handleApiError(error, 'Error al crear la categoría');
+            throw error;
+        }
+    },
+
+    updateCategory: async (
+        id: string,
+        categoryData: {
+            name?: string;
+            description?: string;
+            icon?: string;
+            color?: string;
+            isActive?: boolean;
+        }
+    ): Promise<ContentCategory> => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.put<ContentCategory>(
+                `${API_BASE_URL}/educational/categories/${id}`,
+                categoryData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            handleApiError(error, 'Error al actualizar la categoría');
+            throw error;
+        }
+    },
+
+    deleteCategory: async (id: string): Promise<void> => {
+        try {
+            const token = await getAuthToken();
+            await axios.delete(
+                `${API_BASE_URL}/educational/categories/${id}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        } catch (error) {
+            handleApiError(error, 'Error al eliminar la categoría');
             throw error;
         }
     }

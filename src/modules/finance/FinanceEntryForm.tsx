@@ -4,8 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FinanceService } from '../../services/Finance.service';
 import { CreateEntryDto, FinanceCategory, FinanceEntryType, FinanceTag, FinanceEntry } from './FinanceScreen.types';
 import { styles } from './FinanceEntryForm.styles';
-import ColorPickerModal from './ColorPickerModal';
-import { CustomCalendar } from '../../common';
+import { CustomCalendar, ColorPickerModal } from '../../common';
 import axios from "axios";
 
 interface FinanceEntryFormProps {

@@ -51,3 +51,18 @@ export interface UpdateContentForm {
 export interface VideoManagementProps {
     navigation: any;
 }
+
+export interface CreateCategoryForm {
+    name: string;
+    description?: string;
+    icon: string;
+    color: string;
+}
+
+export interface UpdateCategoryForm {
+    name?: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    isActive?: boolean;
+}

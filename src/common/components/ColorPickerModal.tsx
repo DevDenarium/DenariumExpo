@@ -16,26 +16,38 @@ interface ColorPickerModalProps {
     onColorSelected: (color: string) => void;
     initialColor: string;
     title?: string;
+    presetColors?: string[];
 }
 
 const { width } = Dimensions.get('window');
 
+const defaultPresetColors = [
+    '#D4AF37', '#FF0000', '#00FF00', '#0000FF',
+    '#FFFF00', '#00FFFF', '#FF00FF', '#C0C0C0',
+    '#FFA500', '#800080', '#FFC0CB', '#A52A2A',
+    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0'
+];
+
 const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
-                                                               visible,
-                                                               onClose,
-                                                               onColorSelected,
-                                                               initialColor,
-                                                               title = 'Seleccionar Color'
-                                                           }) => {
+    visible,
+    onClose,
+    onColorSelected,
+    initialColor,
+    title = 'Seleccionar Color',
+    presetColors = defaultPresetColors
+}) => {
     const [currentColor, setCurrentColor] = useState(initialColor);
 
     return (
         <Modal
             visible={visible}
             transparent={true}
-            animationType="slide"
+            animationType="fade"
             onRequestClose={onClose}
             supportedOrientations={['portrait', 'landscape']}
+            statusBarTranslucent={true}
+            presentationStyle="overFullScreen"
+            hardwareAccelerated={true}
         >
             <View style={styles.modalOverlay}>
                 <View style={[
@@ -59,10 +71,7 @@ const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
                             row={false}
                             swatches={false}
                             discrete={false}
-                            palette={[
-                                '#D4AF37', '#FF0000', '#00FF00', '#0000FF',
-                                '#FFFF00', '#00FFFF', '#FF00FF', '#C0C0C0'
-                            ]}
+                            palette={presetColors}
                         />
                     </View>
 
@@ -71,7 +80,7 @@ const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
                             style={[styles.button, styles.cancelButton]}
                             onPress={onClose}
                         >
-                            <Text style={styles.buttonText}>Cancelar</Text>
+                            <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancelar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.button, styles.confirmButton]}
@@ -80,7 +89,7 @@ const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
                                 onClose();
                             }}
                         >
-                            <Text style={styles.buttonText}>Confirmar</Text>
+                            <Text style={[styles.buttonText, styles.confirmButtonText]}>Confirmar</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -92,10 +101,11 @@ const ColorPickerModal: React.FC<ColorPickerModalProps> = ({
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.95)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        zIndex: 999999,
     },
     modalContainer: {
         backgroundColor: '#2a2a2a',
@@ -104,18 +114,28 @@ const styles = StyleSheet.create({
         width: '90%',
         maxWidth: 400,
         maxHeight: '80%',
+        elevation: 50,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 15 },
+        shadowOpacity: 0.8,
+        shadowRadius: 25,
+        borderWidth: 3,
+        borderColor: '#D4AF37',
+        zIndex: 999999,
     },
     iosModalContainer: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.9,
+        shadowRadius: 30,
+        elevation: 50,
+        zIndex: 999999,
     },
     androidModalContainer: {
-        elevation: 5,
-        borderWidth: 1,
-        borderColor: '#333',
+        elevation: 100,
+        borderWidth: 4,
+        borderColor: '#D4AF37',
+        zIndex: 999999,
     },
     modalTitle: {
         color: '#D4AF37',
@@ -165,9 +185,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#D4AF37',
     },
     buttonText: {
-        color: '#000',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    cancelButtonText: {
+        color: '#FFF',
+    },
+    confirmButtonText: {
+        color: '#000',
     },
 });
 

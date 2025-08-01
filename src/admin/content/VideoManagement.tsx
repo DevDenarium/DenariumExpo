@@ -26,7 +26,23 @@ import {
     CreateContentForm,
     UpdateContentForm,
     VideoManagementProps,
+    CreateCategoryForm,
+    UpdateCategoryForm,
 } from './VideoManagement.types';
+
+// Íconos disponibles para las categorías  
+const availableIcons = [
+    'cash', 'piggy-bank', 'chart-line', 'trending-up', 'credit-card',
+    'bank', 'wallet', 'calculator', 'star', 'home', 'currency-usd', 'trophy'
+];
+
+// Colores predefinidos para las categorías
+const presetColors = [
+    '#D4AF37', '#FF5733', '#33FF57', '#3357FF', 
+    '#FF33F5', '#33FFF5', '#F5FF33', '#FF8C33', 
+    '#8C33FF', '#33FF8C', '#FF3333', '#3333FF', 
+    '#33FFFF', '#FFFF33', '#FF33CC', '#000000'
+];
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { AwsService } from '../../services/aws.service';
@@ -61,6 +77,20 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Estados para gestión de categorías
+    const [categoriesModalVisible, setCategoriesModalVisible] = useState<boolean>(false);
+    const [categoryFormModalVisible, setCategoryFormModalVisible] = useState<boolean>(false);
+    const [isCategoryEditMode, setIsCategoryEditMode] = useState<boolean>(false);
+    const [currentCategory, setCurrentCategory] = useState<ContentCategory | null>(null);
+    const [categoryFormData, setCategoryFormData] = useState<CreateCategoryForm>({
+        name: '',
+        description: '',
+        icon: 'video',
+        color: '#D4AF37',
+    });
+    const [categoryFormErrors, setCategoryFormErrors] = useState<Record<string, string>>({});
+    const [isCategorySubmitting, setIsCategorySubmitting] = useState(false);
+
     // Función para obtener la duración de un video
     const getVideoDuration = (videoUri: string): Promise<number> => {
         return new Promise((resolve) => {
@@ -75,7 +105,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 };
                 
                 video.onerror = () => {
-                    console.warn('No se pudo obtener la duración del video');
                     resolve(0);
                 };
                 
@@ -83,7 +112,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
             } else {
                 // En móvil, usar la información del ImagePicker result si está disponible
                 // Por ahora resolver con 0 y el usuario puede editarlo manualmente
-                console.warn('Obtención automática de duración no disponible en móvil');
                 resolve(0);
             }
         });
@@ -112,8 +140,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                         const sizeFormatted = VideoCompressionService.formatFileSize(blob.size);
                         setVideoFileSize(sizeFormatted);
                         
-                        console.log(`Video seleccionado: ${sizeFormatted}`);
-                        
                         // Mostrar advertencia si el archivo es muy grande
                         if (blob.size > 30 * 1024 * 1024) { // 30MB
                             Alert.alert(
@@ -129,8 +155,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                             const sizeFormatted = VideoCompressionService.formatFileSize(fileInfo.size);
                             setVideoFileSize(sizeFormatted);
                             
-                            console.log(`Video seleccionado: ${sizeFormatted}`);
-                            
                             // Mostrar advertencia si el archivo es muy grande
                             if (fileInfo.size > 30 * 1024 * 1024) { // 30MB
                                 Alert.alert(
@@ -144,7 +168,6 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                         }
                     }
                 } catch (error) {
-                    console.warn('No se pudo obtener información del video:', error);
                     setVideoFileSize('Tamaño desconocido');
                 }
                 
@@ -153,10 +176,9 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                     const duration = await getVideoDuration(videoUri);
                     if (duration > 0) {
                         handleFormChange('duration', duration);
-                        console.log(`Duración detectada: ${duration} minutos`);
                     }
                 } catch (error) {
-                    console.warn('No se pudo obtener la duración del video:', error);
+                    // Silenciar error de duración, no es crítico
                 }
                 
                 // Generar thumbnail
@@ -262,15 +284,10 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const fetchContents = async () => {
         try {
             setLoading(true);
-            console.log('Admin panel: Fetching contents with params:', {
-                type: activeTab === 'videos' ? 'VIDEO' : 'STORY'
-            });
             const response = await EducationalService.fetchContents({
                 type: activeTab === 'videos' ? 'VIDEO' : 'STORY',
                 // Eliminar filtro isActive para mostrar todos los videos en el panel de admin
             });
-            console.log('Admin panel: Received contents:', response.length, 'items');
-            console.log('Admin panel: First 3 items:', response.slice(0, 3));
             setContents(response);
         } catch (error) {
             console.error('Error fetching contents:', error);
@@ -283,7 +300,7 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     // Función para obtener categorías
     const fetchCategories = async () => {
         try {
-            const response = await EducationalService.fetchCategories();
+            const response = await EducationalService.fetchCategories(false); // false = mostrar todas (activas e inactivas)
             setCategories(response);
             if (response.length > 0 && !formData.categoryId) {
                 setFormData(prev => ({ ...prev, categoryId: response[0].id }));
@@ -472,6 +489,183 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         }
     };
 
+    // Funciones para gestión de categorías
+    const handleOpenCategoriesModal = () => {
+        setCategoriesModalVisible(true);
+    };
+
+    const handleAddCategory = () => {
+        setCategoryFormData({
+            name: '',
+            description: '',
+            icon: 'video',
+            color: '#D4AF37',
+        });
+        setCategoryFormErrors({});
+        setIsCategoryEditMode(false);
+        setCurrentCategory(null);
+        
+        // Cerrar el modal de categorías y abrir el formulario inmediatamente
+        setCategoriesModalVisible(false);
+        setCategoryFormModalVisible(true);
+    };
+
+    const handleEditCategory = (category: ContentCategory) => {
+        setCategoryFormData({
+            name: category.name,
+            description: category.description || '',
+            icon: category.icon || 'video',
+            color: category.color || '#D4AF37',
+        });
+        setCategoryFormErrors({});
+        setIsCategoryEditMode(true);
+        setCurrentCategory(category);
+        
+        // Cerrar el modal de categorías primero y luego abrir el formulario
+        setCategoriesModalVisible(false);
+        setTimeout(() => {
+            setCategoryFormModalVisible(true);
+        }, 300);
+    };
+
+    const handleCategoryFormChange = (field: keyof CreateCategoryForm, value: any) => {
+        setCategoryFormData(prev => ({ ...prev, [field]: value }));
+        
+        // Limpiar errores del campo que se está editando
+        if (categoryFormErrors[field]) {
+            setCategoryFormErrors(prev => ({ ...prev, [field]: '' }));
+        }
+
+        // Validación en tiempo real para nombres duplicados
+        if (field === 'name' && value.trim()) {
+            const existingCategory = categories.find(cat => 
+                cat.name.toLowerCase() === value.toLowerCase() &&
+                (!isCategoryEditMode || cat.id !== currentCategory?.id)
+            );
+            if (existingCategory) {
+                setCategoryFormErrors(prev => ({ 
+                    ...prev, 
+                    name: `Ya existe una categoría llamada "${existingCategory.name}"` 
+                }));
+            }
+        }
+    };
+
+    const validateCategoryForm = (): boolean => {
+        const errors: Record<string, string> = {};
+
+        if (!categoryFormData.name.trim()) {
+            errors.name = 'El nombre es requerido';
+        } else if (categoryFormData.name.length > 50) {
+            errors.name = 'El nombre no puede exceder 50 caracteres';
+        } else {
+            // Verificar si ya existe una categoría con el mismo nombre
+            const existingCategory = categories.find(cat => 
+                cat.name.toLowerCase() === categoryFormData.name.toLowerCase() &&
+                (!isCategoryEditMode || cat.id !== currentCategory?.id)
+            );
+            if (existingCategory) {
+                errors.name = `Ya existe una categoría llamada "${existingCategory.name}"`;
+            }
+        }
+
+        if (categoryFormData.description && categoryFormData.description.length > 200) {
+            errors.description = 'La descripción no puede exceder 200 caracteres';
+        }
+
+        if (!categoryFormData.icon.trim()) {
+            errors.icon = 'El ícono es requerido';
+        }
+
+        if (!categoryFormData.color.trim()) {
+            errors.color = 'El color es requerido';
+        }
+
+        setCategoryFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSubmitCategory = async () => {
+        if (!validateCategoryForm()) return;
+
+        setIsCategorySubmitting(true);
+        try {
+            console.log('🚀 Enviando datos de categoría:', categoryFormData);
+            
+            if (isCategoryEditMode && currentCategory) {
+                await EducationalService.updateCategory(currentCategory.id, categoryFormData);
+                Alert.alert('Éxito', 'Categoría actualizada correctamente');
+            } else {
+                const result = await EducationalService.createCategory(categoryFormData);
+                console.log('✅ Categoría creada exitosamente:', result);
+                Alert.alert('Éxito', 'Categoría creada correctamente');
+            }
+
+            setCategoryFormModalVisible(false);
+            fetchCategories();
+            
+            // Regresar al modal de gestionar categorías después de un breve delay
+            setTimeout(() => {
+                setCategoriesModalVisible(true);
+            }, 300);
+        } catch (error) {
+            console.error('❌ Error submitting category:', error);
+            
+            // Mejor manejo de errores
+            let errorMessage = 'No se pudo guardar la categoría';
+            if (error instanceof Error) {
+                if (error.message.includes('Ya existe una categoría')) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error.message;
+                }
+            } else if (typeof error === 'object' && error !== null && 'response' in error) {
+                const axiosError = error as any;
+                if (axiosError.response?.data?.message) {
+                    if (axiosError.response.data.message.includes('Ya existe una categoría')) {
+                        errorMessage = axiosError.response.data.message;
+                    } else {
+                        errorMessage = axiosError.response.data.message;
+                    }
+                } else if (axiosError.response?.status) {
+                    errorMessage = `Error del servidor (${axiosError.response.status})`;
+                }
+            }
+            
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setIsCategorySubmitting(false);
+        }
+    };
+
+    const handleDeleteCategory = async (category: ContentCategory) => {
+        Alert.alert(
+            'Confirmar Eliminación',
+            `¿Estás seguro de que deseas eliminar la categoría "${category.name}"?\n\n⚠️ Esta acción:\n• Eliminará la categoría permanentemente\n• NO se puede deshacer\n• Solo se puede eliminar si no tiene videos asociados`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Eliminar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await EducationalService.deleteCategory(category.id);
+                            Alert.alert('Éxito', 'Categoría eliminada correctamente');
+                            fetchCategories();
+                        } catch (error) {
+                            console.error('Error deleting category:', error);
+                            const errorMessage = error instanceof Error ? error.message : 'No se pudo eliminar la categoría';
+                            Alert.alert('Error', errorMessage);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     // Renderizado del componente
     return (
         <View style={styles.container}>
@@ -497,13 +691,26 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Botón agregar */}
-            <TouchableOpacity style={styles.addButton} onPress={handleAddContent}>
-                <Icon name="plus" size={24} color="#D4AF37" />
-                <Text style={styles.addButtonText}>
-                    Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
-                </Text>
-            </TouchableOpacity>
+            {/* Botones de acción */}
+            <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity style={styles.addButton} onPress={handleAddContent}>
+                    <Icon name="plus" size={24} color="#D4AF37" />
+                    <Text style={styles.addButtonText}>
+                        Agregar {activeTab === 'videos' ? 'Video' : 'Historia'}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    style={styles.categoriesButton} 
+                    onPress={handleOpenCategoriesModal}
+                    activeOpacity={0.7}
+                >
+                    <Icon name="folder-cog" size={24} color="#D4AF37" />
+                    <Text style={styles.categoriesButtonText}>
+                        Gestionar Categorías
+                    </Text>
+                </TouchableOpacity>
+            </View>
 
             {/* Lista de contenido */}
             {loading ? (
@@ -799,6 +1006,262 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
                         </KeyboardAvoidingView>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Modal para gestionar categorías */}
+            <Modal
+                visible={categoriesModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setCategoriesModalVisible(false)}
+            >
+                <View style={styles.fullScreenModalOverlay}>
+                    <View style={styles.fullScreenModalContainer}>
+                        <View style={styles.editModalHeader}>
+                            <Text style={styles.editModalTitle}>Gestionar Categorías</Text>
+                            <TouchableOpacity
+                                onPress={() => setCategoriesModalVisible(false)}
+                                style={styles.editModalCloseButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity 
+                            style={styles.newCategoryButton} 
+                            onPress={handleAddCategory}
+                            activeOpacity={0.7}
+                        >
+                            <Icon name="plus" size={20} color="#D4AF37" />
+                            <Text style={styles.newCategoryButtonText}>Nueva Categoría</Text>
+                        </TouchableOpacity>
+
+                        <ScrollView style={styles.modalScrollView}>
+                            {categories.map((category) => (
+                                <View key={category.id} style={styles.categoryCard}>
+                                    <View style={styles.categoryHeader}>
+                                        <View style={styles.categoryInfo}>
+                                            <View style={styles.categoryIconContainer}>
+                                                <Icon
+                                                    name={category.icon || 'video'}
+                                                    size={24}
+                                                    color={category.color || '#D4AF37'}
+                                                />
+                                            </View>
+                                            <View style={styles.categoryDetails}>
+                                                <Text style={styles.categoryName}>
+                                                    {category.name}
+                                                </Text>
+                                                {category.description && (
+                                                    <Text style={styles.categoryDescription}>
+                                                        {category.description}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                        <View style={styles.categoryActions}>
+                                            <TouchableOpacity
+                                                style={styles.categoryActionButton}
+                                                onPress={() => handleEditCategory(category)}
+                                            >
+                                                <Icon name="pencil" size={18} color="#D4AF37" />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.categoryActionButton, styles.deleteCategoryActionButton]}
+                                                onPress={() => handleDeleteCategory(category)}
+                                            >
+                                                <Icon name="delete" size={18} color="#ff4444" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={[
+                                        styles.categoryStatusBadge,
+                                        category.isActive ? styles.activeStatus : styles.inactiveStatus
+                                    ]}>
+                                        <Text style={styles.statusText}>
+                                            {category.isActive ? 'Activa' : 'Inactiva'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                            {categories.length === 0 && (
+                                <View style={styles.emptyContainer}>
+                                    <Icon name="folder-outline" size={60} color="#666" />
+                                    <Text style={styles.emptyText}>No hay categorías disponibles</Text>
+                                    <Text style={styles.emptySubtext}>
+                                        Crea tu primera categoría usando el botón de arriba
+                                    </Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal para formulario de categoría */}
+            <Modal
+                visible={categoryFormModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setCategoryFormModalVisible(false)}
+            >
+                <View style={styles.fullScreenModalOverlay}>
+                    <View style={styles.fullScreenModalContainer}>
+                        <View style={styles.editModalHeader}>
+                            <Text style={styles.editModalTitle}>
+                                {isCategoryEditMode ? 'Editar' : 'Nueva'} Categoría
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => setCategoryFormModalVisible(false)}
+                                style={styles.editModalCloseButton}
+                            >
+                                <Icon name="close" size={24} color="#D4AF37" />
+                            </TouchableOpacity>
+                        </View>
+
+                    <ScrollView style={{ flex: 1, paddingTop: 20 }}>
+                        {/* Nombre */}
+                        <Text style={styles.label}>Nombre *</Text>
+                        <TextInput
+                            style={[styles.input, categoryFormErrors.name && styles.inputError]}
+                            value={categoryFormData.name}
+                            onChangeText={(value) => handleCategoryFormChange('name', value)}
+                            placeholder="Nombre de la categoría"
+                            placeholderTextColor="#666"
+                        />
+                        {categoryFormErrors.name && (
+                            <Text style={styles.errorText}>{categoryFormErrors.name}</Text>
+                        )}
+
+                        {/* Descripción */}
+                        <Text style={styles.label}>Descripción</Text>
+                        <TextInput
+                            style={[styles.textArea, categoryFormErrors.description && styles.inputError]}
+                            value={categoryFormData.description}
+                            onChangeText={(value) => handleCategoryFormChange('description', value)}
+                            placeholder="Descripción de la categoría (opcional)"
+                            placeholderTextColor="#666"
+                            multiline
+                            numberOfLines={3}
+                        />
+                        {categoryFormErrors.description && (
+                            <Text style={styles.errorText}>{categoryFormErrors.description}</Text>
+                        )}
+
+                        {/* Ícono */}
+                        <Text style={styles.label}>Ícono *</Text>
+                        <View style={styles.iconPickerContainer}>
+                            {availableIcons.map((iconName) => (
+                                <TouchableOpacity
+                                    key={iconName}
+                                    style={[
+                                        styles.iconOption,
+                                        categoryFormData.icon === iconName && styles.selectedIconOption
+                                    ]}
+                                    onPress={() => handleCategoryFormChange('icon', iconName)}
+                                >
+                                    <Icon
+                                        name={iconName}
+                                        size={18}
+                                        color={categoryFormData.icon === iconName ? '#1c1c1c' : '#D4AF37'}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {categoryFormErrors.icon && (
+                            <Text style={styles.errorText}>{categoryFormErrors.icon}</Text>
+                        )}
+
+                        {/* Color */}
+                        <Text style={styles.label}>Color *</Text>
+                        <View style={styles.colorGrid}>
+                            {presetColors.map((color) => (
+                                <TouchableOpacity
+                                    key={color}
+                                    style={[
+                                        styles.colorOption,
+                                        { backgroundColor: color },
+                                        categoryFormData.color === color && styles.selectedColorOption
+                                    ]}
+                                    onPress={() => {
+                                        setCategoryFormData({
+                                            ...categoryFormData,
+                                            color: color
+                                        });
+                                    }}
+                                >
+                                    {categoryFormData.color === color && (
+                                        <Icon name="check" size={16} color="#fff" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {categoryFormErrors.color && (
+                            <Text style={styles.errorText}>{categoryFormErrors.color}</Text>
+                        )}
+
+                        {/* Vista previa */}
+                        <Text style={styles.label}>Vista Previa</Text>
+                        <View style={styles.categoryPreview}>
+                            <View style={styles.categoryIconContainer}>
+                                <Icon
+                                    name={categoryFormData.icon}
+                                    size={24}
+                                    color={categoryFormData.color}
+                                />
+                            </View>
+                            <View style={styles.categoryDetails}>
+                                <Text style={styles.categoryName}>
+                                    {categoryFormData.name || 'Nombre de la categoría'}
+                                </Text>
+                                {categoryFormData.description && (
+                                    <Text style={styles.categoryDescription}>
+                                        {categoryFormData.description}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    {/* Botones */}
+                    <View style={{
+                        flexDirection: 'row',
+                        gap: 12,
+                        paddingTop: 20,
+                        paddingBottom: 20
+                    }}>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                backgroundColor: '#2a2a2a',
+                                padding: 15,
+                                borderRadius: 8,
+                                alignItems: 'center'
+                            }}
+                            onPress={() => setCategoryFormModalVisible(false)}
+                        >
+                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+                                Cancelar
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                backgroundColor: isCategorySubmitting ? '#666' : '#D4AF37',
+                                padding: 15,
+                                borderRadius: 8,
+                                alignItems: 'center'
+                            }}
+                            onPress={handleSubmitCategory}
+                            disabled={isCategorySubmitting}
+                        >
+                            <Text style={{ color: '#1c1c1c', fontSize: 16, fontWeight: '700' }}>
+                                {isCategorySubmitting ? 'Guardando...' : 'Guardar'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
             </Modal>
         </View>
     );
