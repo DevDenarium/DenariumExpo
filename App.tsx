@@ -113,22 +113,23 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
 
     const commonMenuItems = [
         { name: 'MainDashboard', label: 'Inicio', icon: 'view-dashboard' },
-        { name: 'Finance', label: 'Finanzas', icon: 'finance' },
-        { name: 'FinanceAnalytics', label: 'Analytics Financiero', icon: 'chart-line' },
         { name: 'Transactions', label: 'Transacciones', icon: 'cash-multiple' },
+        { name: 'Finance', label: 'Finanzas', icon: 'chart-line' },
         { name: 'Videos', label: 'Contenido Educativo', icon: 'bookshelf' },
-        { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
-        { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
     ];
 
     const adminMenuItems = [
         { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'play-box-multiple' },
         { name: 'AppointmentManagement', label: 'Citas Agendadas', icon: 'calendar-clock' },
+        { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
+        { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
     ];
 
     const clientMenuItems = [
         { name: 'Appointments', label: 'Asesorías', icon: 'account-tie-voice' },
         { name: 'Subscriptions', label: 'Suscripciones', icon: 'credit-card' },
+        { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
+        { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
     ];
 
     const menuItems = [
@@ -266,19 +267,14 @@ const DashboardDrawer = () => {
                 options={{ title: 'Inicio' }}
             />
             <Drawer.Screen
-                name="Finance"
-                component={FinanceScreen}
-                options={{ title: 'Finanzas' }}
-            />
-            <Drawer.Screen
-                name="FinanceAnalytics"
-                component={FinanceAnalyticsScreen}
-                options={{ title: 'Analytics Financiero' }}
-            />
-            <Drawer.Screen
                 name="Transactions"
                 component={FinanceScreen}
                 options={{ title: 'Transacciones' }}
+            />
+            <Drawer.Screen
+                name="Finance"
+                component={FinanceAnalyticsScreen}
+                options={{ title: 'Finanzas' }}
             />
             <Drawer.Screen
                 name="Appointments"
@@ -398,11 +394,6 @@ export default function App() {
                         name="EducationalScreen"
                         component={EducationalScreen}
                         options={{ title: 'Contenido Educativo' }}
-                    />
-                    <Stack.Screen
-                        name="FinanceAnalytics"
-                        component={FinanceAnalyticsScreen}
-                        options={{ title: 'Analytics Financiero' }}
                     />
                 </Stack.Navigator>
             </NavigationContainer>
