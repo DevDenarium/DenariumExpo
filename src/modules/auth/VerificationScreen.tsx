@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { verifyEmail, resendVerificationCode } from '../../services/auth.service';
+import { SubscriptionsService } from "../../services/subscription.service";
+import { UserRole } from './user.types';
 import { styles } from './VerificationScreen.styles';
 import axios from "axios";
 import {StackNavigationProp, StackScreenProps} from '@react-navigation/stack';
@@ -56,12 +58,13 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, rou
         setModalVisible(true);
     };
 
+    const [verifiedUser, setVerifiedUser] = useState<any>(null);
+
     const closeModal = () => {
         setModalVisible(false);
-        if (isSuccess && modalMessage.includes('verificado correctamente')) {
-            navigation.navigate('Login', {
-                message: 'Correo verificado exitosamente. Por favor inicia sesión.'
-            });
+        if (isSuccess && modalMessage.includes('verificado correctamente') && verifiedUser) {
+            // Navegar directamente al Dashboard después de verificación exitosa
+            navigation.navigate('Dashboard', { user: verifiedUser });
         }
     };
 
@@ -74,8 +77,24 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ navigation, rou
 
         setLoading(true);
         try {
-            await verifyEmail(email, code);
-            showFeedbackModal('¡Tu correo ha sido verificado correctamente!', true);
+            const result = await verifyEmail(email, code);
+            
+            if (result.success && result.access_token && result.user) {
+                // Guardar el usuario verificado
+                setVerifiedUser(result.user);
+                
+                // Activar suscripción gratuita después de verificación exitosa
+                try {
+                    await SubscriptionsService.activateFreeSubscription('PERSONAL_FREE');
+                } catch (subscriptionError) {
+                    console.warn('Error activating subscription:', subscriptionError);
+                    // No bloquear el flujo si la suscripción falla
+                }
+                
+                showFeedbackModal('¡Tu correo ha sido verificado correctamente!', true);
+            } else {
+                showFeedbackModal('Error en la verificación', false);
+            }
         } catch (error) {
             let errorMessage = 'El código de verificación es incorrecto. Por favor inténtalo de nuevo.';
 

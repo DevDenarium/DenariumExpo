@@ -197,29 +197,30 @@ const RegisterPersonalScreen = ({ navigation }: RegisterPersonalScreenProps) => 
             });
 
             if (registerResponse.success && registerResponse.user) {
-                await SubscriptionsService.activateFreeSubscription('PERSONAL_FREE');
-
                 if (registerResponse.requiresVerification) {
                     navigation.navigate('Verification', {
                         email: formData.email,
                         userRole: UserRole.PERSONAL
                     });
                 } else {
+                    // Solo activar suscripción si NO requiere verificación (caso muy raro)
+                    await SubscriptionsService.activateFreeSubscription('PERSONAL_FREE');
                     navigation.navigate('Dashboard', {
                         user: registerResponse.user
                     });
                 }
             } else {
-                throw new Error(registerResponse.message || 'Error en el registro');
+                // Aquí manejar errores sin mostrar Alert, solo setError
+                setError(registerResponse.message || 'Error en el registro');
             }
 
         } catch (error) {
+            // Este catch solo debería ejecutarse para errores de red u otros errores inesperados
             let errorMessage = 'Error en el registro';
             if (error instanceof Error) {
                 errorMessage = error.message;
             }
             setError(errorMessage);
-            Alert.alert('Error', errorMessage);
         } finally {
             setLoading(false);
         }

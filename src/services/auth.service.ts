@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { AuthResponse, RegisterResponse } from '../modules/auth/user.types';
+import { AuthResponse, RegisterResponse, UserResponse } from '../modules/auth/user.types';
 import { User } from '@react-native-google-signin/google-signin';
 
 
@@ -88,21 +88,42 @@ export const registerPersonal = async (formData: {
             }
         };
 
-        const response = await axios.post<RegisterResponse>(
+        const response = await axios.post<UserResponse>(
             `${API_URL}/register`,
             payload,
             axiosConfig
         );
 
+        // Si llegamos aquí, el registro fue exitoso
         return {
             success: true,
             message: 'Verification email sent',
-            user: response.data.user,
+            user: response.data,
             requiresVerification: true
         };
     } catch (error) {
-        handleAuthError(error, 'Registration failed');
-        throw error;
+        console.error('Registration error:', error);
+        
+        // Manejar errores específicos sin lanzar excepción
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.error || 
+                               error.message || 
+                               'Registration failed';
+            
+            // En lugar de lanzar excepción, retornar objeto con error
+            return {
+                success: false,
+                message: errorMessage,
+                requiresVerification: false
+            };
+        }
+        
+        return {
+            success: false,
+            message: 'Registration failed',
+            requiresVerification: false
+        };
     }
 };
 
@@ -145,7 +166,7 @@ export const registerCorporate = async (formData: {
             }
         };
 
-        const response = await axios.post<RegisterResponse>(
+        const response = await axios.post<UserResponse>(
             `${API_URL}/register`,
             payload,
             axiosConfig
@@ -154,12 +175,30 @@ export const registerCorporate = async (formData: {
         return {
             success: true,
             message: 'Verification email sent',
-            user: response.data.user,
+            user: response.data,
             requiresVerification: true
         };
     } catch (error) {
-        handleAuthError(error, 'Corporate registration failed');
-        throw error;
+        console.error('Corporate registration error:', error);
+        
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.error || 
+                               error.message || 
+                               'Corporate registration failed';
+            
+            return {
+                success: false,
+                message: errorMessage,
+                requiresVerification: false
+            };
+        }
+        
+        return {
+            success: false,
+            message: 'Corporate registration failed',
+            requiresVerification: false
+        };
     }
 };
 
@@ -224,7 +263,7 @@ export const registerCorporateEmployee = async (formData: {
             }
         };
 
-        const response = await axios.post<RegisterResponse>(
+        const response = await axios.post<UserResponse>(
             `${API_URL}/register`,
             payload,
             axiosConfig
@@ -233,12 +272,30 @@ export const registerCorporateEmployee = async (formData: {
         return {
             success: true,
             message: 'Verification email sent',
-            user: response.data.user,
+            user: response.data,
             requiresVerification: true
         };
     } catch (error) {
-        handleAuthError(error, 'Corporate employee registration failed');
-        throw error;
+        console.error('Corporate employee registration error:', error);
+        
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.message || 
+                               error.response?.data?.error || 
+                               error.message || 
+                               'Corporate employee registration failed';
+            
+            return {
+                success: false,
+                message: errorMessage,
+                requiresVerification: false
+            };
+        }
+        
+        return {
+            success: false,
+            message: 'Corporate employee registration failed',
+            requiresVerification: false
+        };
     }
 };
 
@@ -287,7 +344,7 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
     }
 };
 
-export const verifyEmail = async (email: string, code: string): Promise<{ success: boolean; message: string }> => {
+export const verifyEmail = async (email: string, code: string): Promise<{ success: boolean; message: string; access_token?: string; user?: UserResponse }> => {
     try {
         const response = await axios.post(
             `${API_URL}/verify-email`,
@@ -301,7 +358,9 @@ export const verifyEmail = async (email: string, code: string): Promise<{ succes
 
         return {
             success: true,
-            message: response.data.message || 'Email verified successfully'
+            message: response.data.message || 'Email verified successfully',
+            access_token: response.data.access_token,
+            user: response.data.user
         };
     } catch (error) {
         handleAuthError(error, 'Email verification failed');

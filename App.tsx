@@ -35,17 +35,24 @@ const Drawer = createDrawerNavigator<DrawerParamList>();
 const CustomHeader = ({ navigation }: { navigation: any }) => {
     const auth = useAuth(); // Siempre obtenemos el contexto primero
 
+    // If user is not authenticated, loading, or signing out, don't render the header
+    if (!auth.user || auth.loading || auth.isSigningOut) {
+        return null;
+    }
+
     const handleSignOut = async () => {
         try {
-            if (auth.signOut) {
+            if (auth.signOut && !auth.isSigningOut) {
                 await auth.signOut();
-                // Opcional: redirigir al login si es necesario
-                navigation.dispatch(
-                    CommonActions.reset({
-                        index: 0,
-                        routes: [{ name: 'Login' }],
-                    })
-                );
+                // Use a small delay before navigation to allow state cleanup
+                setTimeout(() => {
+                    navigation.dispatch(
+                        CommonActions.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        })
+                    );
+                }, 150);
             }
         } catch (error) {
             console.error('Error during sign out:', error);
@@ -104,9 +111,9 @@ const headerStyles = StyleSheet.create({
 });
 
 const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
-    const { user } = useAuth();
+    const { user, loading, isSigningOut } = useAuth();
 
-    if (!user) {
+    if (!user || loading || isSigningOut) {
         return null;
     }
 

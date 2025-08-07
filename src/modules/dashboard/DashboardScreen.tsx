@@ -10,14 +10,14 @@ import { SubscriptionsService } from '../../services/subscription.service';
 import { useAuth } from '../auth/AuthContext';
 
 const DashboardScreen = ({ navigation }: { navigation: any }) => {
-    const { user, signOut } = useAuth();
+    const { user, signOut, loading: authLoading, isSigningOut } = useAuth();
     const [loading, setLoading] = useState(true);
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [imageError, setImageError] = useState(false);
     const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
 
     useEffect(() => {
-        if (!user) {
+        if (!authLoading && !user && !isSigningOut) {
             navigation.dispatch(
                 CommonActions.reset({
                     index: 0,
@@ -25,10 +25,15 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                 })
             );
         }
-    }, [user, navigation]);
+    }, [user, authLoading, isSigningOut, navigation]);
 
-    if (!user) {
-        return null;
+    // Don't render if auth is loading, signing out, or user is not available
+    if (authLoading || isSigningOut || !user) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ActivityIndicator size="large" color="#D4AF37" />
+            </SafeAreaView>
+        );
     }
 
     const getUserName = () => {
@@ -73,6 +78,9 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
 
     useEffect(() => {
         const fetchUserProfile = async () => {
+            // Don't fetch if user is not available, auth is loading, or signing out
+            if (!user || authLoading || isSigningOut) return;
+            
             try {
                 const token = await AsyncStorage.getItem('token');
                 if (!token) return;
@@ -99,7 +107,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
         };
 
         fetchUserProfile();
-    }, [user]);
+    }, [user, authLoading, isSigningOut]);
 
     const getAccountType = () => {
         switch(user.role) {

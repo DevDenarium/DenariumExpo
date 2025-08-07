@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../services/auth.service';
 export interface AuthContextData {
     user: UserResponse | null;
     loading: boolean;
+    isSigningOut: boolean;
     signIn: (authData: AuthResponse) => Promise<void>;
     signOut: () => Promise<void>;
     updateUser: (userData: Partial<UserResponse>) => Promise<void>;
@@ -23,24 +24,32 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<UserResponse | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isSigningOut, setIsSigningOut] = useState(false);
 
     useEffect(() => {
         async function loadStorageData() {
-            const storedUser = await AsyncStorage.getItem('@Auth:user');
-            const storedToken = await AsyncStorage.getItem('@Auth:token');
+            try {
+                const storedUser = await AsyncStorage.getItem('@Auth:user');
+                const storedToken = await AsyncStorage.getItem('@Auth:token');
 
-            if (storedUser && storedToken) {
-                    axios.defaults.headers.common['Authorization'] =
-                        `Bearer ${storedToken}`;                 // <‑‑ NUEVO
-                setUser(JSON.parse(storedUser));
+                if (storedUser && storedToken) {
+                        axios.defaults.headers.common['Authorization'] =
+                            `Bearer ${storedToken}`;                 // <‑‑ NUEVO
+                    setUser(JSON.parse(storedUser));
+                }
+            } catch (error) {
+                console.error('Error loading storage data:', error);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         }
         loadStorageData();
     }, []);
 
     const signIn = async (authData: AuthResponse) => {
         try {
+            setLoading(true);
+            
             axios.defaults.headers.common['Authorization'] =
                 `Bearer ${authData.access_token}`;          
             
@@ -61,19 +70,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(userWithLocation);
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
             await AsyncStorage.setItem('@Auth:token', authData.access_token);
+            
+            setLoading(false);
         } catch (error) {
             console.error('Error guardando datos de autenticación:', error);
+            setLoading(false);
             throw error;
         }
     };
 
     const signOut = React.useCallback(async () => {
         try {
-            await AsyncStorage.removeItem('@Auth:user');
-            await AsyncStorage.removeItem('@Auth:token');
-            setUser(null);
+            setIsSigningOut(true);
+            
+            // Use setTimeout to ensure the state update happens before cleanup
+            setTimeout(async () => {
+                try {
+                    // Remove axios default authorization header
+                    delete axios.defaults.headers.common['Authorization'];
+                    
+                    // Clear storage
+                    await AsyncStorage.removeItem('@Auth:user');
+                    await AsyncStorage.removeItem('@Auth:token');
+                    
+                    // Clear user state
+                    setUser(null);
+                } catch (error) {
+                    console.error('Error in logout cleanup:', error);
+                } finally {
+                    setIsSigningOut(false);
+                }
+            }, 100); // Small delay to allow state updates to propagate
+            
         } catch (error) {
             console.error('Error cerrando sesión:', error);
+            setIsSigningOut(false);
             throw error;
         }
     }, []); 
@@ -137,6 +168,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const checkAuth = async () => {
+        if (loading) return false; // Don't check auth while already loading
+        
         try {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) return false;
@@ -172,6 +205,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         <AuthContext.Provider value={{
             user,
             loading,
+            isSigningOut,
             signIn,
             signOut,
             updateUser,
