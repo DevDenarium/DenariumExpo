@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "scheme": "denarium",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -39,7 +39,13 @@
     },
     "plugins": [
       "expo-web-browser",
-      "react-native-video"
+      "react-native-video",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1065172753437-t37ak00d7cfj6jqotjsm8q7aq8agtumq"
+        }
+      ]
     ]
   }
 }

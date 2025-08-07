@@ -15,7 +15,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { request, response, promptAsync } = useGoogleAuth();
+    const { loginWithGoogle: googleLogin, isReady } = useGoogleAuth();
     const { signIn } = useAuth();
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,32 +23,15 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     };
 
     useEffect(() => {
-        if (response?.type === 'success') {
-            const idToken = response.params?.id_token || response.authentication?.idToken;
+        // No necesitamos este useEffect ya que manejamos la autenticación directamente
+    }, []);
 
-            if (idToken) {
-                handleGoogleLogin(idToken);
-            } else {
-                console.error('Token de Google ID faltante:', response);
-                setError('No se pudo obtener el token de Google. Por favor intenta nuevamente.');
-            }
-        } else if (response?.type === 'error') {
-            console.error('Error de autenticación de Google:', response.error);
-            setError(`Error al autenticar con Google: ${response.error}`);
-        }
-    }, [response]);
-
-    const handleGoogleLogin = async (token?: string) => {
-        if (!token) {
-            setError('Token de Google no válido');
-            return;
-        }
-
+    const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const result = await loginWithGoogle(token);
+            const result = await googleLogin();
 
             if (result && result.user) {
                 if (signIn && typeof signIn === 'function') {
@@ -238,8 +221,8 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <View style={styles.socialButtonContainer}>
                 <TouchableOpacity
                     style={styles.socialButton}
-                    onPress={() => promptAsync()}
-                    disabled={!request || loading}
+                    onPress={handleGoogleLogin}
+                    disabled={!isReady || loading}
                     activeOpacity={0.7}
                 >
                     <Icon name="google" size={20} color="#D4AF37" />
