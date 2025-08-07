@@ -101,6 +101,7 @@ export type RootStackParamList = {
     Notifications: undefined;
     VideoLibrary: undefined;
     EducationalScreen: undefined;
+    FinanceAnalytics: undefined;
     Appointments: AppointmentScreenParams;
     AppointmentManagement: AppointmentManagementParams;
     AppointmentScreen: AppointmentScreenParams;
@@ -114,6 +115,7 @@ export type DrawerParamList = {
     Subscriptions: undefined;
     Notifications: undefined;
     Finance: undefined;
+    FinanceAnalytics: undefined;
     Profile: undefined;
     VideoLibrary: undefined;
     Appointments: AppointmentScreenParams;

@@ -24,6 +24,7 @@ import RegisterPersonalScreen from "./src/modules/auth/RegisterPersonalScreen";
 import RegisterCorporateScreen from "./src/modules/auth/RegisterCorporateScreen";
 import RegisterCorporateEmployeeScreen from "./src/modules/auth/RegisterCorporateEmployeeScreen";
 import EducationalScreen from './src/modules/educational/EducationalScreen';
+import { FinanceAnalyticsScreen } from './src/modules/finance-analytics/FinanceAnalyticsScreen';
 import { AuthProvider, useAuth } from './src/modules/auth/AuthContext';
 import {UserRole} from "./src/modules/auth/user.types";
 
@@ -113,6 +114,7 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
     const commonMenuItems = [
         { name: 'MainDashboard', label: 'Inicio', icon: 'view-dashboard' },
         { name: 'Finance', label: 'Finanzas', icon: 'finance' },
+        { name: 'FinanceAnalytics', label: 'Analytics Financiero', icon: 'chart-line' },
         { name: 'Transactions', label: 'Transacciones', icon: 'cash-multiple' },
         { name: 'Videos', label: 'Contenido Educativo', icon: 'bookshelf' },
         { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
@@ -269,6 +271,11 @@ const DashboardDrawer = () => {
                 options={{ title: 'Finanzas' }}
             />
             <Drawer.Screen
+                name="FinanceAnalytics"
+                component={FinanceAnalyticsScreen}
+                options={{ title: 'Analytics Financiero' }}
+            />
+            <Drawer.Screen
                 name="Transactions"
                 component={FinanceScreen}
                 options={{ title: 'Transacciones' }}
@@ -391,6 +398,11 @@ export default function App() {
                         name="EducationalScreen"
                         component={EducationalScreen}
                         options={{ title: 'Contenido Educativo' }}
+                    />
+                    <Stack.Screen
+                        name="FinanceAnalytics"
+                        component={FinanceAnalyticsScreen}
+                        options={{ title: 'Analytics Financiero' }}
                     />
                 </Stack.Navigator>
             </NavigationContainer>

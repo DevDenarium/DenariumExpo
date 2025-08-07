@@ -56,6 +56,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     const [calendarYear, setCalendarYear] = useState<number>(
         (initialDate || selectedDate || new Date()).getFullYear()
     );
+    const [calendarKey, setCalendarKey] = useState<number>(0);
 
     const monthNames = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -67,6 +68,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
             const dateToUse = initialDate || selectedDate || new Date();
             setCalendarMonth(dateToUse.getMonth());
             setCalendarYear(dateToUse.getFullYear());
+            // Forzar re-render del calendario cuando se abre
+            setCalendarKey(prev => prev + 1);
         }
     }, [visible, initialDate, selectedDate]);
 
@@ -85,6 +88,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         }
         
         setCalendarMonth(newMonth);
+        // Forzar re-render del calendario
+        setCalendarKey(prev => prev + 1);
     };
 
     const changeYear = (increment: number) => {
@@ -95,6 +100,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         
         if (newYear >= minYear && newYear <= maxYear) {
             setCalendarYear(newYear);
+            // Forzar re-render del calendario
+            setCalendarKey(prev => prev + 1);
         }
     };
 
@@ -198,6 +205,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                     {/* Calendario */}
                     <View style={styles.calendarContainer}>
                         <Calendar
+                            key={`calendar-${calendarKey}-${calendarYear}-${calendarMonth}`}
                             current={`${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-01`}
                             onDayPress={handleDayPress}
                             markedDates={getMarkedDates()}
