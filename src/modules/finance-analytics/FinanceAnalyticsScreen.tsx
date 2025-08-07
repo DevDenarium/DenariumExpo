@@ -59,21 +59,11 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
         year: selectedYear,
       };
 
-      console.log('FinanceAnalyticsScreen - Loading dashboard with params:', params);
       const data = await FinanceAnalyticsService.getDashboard(selectedPeriod);
       
       // Load monthly comparisons separately for the selected year
       const monthlyComparisons = await FinanceAnalyticsService.getMonthlyComparisons(selectedYear);
       data.monthlyComparisons = monthlyComparisons;
-      
-      console.log('FinanceAnalyticsScreen - Dashboard data received:', {
-        hasSummary: !!data.summary,
-        summaryValues: data.summary,
-        categoryExpenses: data.categoryBreakdown?.expenses?.length || 0,
-        categoryIncome: data.categoryBreakdown?.income?.length || 0,
-        trendsCount: data.trends?.length || 0,
-        insightsCount: data.insights?.length || 0
-      });
       
       setDashboard(data);
     } catch (error) {
@@ -103,10 +93,7 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
   };
 
   const handleYearChange = async (year: number) => {
-    console.log('FinanceAnalyticsScreen - handleYearChange called with year:', year);
-    console.log('FinanceAnalyticsScreen - Current selectedYear:', selectedYear);
     setSelectedYear(year);
-    console.log('FinanceAnalyticsScreen - Year updated, useEffect should trigger reload');
     // The useEffect will handle reloading the data
   };
 

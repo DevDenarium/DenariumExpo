@@ -28,18 +28,6 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
   const minYear = Math.min(...availableYears);
   const maxYear = Math.max(...availableYears);
 
-  // Debug logs
-  console.log('MonthlyComparisonChart - Year navigation debug:', {
-    currentYear,
-    currentYearType: typeof currentYear,
-    currentActualYear,
-    availableYears,
-    minYear,
-    maxYear,
-    canGoBack: Number(currentYear) > minYear,
-    canGoForward: Number(currentYear) < maxYear
-  });
-
   const renderYearSelector = () => (
     <View style={{ 
       flexDirection: 'row', 
@@ -63,12 +51,8 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
         }}
         onPress={() => {
           const previousYear = Number(currentYear) - 1;
-          console.log('Back button pressed:', { currentYear, previousYear, minYear, canNavigate: previousYear >= minYear });
           if (previousYear >= minYear && onYearChange) {
-            console.log('Calling onYearChange with:', previousYear);
             onYearChange(previousYear);
-          } else {
-            console.log('Cannot navigate backward - disabled');
           }
         }}
         disabled={Number(currentYear) <= minYear}
@@ -106,12 +90,8 @@ export const MonthlyComparisonChart: React.FC<MonthlyComparisonChartProps> = ({
         }}
         onPress={() => {
           const nextYear = Number(currentYear) + 1;
-          console.log('Forward button pressed:', { currentYear, nextYear, maxYear, canNavigate: nextYear <= maxYear });
           if (nextYear <= maxYear && onYearChange) {
-            console.log('Calling onYearChange with:', nextYear);
             onYearChange(nextYear);
-          } else {
-            console.log('Cannot navigate forward - disabled');
           }
         }}
         disabled={Number(currentYear) >= maxYear}

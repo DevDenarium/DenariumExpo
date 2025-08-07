@@ -24,18 +24,9 @@ export const FinanceAnalyticsService = {
     const token = await this.getToken();
     const params = { period };
     try {
-      console.log('FinanceAnalyticsService - getDashboard called with params:', params);
-      
       const response = await axios.get(`${API_BASE_URL}/finance-analytics/dashboard`, {
         headers: { Authorization: `Bearer ${token}` },
         params
-      });
-      
-      console.log('FinanceAnalyticsService - Response received:', {
-        status: response.status,
-        dataKeys: Object.keys(response.data),
-        summary: response.data.summary,
-        categoryBreakdown: response.data.categoryBreakdown
       });
       
       return response.data;
