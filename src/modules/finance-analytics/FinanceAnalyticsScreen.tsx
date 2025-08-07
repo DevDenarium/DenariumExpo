@@ -24,6 +24,7 @@ import {
   InsightsSection,
   RecurringSection,
   MonthlyComparisonChart,
+  HistoricalSummary,
 } from './components';
 
 interface FinanceAnalyticsScreenProps {
@@ -36,6 +37,7 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(PeriodType.MONTH);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'categories' | 'recurring'>('overview');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const periods = [
     { key: PeriodType.TODAY, label: 'Hoy' },
@@ -47,17 +49,23 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
 
   useEffect(() => {
     loadDashboard();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, selectedYear]);
 
   const loadDashboard = async () => {
     try {
       setLoading(true);
       const params: AnalyticsQueryParams = {
         period: selectedPeriod,
+        year: selectedYear,
       };
 
       console.log('FinanceAnalyticsScreen - Loading dashboard with params:', params);
       const data = await FinanceAnalyticsService.getDashboard(selectedPeriod);
+      
+      // Load monthly comparisons separately for the selected year
+      const monthlyComparisons = await FinanceAnalyticsService.getMonthlyComparisons(selectedYear);
+      data.monthlyComparisons = monthlyComparisons;
+      
       console.log('FinanceAnalyticsScreen - Dashboard data received:', {
         hasSummary: !!data.summary,
         summaryValues: data.summary,
@@ -92,6 +100,14 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
     setRefreshing(true);
     await loadDashboard();
     setRefreshing(false);
+  };
+
+  const handleYearChange = async (year: number) => {
+    console.log('FinanceAnalyticsScreen - handleYearChange called with year:', year);
+    console.log('FinanceAnalyticsScreen - Current selectedYear:', selectedYear);
+    setSelectedYear(year);
+    console.log('FinanceAnalyticsScreen - Year updated, useEffect should trigger reload');
+    // The useEffect will handle reloading the data
   };
 
   const formatCurrency = (amount: number): string => {
@@ -239,8 +255,14 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
         <MonthlyComparisonChart
           comparisons={dashboard.monthlyComparisons}
           formatCurrency={formatCurrency}
+          onYearChange={handleYearChange}
         />
       )}
+      
+      <HistoricalSummary
+        currentYear={selectedYear}
+        formatCurrency={formatCurrency}
+      />
     </>
   );
 

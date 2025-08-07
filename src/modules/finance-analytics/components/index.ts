@@ -5,3 +5,4 @@ export { PieChart } from './PieChart';
 export { InsightsSection } from './InsightsSection';
 export { RecurringSection } from './RecurringSection';
 export { MonthlyComparisonChart } from './MonthlyComparisonChart';
+export { HistoricalSummary } from './HistoricalSummary';
