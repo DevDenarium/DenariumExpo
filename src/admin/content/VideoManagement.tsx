@@ -47,6 +47,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { AwsService } from '../../services/aws.service';
 import { VideoCompressionService } from '../../services/video-compression.service';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
     const { user } = useAuth();
@@ -192,10 +193,20 @@ const VideoManagement: React.FC<VideoManagementProps> = ({ navigation }) => {
         }
     };
 
-    // Función simple para generar thumbnail
+    // Función para generar thumbnail del video
     const generateThumbnail = async (uri: string) => {
-        // Implementación básica - en producción usaría una librería específica
-        return uri;
+        try {
+            console.log('Generando miniatura para:', uri);
+            const { uri: thumbnailUri } = await VideoThumbnails.getThumbnailAsync(uri, {
+                time: 0, // Tomar el primer frame
+                quality: 1.0, // Máxima calidad
+            });
+            console.log('Miniatura generada:', thumbnailUri);
+            return thumbnailUri;
+        } catch (e) {
+            console.error('Error generando miniatura:', e);
+            return null;
+        }
     };
 
     // Función para validar formulario

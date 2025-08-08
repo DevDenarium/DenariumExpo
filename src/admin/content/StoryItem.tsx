@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, TouchableOpacity, Text, ActivityIndicator, Image } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { EducationalContent } from '../../modules/educational/EducationalScreen.types';
 import { styles } from '../../modules/educational/EducationalScreen.styles';
 import { EducationalService } from '../../services/educational.service';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 interface StoryItemProps {
     item: EducationalContent;
@@ -15,6 +16,22 @@ const StoryItem: React.FC<StoryItemProps> = ({ item, onPress }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [processedItem, setProcessedItem] = useState<EducationalContent>(item);
     const [error, setError] = useState<string | null>(null);
+    const [thumbnail, setThumbnail] = useState<string | null>(null);
+
+    const generateThumbnail = async (videoUrl: string) => {
+        try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(
+                videoUrl,
+                {
+                    time: 0, // Tomar el primer frame del video
+                    quality: 0.7
+                }
+            );
+            setThumbnail(uri);
+        } catch (e) {
+            console.warn("No se pudo generar la miniatura:", e);
+        }
+    };
 
     useEffect(() => {
         const initializeStory = async () => {
@@ -33,6 +50,8 @@ const StoryItem: React.FC<StoryItemProps> = ({ item, onPress }) => {
                     try {
                         const signedUrl = await EducationalService.getSignedUrl(item.videoUrl);
                         finalVideoUrl = signedUrl;
+                        // Generar miniatura una vez que tengamos la URL firmada
+                        await generateThumbnail(signedUrl);
                     } catch (urlError) {
                         console.error('Error obteniendo URL firmada para historia:', urlError);
                         setError('Error al cargar el contenido');
@@ -71,11 +90,17 @@ const StoryItem: React.FC<StoryItemProps> = ({ item, onPress }) => {
                 </View>
             ) : !hasAccess || error ? (
                 <View style={[styles.storyImage, styles.storyPlaceholder]}>
-                    <Icon name="lock" size={30} color="#999" />
+                    <MaterialCommunityIcons name="lock" size={30} color="#999" />
                 </View>
+            ) : thumbnail ? (
+                <Image 
+                    source={{ uri: thumbnail }}
+                    style={[styles.storyImage]}
+                    resizeMode="cover"
+                />
             ) : (
                 <View style={[styles.storyImage, styles.storyPlaceholder]}>
-                    <Icon name="video" size={30} color="#D4AF37" />
+                    <MaterialCommunityIcons name="video" size={30} color="#D4AF37" />
                 </View>
             )}
             <Text style={styles.storyTitle} numberOfLines={1}>
@@ -84,7 +109,7 @@ const StoryItem: React.FC<StoryItemProps> = ({ item, onPress }) => {
             {/* Indicador premium */}
             {item.isPremium && (
                 <View style={styles.storyPremiumBadge}>
-                    <Icon name="crown" size={12} color="#D4AF37" />
+                    <MaterialCommunityIcons name="crown" size={12} color="#D4AF37" />
                 </View>
             )}
         </TouchableOpacity>
