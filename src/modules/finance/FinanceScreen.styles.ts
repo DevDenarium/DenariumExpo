@@ -94,12 +94,13 @@ export const styles = StyleSheet.create({
     },
     fullScreenModalContainer: {
         backgroundColor: '#1c1c1c',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        padding: 20,
-        maxHeight: '90%',
-        height: '90%',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        maxHeight: '75%',
+        height: '75%',
         width: '100%',
+        flex: 1,
+        overflow: 'hidden',
     },
     editModalHeader: {
         flexDirection: 'row',

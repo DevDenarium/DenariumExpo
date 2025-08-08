@@ -13,10 +13,14 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        paddingBottom: 10,
+        marginBottom: 0,
+        paddingBottom: 15,
+        paddingHorizontal: 20,
+        paddingTop: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#333333',
+        backgroundColor: '#1c1c1c',
+        zIndex: 1,
     },
     closeButton: {
         padding: 5,
@@ -59,6 +63,7 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 10,
         marginBottom: 15,
         width: '100%',
+        overflow: 'hidden',
     },
     inputIcon: {
         marginRight: 10,
@@ -68,7 +73,8 @@ export const styles = StyleSheet.create({
         paddingVertical: 15,
         color: '#FFFFFF',
         fontSize: 16,
-        minWidth: '90%',
+        minWidth: 0,
+        maxWidth: '100%',
     },
     label: {
         color: '#D4AF37',
@@ -292,8 +298,8 @@ export const styles = StyleSheet.create({
     },
     scrollContainer: {
         flexGrow: 1,
-        paddingVertical: 15,
-        paddingHorizontal: 15,
+        paddingVertical: 0,
+        paddingHorizontal: 0,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -319,10 +325,11 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     customFormContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 10,
-        margin: 20,
+        backgroundColor: '#1c1c1c',
+        borderRadius: 0,
+        margin: 0,
         padding: 20,
+        paddingTop: 10,
         flex: 1,
     },
     submitButton: {

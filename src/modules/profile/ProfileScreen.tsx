@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Modal, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { styles } from './ProfileScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -64,6 +64,7 @@ const ProfileScreen = () => {
     const [hasLoadedProvinces, setHasLoadedProvinces] = useState(false);
     const [loadedCantonForProvince, setLoadedCantonForProvince] = useState<string | null>(null);
     const [loadedDistrictForCanton, setLoadedDistrictForCanton] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Helper para construir URL completa de imagen
     const getImageUrl = (picture: string | undefined) => {
@@ -634,6 +635,18 @@ const ProfileScreen = () => {
         }
     };
 
+    const onRefresh = async () => {
+        setRefreshing(true);
+        try {
+            // Recargar datos del usuario desde el contexto
+            await refreshUser();
+        } catch (error) {
+            console.error('Error refreshing profile:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -648,7 +661,21 @@ const ProfileScreen = () => {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView 
+            contentContainerStyle={styles.container}
+            style={styles.scrollViewContainer}
+            bounces={true}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor="#D4AF37"
+                    colors={["#D4AF37"]}
+                    progressBackgroundColor="#1c1c1c"
+                />
+            }
+        >
             {/* Modal de confirmación */}
             <Modal
                 animationType="fade"

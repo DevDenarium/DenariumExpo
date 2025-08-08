@@ -441,16 +441,6 @@ const FinanceList: React.FC<FinanceListProps> = ({
             >
                 <View style={styles.fullScreenModalOverlay}>
                     <View style={styles.fullScreenModalContainer}>
-                        <View style={styles.editModalHeader}>
-                            <Text style={styles.editModalTitle}>Editar Movimiento</Text>
-                            <TouchableOpacity
-                                onPress={() => setShowEditModal(false)}
-                                style={styles.editModalCloseButton}
-                            >
-                                <Icon name="close" size={24} color="#D4AF37" />
-                            </TouchableOpacity>
-                        </View>
-
                         <FinanceEntryForm
                             onEntryAdded={() => {
                                 setShowEditModal(false);
@@ -468,7 +458,7 @@ const FinanceList: React.FC<FinanceListProps> = ({
                             }}
                             isEditing={true}
                             onCancel={() => setShowEditModal(false)}
-                            hideHeader={true}
+                            hideHeader={false}
                             customStyles={true}
                         />
                     </View>

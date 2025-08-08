@@ -6,6 +6,7 @@ export const analyticsStyles = StyleSheet.create({
     backgroundColor: '#1c1c1c',
   },
   scrollContainer: {
+    backgroundColor: '#1c1c1c',
     padding: 16,
   },
   header: {

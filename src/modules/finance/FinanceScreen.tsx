@@ -220,16 +220,6 @@ const FinanceScreen: React.FC = () => {
             >
                 <View style={styles.fullScreenModalOverlay}>
                     <View style={styles.fullScreenModalContainer}>
-                        <View style={styles.editModalHeader}>
-                            <Text style={styles.editModalTitle}>Nuevo Movimiento</Text>
-                            <TouchableOpacity
-                                onPress={() => setShowEntryForm(false)}
-                                style={styles.editModalCloseButton}
-                            >
-                                <Icon name="close" size={24} color="#D4AF37" />
-                            </TouchableOpacity>
-                        </View>
-
                         <FinanceEntryForm
                             onEntryAdded={handleEntryAdded}
                             categories={categories}
@@ -237,7 +227,7 @@ const FinanceScreen: React.FC = () => {
                             tags={tags}
                             setTags={setTags}
                             onCancel={() => setShowEntryForm(false)}
-                            hideHeader={true}
+                            hideHeader={false}
                             customStyles={true}
                         />
                     </View>

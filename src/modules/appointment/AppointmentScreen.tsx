@@ -10,7 +10,10 @@ import {
     Alert,
     ScrollView,
     ViewStyle,
-    Platform
+    Platform,
+    Keyboard,
+    TouchableWithoutFeedback,
+    KeyboardAvoidingView
 } from 'react-native';
 import {styles} from './AppointmentScreen.styles';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -524,12 +527,13 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             <>
                 <View style={styles.datePickerContainer}>
                     <TouchableOpacity
-                        style={styles.modalInput}
+                        style={styles.datePickerButton}
                         onPress={() => setShowMobileDatePicker(true)}
                     >
-                        <Text style={{color: '#FFFFFF'}}>
+                        <Text style={[styles.datePickerText, selectedDate && {color: '#FFFFFF'}]}>
                             {selectedDate ? formatDisplayDate(selectedDate) : 'Seleccionar fecha'}
                         </Text>
+                        <Icon name="calendar" size={20} color="#D4AF37" />
                     </TouchableOpacity>
                 </View>
 
@@ -555,15 +559,13 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             <>
                 <View style={styles.datePickerContainer}>
                     <TouchableOpacity
-                        style={[styles.modalInput, {marginBottom: 10}]}
+                        style={styles.datePickerButton}
                         onPress={() => setShowRescheduleDatePicker(true)}
                     >
-                        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <Text style={{color: '#FFFFFF'}}>
-                                {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
-                            </Text>
-                            <Icon name="calendar-edit" size={20} color="#D4AF37" />
-                        </View>
+                        <Text style={[styles.datePickerText, selectedDate && {color: '#FFFFFF'}]}>
+                            {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : 'Seleccionar fecha'}
+                        </Text>
+                        <Icon name="calendar-edit" size={20} color="#D4AF37" />
                     </TouchableOpacity>
                 </View>
 
@@ -856,17 +858,40 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
             <Modal
                 visible={showModal}
                 transparent={true}
-                animationType="fade"
+                animationType="slide"
                 onRequestClose={() => {
                     setShowModal(false);
                     resetForm();
                 }}
             >
-                <View style={styles.modalOverlay}>
-                    <ScrollView style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>
-                            {actionType === 'create' ? 'Nueva Cita' : 'Editar Cita'}
-                        </Text>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                style={styles.modalContainer}
+                                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                            >
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>
+                                        {actionType === 'create' ? 'Nueva Cita' : 'Editar Cita'}
+                                    </Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setShowModal(false);
+                                            resetForm();
+                                        }}
+                                        style={styles.closeButton}
+                                    >
+                                        <Icon name="close" size={24} color="#D4AF37" />
+                                    </TouchableOpacity>
+                                </View>
+                                
+                                <ScrollView 
+                                    style={styles.scrollContainer}
+                                    contentContainerStyle={styles.scrollContent}
+                                    keyboardShouldPersistTaps="handled"
+                                >
 
                         <TextInput
                             style={styles.modalInput}
@@ -874,6 +899,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             placeholderTextColor="#AAAAAA"
                             value={formData.title}
                             onChangeText={(text) => setFormData({...formData, title: text})}
+                            returnKeyType="next"
+                            blurOnSubmit={false}
                         />
                         <TextInput
                             style={[styles.modalInput, {minHeight: 80}]}
@@ -882,6 +909,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             value={formData.description}
                             onChangeText={(text) => setFormData({...formData, description: text})}
                             multiline
+                            returnKeyType="done"
+                            blurOnSubmit={true}
                         />
 
                         <View style={styles.typeSelectorContainer}>
@@ -942,6 +971,8 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                             keyboardType="numeric"
                             value={formData.duration}
                             onChangeText={(text) => setFormData({...formData, duration: text})}
+                            returnKeyType="done"
+                            blurOnSubmit={true}
                         />
 
                         <View style={styles.modalButtonContainer}>
@@ -959,13 +990,16 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                                 onPress={handleCreateAppointment}
                                 disabled={!selectedTime}
                             >
-                                <Text style={styles.modalButtonText}>
+                                <Text style={[styles.modalButtonText, {color: '#000000'}]}>
                                     {actionType === 'create' ? 'Crear Cita' : 'Actualizar Cita'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </ScrollView>
-                </View>
+                        </ScrollView>
+                            </KeyboardAvoidingView>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
             </Modal>
 
             <Modal

@@ -379,24 +379,25 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
             style={{ flex: 1, backgroundColor: '#1c1c1c' }}
             keyboardVerticalOffset={Platform.OS === 'ios' ? (customStyles ? 100 : 0) : 0}
         >
+            {!hideHeader && (
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>
+                        {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={onCancel}
+                        style={styles.closeButton}
+                    >
+                        <Icon name="close" size={24} color="#D4AF37" />
+                    </TouchableOpacity>
+                </View>
+            )}
             <ScrollView
                 ref={scrollViewRef}
                 contentContainerStyle={styles.scrollContainer}
                 keyboardShouldPersistTaps="handled"
+                style={{ flex: 1 }}
             >
-                {!hideHeader && (
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>
-                            {isEditing ? 'Editar Movimiento' : 'Nuevo Movimiento'}
-                        </Text>
-                        <TouchableOpacity
-                            onPress={onCancel}
-                            style={styles.closeButton}
-                        >
-                            <Icon name="close" size={24} color="#D4AF37" />
-                        </TouchableOpacity>
-                    </View>
-                )}
                 <View style={[styles.formContainer, customStyles && styles.customFormContainer]}>
                     <View style={styles.typeSelector}>
                         <TouchableOpacity
@@ -439,6 +440,8 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                             value={formData.title}
                             onChangeText={(title) => setFormData({ ...formData, title })}
                             returnKeyType="next"
+                            numberOfLines={1}
+                            textBreakStrategy="simple"
                             onFocus={() => handleFocus(descriptionInputRef as React.RefObject<View>)}
                         />
                     </View>
@@ -458,6 +461,8 @@ const FinanceEntryForm: React.FC<FinanceEntryFormProps> = ({
                                 setFormData({ ...formData, amount });
                             }}
                             returnKeyType="next"
+                            numberOfLines={1}
+                            textBreakStrategy="simple"
                             onFocus={() => handleFocus(descriptionInputRef as React.RefObject<View>)}
                         />
                     </View>

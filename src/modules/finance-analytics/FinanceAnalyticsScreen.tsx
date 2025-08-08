@@ -38,6 +38,7 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(PeriodType.MONTH);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'categories' | 'recurring'>('overview');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const periods = [
     { key: PeriodType.TODAY, label: 'Hoy' },
@@ -48,27 +49,34 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
   ];
 
   useEffect(() => {
-    loadDashboard();
+    loadDashboard(false);
   }, [selectedPeriod, selectedYear]);
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      }
+      
       const params: AnalyticsQueryParams = {
         period: selectedPeriod,
         year: selectedYear,
       };
 
-      const data = await FinanceAnalyticsService.getDashboard(selectedPeriod);
+      // Load both dashboard and monthly comparisons in parallel for better performance
+      const [dashboardData, monthlyComparisons] = await Promise.all([
+        FinanceAnalyticsService.getDashboard(selectedPeriod),
+        FinanceAnalyticsService.getMonthlyComparisons(selectedYear)
+      ]);
       
-      // Load monthly comparisons separately for the selected year
-      const monthlyComparisons = await FinanceAnalyticsService.getMonthlyComparisons(selectedYear);
-      data.monthlyComparisons = monthlyComparisons;
+      dashboardData.monthlyComparisons = monthlyComparisons;
+      setDashboard(dashboardData);
       
-      setDashboard(data);
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     } catch (error) {
       console.error('Error loading analytics dashboard:', error);
-      
       
       let errorMessage = 'No se pudo cargar la información de analytics. Por favor, intenta de nuevo.';
       
@@ -82,14 +90,20 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
       
       Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadDashboard();
+    await loadDashboard(true);
     setRefreshing(false);
+  };
+
+  const handleRetry = async () => {
+    await loadDashboard(false);
   };
 
   const handleYearChange = async (year: number) => {
@@ -292,7 +306,7 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
     }
   };
 
-  if (loading) {
+  if (loading && isInitialLoad) {
     return (
       <View style={analyticsStyles.loadingContainer}>
         <ActivityIndicator size="large" color="#D4AF37" />
@@ -308,7 +322,7 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
         <Text style={analyticsStyles.errorText}>
           No se pudo cargar la información de analytics
         </Text>
-        <TouchableOpacity style={analyticsStyles.retryButton} onPress={loadDashboard}>
+        <TouchableOpacity style={analyticsStyles.retryButton} onPress={handleRetry}>
           <Text style={analyticsStyles.retryButtonText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -319,8 +333,16 @@ export const FinanceAnalyticsScreen: React.FC<FinanceAnalyticsScreenProps> = ({ 
     <View style={analyticsStyles.container}>
       <ScrollView
         style={analyticsStyles.scrollContainer}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={handleRefresh}
+            tintColor="#D4AF37"
+            colors={["#D4AF37"]}
+            progressBackgroundColor="#1c1c1c"
+          />
         }
       >
         <View style={analyticsStyles.header}>
