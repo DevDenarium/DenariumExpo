@@ -145,7 +145,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
         <View style={styles.container}>
             <View style={styles.logoContainer}>
                 <Image
-                    source={require('../../assets/logo.png')}
+                    source={require('../../assets/denariumDoradoLogo.png')}
                     style={styles.logo}
                     resizeMode="contain"
                 />
