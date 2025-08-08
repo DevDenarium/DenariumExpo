@@ -88,50 +88,15 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     -webkit-user-select: none;
                     user-select: none;
                 }
-                .touch-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: ${controls ? '10' : '5'};
-                    background: transparent;
-                    cursor: pointer;
+                video::-webkit-media-controls-overlay-play-button {
+                    display: block;
                 }
-                .play-button {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    width: 60px;
-                    height: 60px;
-                    background: rgba(0, 0, 0, 0.6);
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 15;
+                video::-webkit-media-controls {
                     opacity: 0;
                     transition: opacity 0.3s;
-                    pointer-events: none;
                 }
-                .play-button.visible {
+                video:hover::-webkit-media-controls {
                     opacity: 1;
-                }
-                .play-button::before {
-                    content: '';
-                    width: 0;
-                    height: 0;
-                    border-style: solid;
-                    border-width: 12px 0 12px 20px;
-                    border-color: transparent transparent transparent #ffffff;
-                    margin-left: 4px;
-                }
-                .play-button.paused::before {
-                    border-style: double;
-                    border-width: 0px 0 0px 20px;
-                    height: 24px;
-                    margin-left: 0px;
                 }
             </style>
             <script>
@@ -217,18 +182,17 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
             <div class="video-container">
                 <video 
                     id="video"
-                    ${controls ? 'controls' : ''} 
+                    controls
                     preload="metadata" 
                     ${autoplay ? 'autoplay muted' : ''}
                     playsinline 
                     webkit-playsinline
                     x-webkit-airplay="allow"
+                    poster="${videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,ar_auto,m_fast"
                 >
                     <source src="${testVideoUrl}" type="video/mp4">
                     Video no compatible
                 </video>
-                ${!controls ? '<div class="touch-overlay" id="touchOverlay"></div>' : ''}
-                <div class="play-button visible" id="playButton"></div>
             </div>
             
             <script>
