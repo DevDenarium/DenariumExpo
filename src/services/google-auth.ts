@@ -1,4 +1,3 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import { loginWithGoogle as authServiceLogin } from './auth.service';
@@ -9,9 +8,28 @@ interface GoogleLoginResult {
   user: any;
 }
 
+// 🔧 Importaciones dinámicas para compatibilidad
+let GoogleSignin: any = null;
+let statusCodes: any = null;
+
+// 🔄 Intentar importar el módulo nativo, si no está disponible usar Expo Auth Session
+try {
+  const googleSigninModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = googleSigninModule.GoogleSignin;
+  statusCodes = googleSigninModule.statusCodes;
+} catch (error) {
+  console.log('⚠️ Google Signin nativo no disponible, usando Expo Auth Session');
+}
+
 export const useGoogleAuth = () => {
     const [isConfigured, setIsConfigured] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+
+    // 🔄 Si Google Signin nativo no está disponible, usar Expo Auth Session
+    if (!GoogleSignin) {
+        const { useGoogleAuthExpo } = require('./google-auth-expo');
+        return useGoogleAuthExpo();
+    }
 
     // 🔧 Configurar Google SDK al inicializar el hook
     useEffect(() => {

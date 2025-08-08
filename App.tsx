@@ -35,29 +35,26 @@ const Drawer = createDrawerNavigator<DrawerParamList>();
 const CustomHeader = ({ navigation }: { navigation: any }) => {
     const auth = useAuth(); // Siempre obtenemos el contexto primero
 
-    // If user is not authenticated, loading, or signing out, don't render the header
-    if (!auth.user || auth.loading || auth.isSigningOut) {
-        return null;
-    }
-
     const handleSignOut = async () => {
         try {
             if (auth.signOut && !auth.isSigningOut) {
                 await auth.signOut();
-                // Use a small delay before navigation to allow state cleanup
-                setTimeout(() => {
-                    navigation.dispatch(
-                        CommonActions.reset({
-                            index: 0,
-                            routes: [{ name: 'Login' }],
-                        })
-                    );
-                }, 150);
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    })
+                );
             }
         } catch (error) {
             console.error('Error during sign out:', error);
         }
     };
+
+    // If user is not authenticated, loading, or signing out, don't render the header
+    if (!auth.user || auth.loading || auth.isSigningOut) {
+        return null;
+    }
 
     return (
         <SafeAreaView style={headerStyles.safeArea}>
@@ -113,11 +110,7 @@ const headerStyles = StyleSheet.create({
 const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
     const { user, loading, isSigningOut } = useAuth();
 
-    if (!user || loading || isSigningOut) {
-        return null;
-    }
-
-    const isAdmin = user.role === UserRole.ADMIN;
+    const isAdmin = user?.role === UserRole.ADMIN;
 
     const commonMenuItems = [
         { name: 'MainDashboard', label: 'Inicio', icon: 'view-dashboard' },
@@ -146,6 +139,8 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
     ];
 
     const getUserName = () => {
+        if (!user) return 'Usuario';
+        
         if (user.role === UserRole.PERSONAL && user.personalUser) {
             return user.personalUser.firstName || 'Usuario';
         }
@@ -163,6 +158,10 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
         }
         return user.firstName || 'Usuario';
     };
+
+    if (!user || loading || isSigningOut) {
+        return null;
+    }
 
     return (
         <SafeAreaView style={drawerStyles.safeArea}>
