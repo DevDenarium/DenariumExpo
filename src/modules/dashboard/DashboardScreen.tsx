@@ -16,45 +16,6 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
     const [imageError, setImageError] = useState(false);
     const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
 
-    useEffect(() => {
-        if (!authLoading && !user && !isSigningOut) {
-            navigation.dispatch(
-                CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Login' }],
-                })
-            );
-        }
-    }, [user, authLoading, isSigningOut, navigation]);
-
-    // Don't render if auth is loading, signing out, or user is not available
-    if (authLoading || isSigningOut || !user) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <ActivityIndicator size="large" color="#D4AF37" />
-            </SafeAreaView>
-        );
-    }
-
-    const getUserName = () => {
-        if (user.role === UserRole.PERSONAL && user.personalUser) {
-            return user.personalUser.firstName || 'Usuario';
-        }
-        if (user.role === UserRole.CORPORATE_EMPLOYEE && user.corporateEmployee) {
-            return user.corporateEmployee.firstName || 'Empleado';
-        }
-        if (user.role === UserRole.ADMIN && user.adminUser) {
-            return user.adminUser.firstName || 'Administrador';
-        }
-        if (user.role === UserRole.ADVISOR && user.advisorUser) {
-            return user.advisorUser.firstName || 'Asesor';
-        }
-        if (user.role === UserRole.CORPORATE && user.corporateUser) {
-            return user.corporateUser.companyName || 'Empresa';
-        }
-        return user.firstName || 'Usuario';
-    };
-
     const fetchSubscriptionData = async () => {
         try {
             const status = await SubscriptionsService.getSubscriptionStatus();
@@ -75,6 +36,17 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
             setSubscriptionPlan('Free');
         }
     };
+
+    useEffect(() => {
+        if (!authLoading && !user && !isSigningOut) {
+            navigation.dispatch(
+                CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                })
+            );
+        }
+    }, [user, authLoading, isSigningOut, navigation]);
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -108,6 +80,36 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
 
         fetchUserProfile();
     }, [user, authLoading, isSigningOut]);
+
+    // Don't render if auth is loading, signing out, or user is not available
+    if (authLoading || isSigningOut || !user) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ActivityIndicator size="large" color="#D4AF37" />
+            </SafeAreaView>
+        );
+    }
+
+    const getUserName = () => {
+        if (user.role === UserRole.PERSONAL && user.personalUser) {
+            return user.personalUser.firstName || 'Usuario';
+        }
+        if (user.role === UserRole.CORPORATE_EMPLOYEE && user.corporateEmployee) {
+            return user.corporateEmployee.firstName || 'Empleado';
+        }
+        if (user.role === UserRole.ADMIN && user.adminUser) {
+            return user.adminUser.firstName || 'Administrador';
+        }
+        if (user.role === UserRole.ADVISOR && user.advisorUser) {
+            return user.advisorUser.firstName || 'Asesor';
+        }
+        if (user.role === UserRole.CORPORATE && user.corporateUser) {
+            return user.corporateUser.companyName || 'Empresa';
+        }
+        return user.firstName || 'Usuario';
+    };
+
+
 
     const getAccountType = () => {
         switch(user.role) {

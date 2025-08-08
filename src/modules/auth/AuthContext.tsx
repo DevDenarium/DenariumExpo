@@ -33,8 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const storedToken = await AsyncStorage.getItem('@Auth:token');
 
                 if (storedUser && storedToken) {
-                        axios.defaults.headers.common['Authorization'] =
-                            `Bearer ${storedToken}`;                 // <‑‑ NUEVO
+                    axios.defaults.headers.common['Authorization'] =
+                        `Bearer ${storedToken}`;                 // <‑‑ NUEVO
                     setUser(JSON.parse(storedUser));
                 }
             } catch (error) {
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loadStorageData();
     }, []);
 
-    const signIn = async (authData: AuthResponse) => {
+    const signIn = React.useCallback(async (authData: AuthResponse) => {
         try {
             setLoading(true);
             
@@ -71,45 +71,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await AsyncStorage.setItem('@Auth:user', JSON.stringify(userWithLocation));
             await AsyncStorage.setItem('@Auth:token', authData.access_token);
             
-            setLoading(false);
         } catch (error) {
             console.error('Error guardando datos de autenticación:', error);
-            setLoading(false);
             throw error;
+        } finally {
+            setLoading(false);
         }
-    };
+    }, []);
 
     const signOut = React.useCallback(async () => {
+        if (isSigningOut) return; // Prevent multiple simultaneous sign-outs
+        
         try {
             setIsSigningOut(true);
             
-            // Use setTimeout to ensure the state update happens before cleanup
-            setTimeout(async () => {
-                try {
-                    // Remove axios default authorization header
-                    delete axios.defaults.headers.common['Authorization'];
-                    
-                    // Clear storage
-                    await AsyncStorage.removeItem('@Auth:user');
-                    await AsyncStorage.removeItem('@Auth:token');
-                    
-                    // Clear user state
-                    setUser(null);
-                } catch (error) {
-                    console.error('Error in logout cleanup:', error);
-                } finally {
-                    setIsSigningOut(false);
-                }
-            }, 100); // Small delay to allow state updates to propagate
+            // Remove axios default authorization header
+            delete axios.defaults.headers.common['Authorization'];
+            
+            // Clear storage
+            await AsyncStorage.removeItem('@Auth:user');
+            await AsyncStorage.removeItem('@Auth:token');
+            
+            // Clear user state
+            setUser(null);
             
         } catch (error) {
             console.error('Error cerrando sesión:', error);
+        } finally {
             setIsSigningOut(false);
-            throw error;
         }
-    }, []); 
+    }, [isSigningOut]);
 
-    const updateUser = async (userData: Partial<UserResponse>) => {
+    const updateUser = React.useCallback(async (userData: Partial<UserResponse>) => {
         if (!user) return;
 
         try {
@@ -134,10 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('Error actualizando usuario:', error);
             throw error;
         }
-    };
+    }, [user]);
 
-
-    const refreshUser = async () => {
+    const refreshUser = React.useCallback(async () => {
         try {
             const token = await AsyncStorage.getItem('@Auth:token');
             if (!token) throw new Error('Token no encontrado');
@@ -165,14 +157,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (error) {
             console.error('Error actualizando el usuario desde el backend:', error);
         }
-    };
+    }, []);
 
-    const checkAuth = async () => {
-        if (loading) return false; // Don't check auth while already loading
+    const checkAuth = React.useCallback(async () => {
+        if (loading || isSigningOut) return false; // Don't check auth while loading or signing out
         
         try {
             const token = await AsyncStorage.getItem('@Auth:token');
-            if (!token) return false;
+            if (!token) {
+                setUser(null);
+                return false;
+            }
 
             const response = await axios.get(`${API_BASE_URL}/auth/me`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -196,12 +191,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(userWithLocation);
             return true;
         } catch (error) {
-            await signOut();
+            console.error('Error checking auth:', error);
+            // Only sign out if we're not already signing out to avoid infinite loops
+            if (!isSigningOut) {
+                await signOut();
+            }
             return false;
         }
-    };
-
-    return (
+    }, [loading, isSigningOut, signOut]);    return (
         <AuthContext.Provider value={{
             user,
             loading,
