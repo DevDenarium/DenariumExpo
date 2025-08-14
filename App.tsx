@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { SplashScreen } from './src/modules/splash/SplashScreen';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -318,20 +319,25 @@ const DashboardDrawer = () => {
 };
 
 export default function App() {
+    const [showSplash, setShowSplash] = useState(true);
+
     return (
         <SafeAreaProvider>
             <AuthProvider>
                 <StatusBar style="light" />
-                <NavigationContainer>
-                    <Stack.Navigator
-                        initialRouteName="Login"
-                        screenOptions={{
-                            headerStyle: {
-                                backgroundColor: '#1c1c1c',
-                            },
-                            headerTintColor: '#D4AF37',
-                        }}
-                    >
+                {showSplash ? (
+                    <SplashScreen onAnimationComplete={() => setShowSplash(false)} />
+                ) : (
+                    <NavigationContainer>
+                        <Stack.Navigator
+                            initialRouteName="Login"
+                            screenOptions={{
+                                headerStyle: {
+                                    backgroundColor: '#1c1c1c',
+                                },
+                                headerTintColor: '#D4AF37',
+                            }}
+                        >
                     <Stack.Screen
                         name="Login"
                         component={LoginScreen}
@@ -405,7 +411,8 @@ export default function App() {
                     />
                 </Stack.Navigator>
             </NavigationContainer>
-        </AuthProvider>
+                )}
+            </AuthProvider>
         </SafeAreaProvider>
     );
 }

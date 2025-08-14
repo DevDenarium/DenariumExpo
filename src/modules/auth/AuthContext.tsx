@@ -2,7 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserResponse, AuthResponse } from './user.types';
 import axios from "axios";
-import { API_BASE_URL } from '../../services/auth.service';
+import { API_BASE_URL, validateToken } from '../../services/auth.service';
 
 export interface AuthContextData {
     user: UserResponse | null;
@@ -33,9 +33,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const storedToken = await AsyncStorage.getItem('@Auth:token');
 
                 if (storedUser && storedToken) {
-                    axios.defaults.headers.common['Authorization'] =
-                        `Bearer ${storedToken}`;                 // <‑‑ NUEVO
-                    setUser(JSON.parse(storedUser));
+                    // Configurar el token en axios
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+                    
+                    // Verificar si el token es válido
+                    const isValid = await validateToken();
+                    
+                    if (isValid) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        console.log('Token inválido o expirado');
+                        await signOut();
+                    }
                 }
             } catch (error) {
                 console.error('Error loading storage data:', error);

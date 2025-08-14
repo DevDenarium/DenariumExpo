@@ -34,6 +34,24 @@ const handleAuthError = (error: unknown, defaultMessage: string) => {
     throw new Error(defaultMessage);
 };
 
+export const validateToken = async (): Promise<boolean> => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return false;
+
+        const response = await axios.get(`${API_URL}/validate-token`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error validating token:', error);
+        return false;
+    }
+};
+
 export const login = async (credentials: { email: string; password: string }): Promise<AuthResponse> => {
     try {
         const response = await axios.post<AuthResponse>(
