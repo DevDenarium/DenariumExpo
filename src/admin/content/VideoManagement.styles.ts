@@ -445,9 +445,10 @@ export const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        maxHeight: '85%', // Ocupa más espacio de la pantalla
+        maxHeight: '85%',
         height: '85%',
         width: '100%',
+        paddingBottom: 80, // Space for fixed buttons
     },
     editModalHeader: {
         flexDirection: 'row',
@@ -469,13 +470,13 @@ export const styles = StyleSheet.create({
     },
     keyboardAvoidingContainer: {
         flex: 1,
+        position: 'relative', // Para botones absolutos
     },
     modalScrollView: {
         flex: 1,
-        paddingBottom: 10,
     },
     scrollContentContainer: {
-        paddingBottom: 20,
+        paddingBottom: 80, // Espacio para los botones fijos
     },
     modalTitle: {
         fontSize: 22,
@@ -486,15 +487,22 @@ export const styles = StyleSheet.create({
         paddingVertical: 5,
     },
     modalButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingTop: 25,
-        paddingBottom: 30,
-        paddingHorizontal: 5,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
         borderTopWidth: 1,
         borderTopColor: '#3a3a3a',
-        marginTop: 30, // Más espacio superior cuando está dentro del scroll
-        backgroundColor: '#1c1c1c', // Asegurar fondo consistente
+        backgroundColor: '#1c1c1c',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     modalCancelButton: {
         backgroundColor: '#2a2a2a',

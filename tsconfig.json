@@ -6,7 +6,8 @@
     "lib": [
       "esnext"
     ],
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "skipLibCheck": true,
     "strict": true,

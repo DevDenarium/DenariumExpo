@@ -7,7 +7,7 @@ import { User } from '@react-native-google-signin/google-signin';
 
 
 
-export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.13:3000';
+export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.14:3000';
 const API_URL = `${API_BASE_URL}/auth`;
 
 const axiosConfig = {
@@ -32,6 +32,24 @@ const handleAuthError = (error: unknown, defaultMessage: string) => {
         throw new Error(message);
     }
     throw new Error(defaultMessage);
+};
+
+export const validateToken = async (): Promise<boolean> => {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return false;
+
+        const response = await axios.get(`${API_URL}/validate-token`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error validating token:', error);
+        return false;
+    }
 };
 
 export const login = async (credentials: { email: string; password: string }): Promise<AuthResponse> => {

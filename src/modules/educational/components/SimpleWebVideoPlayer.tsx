@@ -88,55 +88,161 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     -webkit-user-select: none;
                     user-select: none;
                 }
-                .touch-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: ${controls ? '10' : '5'};
-                    background: transparent;
-                    cursor: pointer;
+                video::-webkit-media-controls-overlay-play-button {
+                    display: block;
+                }
+                video::-webkit-media-controls {
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                }
+                video:hover::-webkit-media-controls {
+                    opacity: 1;
                 }
             </style>
+            <script>
+                async function generarPortadaVideo(video) {
+                    return new Promise((resolve, reject) => {
+                        // Configurar canvas para análisis
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const threshold = 5; // Umbral para determinar si un frame es negro
+                        let isSearching = true;
+                        
+                        // Función para detectar si un frame es negro
+                        function isBlackFrame(imageData) {
+                            const data = imageData.data;
+                            let totalBrightness = 0;
+                            
+                            for (let i = 0; i < data.length; i += 4) {
+                                const r = data[i];
+                                const g = data[i + 1];
+                                const b = data[i + 2];
+                                totalBrightness += (r + g + b) / 3;
+                            }
+                            
+                            const avgBrightness = totalBrightness / (data.length / 4);
+                            return avgBrightness < threshold;
+                        }
+                        
+                        // Función para capturar y analizar frame
+                        function captureFrame() {
+                            if (!isSearching) return;
+                            
+                            // Configurar canvas al tamaño del video
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            
+                            // Dibujar frame actual
+                            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            
+                            // Analizar una muestra del frame (centro de la imagen)
+                            const sampleSize = 100;
+                            const centerX = (canvas.width - sampleSize) / 2;
+                            const centerY = (canvas.height - sampleSize) / 2;
+                            const imageData = context.getImageData(centerX, centerY, sampleSize, sampleSize);
+                            
+                            if (!isBlackFrame(imageData)) {
+                                isSearching = false;
+                                
+                                // Comprimir la imagen
+                                canvas.toBlob((blob) => {
+                                    const url = URL.createObjectURL(blob);
+                                    video.poster = url;
+                                    resolve(url);
+                                }, 'image/jpeg', 0.85); // Comprimir con calidad 0.85
+                            } else if (video.currentTime < video.duration) {
+                                // Avanzar 100ms y revisar siguiente frame
+                                video.currentTime += 0.1;
+                            } else {
+                                reject(new Error('No se encontró un frame válido'));
+                            }
+                        }
+                        
+                        // Eventos del video
+                        video.addEventListener('seeked', captureFrame);
+                        
+                        // Manejar errores
+                        video.addEventListener('error', () => {
+                            reject(new Error('Error al cargar el video'));
+                        });
+                        
+                        // Iniciar búsqueda cuando el video esté listo
+                        if (video.readyState >= 2) {
+                            video.currentTime = 0;
+                        } else {
+                            video.addEventListener('loadeddata', () => {
+                                video.currentTime = 0;
+                            });
+                        }
+                    });
+                }
+            </script>
         </head>
         <body>
             <div class="video-container">
                 <video 
                     id="video"
-                    ${controls ? 'controls' : ''} 
+                    controls
                     preload="metadata" 
                     ${autoplay ? 'autoplay muted' : ''}
                     playsinline 
                     webkit-playsinline
                     x-webkit-airplay="allow"
+                    poster="${videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,ar_auto,m_fast"
                 >
                     <source src="${testVideoUrl}" type="video/mp4">
                     Video no compatible
                 </video>
-                ${!controls ? '<div class="touch-overlay" id="touchOverlay"></div>' : ''}
             </div>
             
             <script>
                 const video = document.getElementById('video');
                 const touchOverlay = document.getElementById('touchOverlay');
+                const playButton = document.getElementById('playButton');
                 let isPlaying = false;
                 let duration = 0;
+                let hideControlsTimeout;
                 const hasControls = ${controls};
                 
-                // Configuración condicional para autoplay
                 video.autoplay = ${autoplay};
-                video.muted = ${autoplay}; // Solo mutear si hay autoplay
-                video.playsInline = true;
+                video.muted = ${autoplay};
+                video.playsInLine = true;
                 
-                // Función optimizada para reproducir
+                function showControls() {
+                    if (playButton) {
+                        playButton.classList.add('visible');
+                        if (hideControlsTimeout) {
+                            clearTimeout(hideControlsTimeout);
+                        }
+                        hideControlsTimeout = setTimeout(() => {
+                            if (isPlaying) {
+                                playButton.classList.remove('visible');
+                            }
+                        }, 3000);
+                    }
+                }
+                
+                function hideControls() {
+                    if (playButton && isPlaying) {
+                        playButton.classList.remove('visible');
+                    }
+                }
+                
+                function updatePlayButton() {
+                    if (playButton) {
+                        playButton.classList.toggle('paused', !video.paused);
+                    }
+                }
+                
                 function playVideo() {
                     if (video.paused) {
                         const playPromise = video.play();
                         if (playPromise !== undefined) {
                             playPromise.then(() => {
                                 isPlaying = true;
+                                updatePlayButton();
                                 window.ReactNativeWebView?.postMessage('playing');
+                                hideControls();
                             }).catch(error => {
                                 console.error('Play failed:', error);
                                 window.ReactNativeWebView?.postMessage('autoplay-failed');
@@ -145,21 +251,20 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     }
                 }
                 
-                // Función optimizada para pausar
                 function pauseVideo() {
                     if (!video.paused) {
                         video.pause();
                         isPlaying = false;
+                        updatePlayButton();
                         window.ReactNativeWebView?.postMessage('paused');
+                        showControls();
                     }
                 }
                 
-                // Función para toggle play/pause
                 function togglePlayPause() {
                     console.log('Toggle play/pause, current paused:', video.paused);
                     if (video.paused) {
                         playVideo();
-                        // Desmutear si estaba muted por autoplay
                         if (video.muted && ${autoplay}) {
                             video.muted = false;
                         }
@@ -173,8 +278,15 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                     duration = video.duration;
                     window.ReactNativeWebView?.postMessage('ready');
                     window.ReactNativeWebView?.postMessage('duration:' + duration);
+                    showControls();
                     
-                    // Autoplay solo si está habilitado
+                    // Generar thumbnail automáticamente
+                    generarPortadaVideo(video).then(thumbnailUrl => {
+                        console.log('Thumbnail generado:', thumbnailUrl);
+                    }).catch(error => {
+                        console.error('Error generando thumbnail:', error);
+                    });
+                    
                     if (${autoplay}) {
                         setTimeout(playVideo, 50);
                     }
@@ -182,12 +294,16 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 
                 video.addEventListener('play', () => {
                     isPlaying = true;
+                    updatePlayButton();
                     window.ReactNativeWebView?.postMessage('playing');
+                    hideControls();
                 });
                 
                 video.addEventListener('pause', () => {
                     isPlaying = false;
+                    updatePlayButton();
                     window.ReactNativeWebView?.postMessage('paused');
+                    showControls();
                 });
                 
                 video.addEventListener('timeupdate', () => {
@@ -199,7 +315,9 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 
                 video.addEventListener('ended', () => {
                     isPlaying = false;
+                    updatePlayButton();
                     window.ReactNativeWebView?.postMessage('ended');
+                    showControls();
                 });
                 
                 video.addEventListener('error', (e) => {
@@ -209,12 +327,12 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                 
                 // Control táctil mejorado
                 function setupTouchControls() {
-                    // Si no hay controles nativos, usar overlay
                     if (touchOverlay) {
                         touchOverlay.addEventListener('click', function(e) {
                             e.preventDefault();
                             e.stopPropagation();
                             console.log('Touch overlay clicked');
+                            showControls();
                             togglePlayPause();
                         });
                         
@@ -222,22 +340,21 @@ export const SimpleWebVideoPlayer: React.FC<SimpleWebVideoPlayerProps> = ({
                             e.preventDefault();
                             e.stopPropagation();
                             console.log('Touch overlay touched');
+                            showControls();
                             togglePlayPause();
                         });
                     } else {
-                        // Si hay controles nativos, interceptar clics en el video
                         video.addEventListener('click', function(e) {
-                            // Solo interceptar si el clic no es en los controles nativos
                             const rect = video.getBoundingClientRect();
                             const clickY = e.clientY - rect.top;
                             const videoHeight = rect.height;
-                            const controlsHeight = hasControls ? 40 : 0; // Altura aproximada de controles
+                            const controlsHeight = hasControls ? 40 : 0;
                             
-                            // Si el clic está en el área del video (no en controles)
                             if (clickY < videoHeight - controlsHeight) {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 console.log('Video area clicked');
+                                showControls();
                                 togglePlayPause();
                             }
                         });
