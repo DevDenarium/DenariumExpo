@@ -18,7 +18,7 @@ export interface AppointmentCreationResponse {
 
 class AppointmentService {
     private async getAuthToken(): Promise<string> {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) {
             throw new Error('No authentication token found');
         }

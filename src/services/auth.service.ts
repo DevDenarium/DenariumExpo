@@ -397,16 +397,16 @@ export const getCountries = async () => {
 };
 
 export const logout = async () => {
-    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('@Auth:token');
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {
-    const token = await AsyncStorage.getItem('token');
+    const token = await AsyncStorage.getItem('@Auth:token');
     return !!token;
 };
 
 export const getValidToken = async (): Promise<string> => {
-    const token = await AsyncStorage.getItem('token');
+    const token = await AsyncStorage.getItem('@Auth:token');
     if (!token) throw new Error('No token found');
     return token;
 };
@@ -447,7 +447,7 @@ export const resetPassword = async (email: string, code: string, newPassword: st
 
 export const getProfile = async (): Promise<any> => {
     try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) throw new Error('No authentication token found');
 
         const response = await axios.get(`${API_URL}/me`, {
@@ -524,7 +524,7 @@ export const validateCostaRicaLocation = async (provinceName: string, cantonName
 
 export const updateProfile = async (profileData: any): Promise<any> => {
     try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) throw new Error('No authentication token found');
 
         const response = await axios.put(

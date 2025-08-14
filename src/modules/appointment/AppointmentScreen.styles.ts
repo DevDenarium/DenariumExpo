@@ -177,6 +177,7 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#1c1c1c',
     } as ViewStyle,
     statusPending: {
         backgroundColor: 'rgba(255, 193, 7, 0.2)',

@@ -338,7 +338,7 @@ export const EducationalService = {
 
 export const getAuthToken = async (): Promise<string> => {
     try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) {
             throw new Error('No se encontró token de autenticación');
         }

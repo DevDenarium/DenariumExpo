@@ -28,6 +28,8 @@ import EducationalScreen from './src/modules/educational/EducationalScreen';
 import { FinanceAnalyticsScreen } from './src/modules/finance-analytics/FinanceAnalyticsScreen';
 import { AuthProvider, useAuth } from './src/modules/auth/AuthContext';
 import {UserRole} from "./src/modules/auth/user.types";
+import NotificationsScreen from './src/modules/notifications/NotificationsScreen';
+import NotificationBadge from './src/common/components/NotificationBadge';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -66,6 +68,13 @@ const CustomHeader = ({ navigation }: { navigation: any }) => {
                     <Icon name="menu" size={28} color="#D4AF37" />
                 </TouchableOpacity>
                 <View style={headerStyles.spacer} />
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Notifications')}
+                    style={headerStyles.iconButton}
+                >
+                    <Icon name="bell" size={24} color="#D4AF37" />
+                    <NotificationBadge size={16} />
+                </TouchableOpacity>
                 <TouchableOpacity
                     onPress={handleSignOut}
                     style={headerStyles.iconButton}
@@ -189,7 +198,12 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
                             style={drawerStyles.menuItem}
                             onPress={() => navigation.navigate(item.name)}
                         >
-                            <Icon name={item.icon} size={24} color="#D4AF37" />
+                            <View style={{ position: 'relative' }}>
+                                <Icon name={item.icon} size={24} color="#D4AF37" />
+                                {item.name === 'Notifications' && (
+                                    <NotificationBadge size={14} position="top-right" />
+                                )}
+                            </View>
                             <Text style={drawerStyles.menuItemText}>{item.label}</Text>
                         </TouchableOpacity>
                     ))}
@@ -312,6 +326,11 @@ const DashboardDrawer = () => {
                 name="Videos"
                 component={EducationalScreen}
                 options={{ title: 'Contenido Educativo' }}
+            />
+            <Drawer.Screen
+                name="Notifications"
+                component={NotificationsScreen}
+                options={{ title: 'Notificaciones' }}
             />
         </Drawer.Navigator>
     );
