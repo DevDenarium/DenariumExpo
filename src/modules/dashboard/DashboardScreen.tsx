@@ -54,7 +54,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
             if (!user || authLoading || isSigningOut) return;
             
             try {
-                const token = await AsyncStorage.getItem('token');
+                const token = await AsyncStorage.getItem('@Auth:token');
                 if (!token) return;
 
                 const config = {

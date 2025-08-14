@@ -20,7 +20,7 @@ const axiosConfig = {
 };
 
 const storeToken = async (token: string) => {
-    await AsyncStorage.setItem('token', token);
+    await AsyncStorage.setItem('@Auth:token', token);
 };
 
 const handleAuthError = (error: unknown, defaultMessage: string) => {
@@ -36,18 +36,34 @@ const handleAuthError = (error: unknown, defaultMessage: string) => {
 
 export const validateToken = async (): Promise<boolean> => {
     try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem('@Auth:token');
         if (!token) return false;
 
         const response = await axios.get(`${API_URL}/validate-token`, {
             headers: {
                 Authorization: `Bearer ${token}`
-            }
+            },
+            timeout: 5000 // Reducir timeout para fallar más rápido
         });
         
         return response.status === 200;
     } catch (error) {
         console.error('Error validating token:', error);
+        
+        // Si el error es por conexión (network error), consideramos el token como válido temporalmente
+        // para permitir que la app funcione offline o cuando el backend no esté disponible
+        if (axios.isAxiosError(error)) {
+            if (error.code === 'ECONNREFUSED' || error.code === 'NETWORK_ERROR' || !error.response) {
+                console.log('Backend no disponible, manteniendo sesión local');
+                return true; // Permite continuar con el token existente
+            }
+            
+            // Si el backend responde con 401/403, el token realmente es inválido
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                return false;
+            }
+        }
+        
         return false;
     }
 };
@@ -61,7 +77,7 @@ export const login = async (credentials: { email: string; password: string }): P
         );
 
         if (response.data.access_token) {
-            await AsyncStorage.setItem('token', response.data.access_token);
+            await AsyncStorage.setItem('@Auth:token', response.data.access_token);
         } else {
             throw new Error('Invalid token received');
         }
