@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserRole } from '../modules/auth/user.types';
 
 
-const API_BASE_URL = 'http://192.168.20.13:3000';
+const API_BASE_URL = 'http://192.168.20.19:3000';
 
 export const SubscriptionsService = {
     getAvailablePlans: async (role: UserRole) => {
