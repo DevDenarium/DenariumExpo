@@ -226,11 +226,19 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        width: '100%',
+        width: '108%', // Aumenta el ancho visual del contenedor gris
+        alignSelf: 'stretch',
+        marginBottom: 15,
+        marginLeft: 4,
+        minWidth: 0,
+        flexGrow: 1,
+        flexBasis: '100%',
+        maxWidth: '108%',
     } as ViewStyle,
     datePickerText: {
         color: '#AAAAAA',
         fontSize: 16,
+        marginRight: 12, // Espacio extra entre el texto y el icono
     } as TextStyle,
     durationInput: {
         backgroundColor: '#333333',

@@ -100,7 +100,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        duration: '60',
+        duration: '30', // Valor por defecto 30min
         isVirtual: false
     });
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -996,16 +996,27 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
                         {renderTimeSlots()}
 
-                        <TextInput
-                            style={styles.durationInput}
-                            placeholder="Duración en minutos (mínimo 15)*"
-                            placeholderTextColor="#AAAAAA"
-                            keyboardType="numeric"
-                            value={formData.duration}
-                            onChangeText={(text) => setFormData({...formData, duration: text})}
-                            returnKeyType="done"
-                            blurOnSubmit={true}
-                        />
+                        <View style={{marginBottom: 15}}>
+                            <Text style={styles.typeLabel}>Duración:</Text>
+                            <View style={{flexDirection: 'row', gap: 10}}>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, formData.duration === '30' 
+                                        ? {backgroundColor: '#D4AF37'} 
+                                        : {backgroundColor: '#333333'}]}
+                                    onPress={() => setFormData({...formData, duration: '30'})}
+                                >
+                                    <Text style={[styles.modalButtonText, {color: '#FFFFFF'}]}>30min</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, formData.duration === '60' 
+                                        ? {backgroundColor: '#D4AF37'} 
+                                        : {backgroundColor: '#333333'}]}
+                                    onPress={() => setFormData({...formData, duration: '60'})}
+                                >
+                                    <Text style={[styles.modalButtonText, {color: '#FFFFFF'}]}>1 hora</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
                         <View style={styles.modalButtonContainer}>
                             <TouchableOpacity
@@ -1018,12 +1029,17 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                                 <Text style={styles.modalButtonText}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton, !selectedTime ? styles.disabledButton : {}]}
-                                onPress={handleCreateAppointment}
-                                disabled={!selectedTime}
+                                style={[styles.modalButton, {backgroundColor: '#D4AF37'}, !selectedTime ? styles.disabledButton : {}]}
+                                onPress={() => {
+                                    if (!selectedTime) {
+                                        Alert.alert('Faltan campos por completar', 'Completa todos los campos requeridos para pasar al pago de la cita');
+                                    } else {
+                                        handleCreateAppointment();
+                                    }
+                                }}
                             >
-                                <Text style={[styles.modalButtonText, {color: '#000000'}]}>
-                                    {actionType === 'create' ? 'Crear Cita' : 'Actualizar Cita'}
+                                <Text style={[styles.modalButtonText, {color: '#FFFFFF'}]}>
+                                    {actionType === 'create' ? 'Pagar Cita' : 'Actualizar Cita'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
