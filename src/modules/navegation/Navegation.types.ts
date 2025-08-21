@@ -104,6 +104,11 @@ export type RootStackParamList = {
     Appointments: AppointmentScreenParams;
     AppointmentManagement: AppointmentManagementParams;
     AppointmentScreen: AppointmentScreenParams;
+    ScheduleManagement: undefined;
+    ScheduleBlockForm: {
+        blockId?: string;
+        block?: any;
+    } | undefined;
 };
 
 export type DrawerParamList = {
@@ -118,6 +123,7 @@ export type DrawerParamList = {
     VideoLibrary: undefined;
     Appointments: AppointmentScreenParams;
     AppointmentManagement: AppointmentManagementParams;
+    ScheduleManagement: undefined;
 };
 
 export type PaymentsStackParamList = {

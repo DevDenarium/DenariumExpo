@@ -31,6 +31,7 @@ import { AuthProvider, useAuth } from './src/modules/auth/AuthContext';
 import {UserRole} from "./src/modules/auth/user.types";
 import NotificationsScreen from './src/modules/notifications/NotificationsScreen';
 import NotificationBadge from './src/common/components/NotificationBadge';
+import { ScheduleManagement } from './src/admin/schedule';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -132,6 +133,7 @@ const CustomDrawerContent = ({ navigation }: { navigation: any }) => {
     const adminMenuItems = [
         { name: 'VideoLibrary', label: 'Administrar Videos', icon: 'play-box-multiple' },
         { name: 'AppointmentManagement', label: 'Citas Agendadas', icon: 'calendar-clock' },
+        { name: 'ScheduleManagement', label: 'Administrar Horarios', icon: 'calendar-edit' },
         { name: 'Profile', label: 'Mi Perfil', icon: 'account' },
         { name: 'Notifications', label: 'Notificaciones', icon: 'bell' },
     ];
@@ -319,6 +321,11 @@ const DashboardDrawer = () => {
                 options={{ title: 'Citas Agendadas' }}
             />
             <Drawer.Screen
+                name="ScheduleManagement"
+                component={ScheduleManagement}
+                options={{ title: 'Administrar Horarios' }}
+            />
+            <Drawer.Screen
                 name="Profile"
                 component={ProfileScreen}
                 options={{ title: 'Mi Perfil' }}
@@ -422,6 +429,11 @@ export default function App() {
                         name="AppointmentManagement"
                         component={AppointmentManagement}
                         options={{ title: 'Citas Agendadas' }}
+                    />
+                    <Stack.Screen
+                        name="ScheduleManagement"
+                        component={ScheduleManagement}
+                        options={{ title: 'Administrar Horarios' }}
                     />
                     <Stack.Screen
                         name="EducationalScreen"

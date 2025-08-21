@@ -243,21 +243,41 @@ export const styles = StyleSheet.create({
     timeSlotsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        gap: 6,
     } as ViewStyle,
     timeSlot: {
-        width: '30%',
-        backgroundColor: '#333333',
-        padding: 10,
-        borderRadius: 10,
-        marginBottom: 10,
+        width: '22%',
+        minWidth: 72,
+        height: 48,
+        marginBottom: 6,
+        borderRadius: 8,
+        backgroundColor: '#2a2a2a',
+        borderWidth: 1,
+        borderColor: '#333',
         alignItems: 'center',
+        justifyContent: 'center',
     } as ViewStyle,
     selectedTimeSlot: {
         backgroundColor: '#D4AF37',
+        borderColor: '#D4AF37',
     } as ViewStyle,
     timeSlotText: {
+        fontSize: 13,
         color: '#FFFFFF',
+        fontWeight: '500',
+    } as TextStyle,
+    selectedTimeSlotText: {
+        color: '#1c1c1c',
+        fontWeight: 'bold',
+    } as TextStyle,
+    disabledTimeSlot: {
+        backgroundColor: '#444',
+        borderColor: '#666',
+        opacity: 0.5,
+    } as ViewStyle,
+    disabledTimeSlotText: {
+        color: '#888',
     } as TextStyle,
     filterContainer: {
         marginBottom: 15,

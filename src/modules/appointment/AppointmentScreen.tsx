@@ -105,7 +105,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
     });
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [actionType, setActionType] = useState<'create' | 'edit' | 'cancel' | 'reschedule'>('create');
-    const [availabilitySlots, setAvailabilitySlots] = useState<TimeSlot[]>([]);
+    const [availabilitySlots, setAvailabilitySlots] = useState<Array<{ time: string; available: boolean; reason?: string }>>([]);
     const [showTimeSlots, setShowTimeSlots] = useState(false);
     const [timeSlots, setTimeSlots] = useState<Date[]>([]);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -223,13 +223,20 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
 
     const generateTimeSlots = (date: Date) => {
         const slots: Date[] = [];
-        const startHour = 9;
+        const startHour = 8;
         const endHour = 21;
 
+        // Generar slots cada 30 minutos desde 8:00 AM hasta 9:00 PM
         for (let hour = startHour; hour < endHour; hour++) {
-            const slot = new Date(date);
-            slot.setHours(hour, 0, 0, 0);
-            slots.push(slot);
+            // Slot en la hora exacta (ej: 8:00, 9:00)
+            const hourSlot = new Date(date);
+            hourSlot.setHours(hour, 0, 0, 0);
+            slots.push(hourSlot);
+
+            // Slot a los 30 minutos (ej: 8:30, 9:30)
+            const halfHourSlot = new Date(date);
+            halfHourSlot.setHours(hour, 30, 0, 0);
+            slots.push(halfHourSlot);
         }
 
         setTimeSlots(slots);
@@ -291,7 +298,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
         setSelectedTime(null);
         
         // Generar horarios disponibles automáticamente para la fecha de la cita
-        generateTimeSlots(appointmentDate);
+        fetchAvailability(appointmentDate);
         
         setShowRescheduleModal(true);
     };
@@ -575,7 +582,7 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     onDateSelect={(date) => {
                         setSelectedDate(date);
                         setSelectedTime(null);
-                        generateTimeSlots(date);
+                        fetchAvailability(date);
                         setShowRescheduleDatePicker(false);
                     }}
                     selectedDate={selectedDate}
@@ -595,20 +602,45 @@ const AppointmentScreen: React.FC<AppointmentScreenProps> = ({navigation}) => {
                     Horarios disponibles para {formatDisplayDate(selectedDate)}:
                 </Text>
                 <View style={styles.timeSlotsContainer}>
-                    {timeSlots.map((time, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.timeSlot,
-                                selectedTime && selectedTime.getTime() === time.getTime() ? styles.selectedTimeSlot : {}
-                            ]}
-                            onPress={() => handleTimeSelect(time)}
-                        >
-                            <Text style={styles.timeSlotText}>
-                                {formatTime(time)}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {timeSlots.map((time, index) => {
+                        // Formato 12 horas am/pm igual que ScheduleBlockModal
+                        const h = time.getHours();
+                        const m = time.getMinutes();
+                        let hour12 = h % 12 === 0 ? 12 : h % 12;
+                        const ampm = h < 12 || h === 24 ? 'am' : 'pm';
+                        const timeLabel = `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+                        const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                        const availabilityInfo = availabilitySlots.find(slot => slot.time === timeString);
+                        const isAvailable = availabilityInfo?.available === true;
+                        const isSelected = selectedTime && selectedTime.getTime() === time.getTime();
+                        const isOccupied = !isAvailable;
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.timeSlot,
+                                    isSelected && styles.selectedTimeSlot,
+                                    isOccupied && !isSelected && styles.disabledTimeSlot,
+                                ]}
+                                onPress={() => {
+                                    if (isAvailable) {
+                                        handleTimeSelect(time);
+                                    } else {
+                                        Alert.alert('Horario no disponible', availabilityInfo?.reason || 'Este horario ya está ocupado');
+                                    }
+                                }}
+                                disabled={isOccupied && !isSelected}
+                            >
+                                <Text style={[
+                                    styles.timeSlotText,
+                                    isSelected && styles.selectedTimeSlotText,
+                                    isOccupied && !isSelected && styles.disabledTimeSlotText,
+                                ]}>
+                                    {timeLabel}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </View>
         );

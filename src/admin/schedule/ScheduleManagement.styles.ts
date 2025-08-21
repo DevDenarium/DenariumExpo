@@ -1,0 +1,181 @@
+import { StyleSheet } from 'react-native';
+
+export const scheduleManagementStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1c1c1c',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#1c1c1c',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#D4AF37',
+  },
+  addButton: {
+    backgroundColor: '#D4AF37',
+    padding: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  addButtonText: {
+    color: '#1c1c1c',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  filterContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#1c1c1c',
+  },
+  filterScrollContent: {
+    paddingRight: 20,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  filterButtonActive: {
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
+  },
+  filterButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  filterButtonTextActive: {
+    color: '#1c1c1c',
+    fontWeight: 'bold',
+  },
+  listContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  blockCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  blockHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 8,
+  },
+  blockTypeLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#D4AF37',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  blockActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: '#4CAF50',
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+  },
+  blockContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  blockDate: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#D4AF37',
+    marginBottom: 6,
+  },
+  blockTime: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 4,
+  },
+  blockReason: {
+    fontSize: 13,
+    color: '#999999',
+    fontStyle: 'italic',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  blockDays: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  dayChip: {
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  dayChipText: {
+    color: '#1c1c1c',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  dateRange: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 4,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    color: '#888888',
+    fontSize: 15,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

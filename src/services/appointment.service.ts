@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment, AppointmentStatus } from '../modules/navegation/Navegation.types';
 
-const API_BASE_URL = 'http://192.168.100.4:3000';
+const API_BASE_URL = 'http://192.168.20.16:3000';
 
 interface ApiResponse<T> {
     data: T;
@@ -121,12 +121,12 @@ class AppointmentService {
         }
     }
 
-    async getAvailability(date: Date): Promise<ApiResponse<Array<{ start: Date; end: Date }>>> {
+    async getAvailability(date: Date): Promise<ApiResponse<Array<{ time: string; available: boolean; reason?: string }>>> {
         try {
             const headers = await this.getHeaders();
-            const response = await axios.get(`${API_BASE_URL}/appointments/availability`, {
+            const response = await axios.get(`${API_BASE_URL}/schedule-blocks/availability`, {
                 headers,
-                params: { date: date.toISOString() }
+                params: { date: date.toISOString().split('T')[0] }
             });
             return {
                 data: response.data,
@@ -135,6 +135,26 @@ class AppointmentService {
         } catch (error: any) {
             console.error('Error fetching availability:', error);
             throw new Error(error.response?.data?.message || 'Error al obtener la disponibilidad');
+        }
+    }
+
+    async getBlockedDates(startDate: Date, endDate: Date): Promise<ApiResponse<string[]>> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await axios.get(`${API_BASE_URL}/schedule-blocks/blocked-dates`, {
+                headers,
+                params: { 
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0]
+                }
+            });
+            return {
+                data: response.data,
+                status: response.status
+            };
+        } catch (error: any) {
+            console.error('Error fetching blocked dates:', error);
+            throw new Error(error.response?.data?.message || 'Error al obtener las fechas bloqueadas');
         }
     }
 
