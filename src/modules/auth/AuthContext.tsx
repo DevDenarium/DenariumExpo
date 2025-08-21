@@ -13,6 +13,8 @@ export interface AuthContextData {
     updateUser: (userData: Partial<UserResponse>) => Promise<void>;
     checkAuth: () => Promise<boolean>;
     refreshUser: () => Promise<void>;
+    hasAcceptedTerms: boolean;
+    acceptTerms: () => Promise<void>;
 }
 
 type AuthProviderProps = {
@@ -25,6 +27,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<UserResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
 
     useEffect(() => {
         async function loadStorageData() {
@@ -207,7 +210,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
             return false;
         }
-    }, [loading, isSigningOut, signOut]);    return (
+    }, [loading, isSigningOut, signOut]);    
+
+    useEffect(() => {
+        const checkTermsAcceptance = async () => {
+            try {
+                const termsAccepted = await AsyncStorage.getItem('@Auth:termsAccepted');
+                setHasAcceptedTerms(termsAccepted === 'true');
+            } catch (error) {
+                console.error('Error checking terms acceptance:', error);
+            }
+        };
+        checkTermsAcceptance();
+    }, []);
+
+    const acceptTerms = React.useCallback(async () => {
+        try {
+            setHasAcceptedTerms(true);
+            await AsyncStorage.setItem('@Auth:termsAccepted', 'true');
+        } catch (error) {
+            console.error('Error saving terms acceptance:', error);
+            throw error;
+        }
+    }, []);
+
+    return (
         <AuthContext.Provider value={{
             user,
             loading,
@@ -216,7 +243,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             signOut,
             updateUser,
             checkAuth,
-            refreshUser
+            refreshUser,
+            hasAcceptedTerms,
+            acceptTerms
         }}>
             {children}
         </AuthContext.Provider>

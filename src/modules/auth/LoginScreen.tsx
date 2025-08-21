@@ -8,6 +8,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { UserRole } from './user.types';
 import {UserResponse} from "./user.types";
 import {useAuth} from './AuthContext'
+import TermsAndConditionsModal from './TermsAndConditionsModal';
+import { AuthResponse } from './user.types';
+
 const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const [formData, setFormData] = useState({
         email: '',
@@ -16,7 +19,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { loginWithGoogle: googleLogin, isReady } = useGoogleAuth();
-    const { signIn } = useAuth();
+    const { signIn, hasAcceptedTerms, acceptTerms } = useAuth();
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [loginData, setLoginData] = useState<AuthResponse | null>(null);
+
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
@@ -29,16 +35,15 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const handleGoogleLogin = async () => {
         setLoading(true);
         setError(null);
-
         try {
             const result = await googleLogin();
-
             if (result && result.user) {
-                if (signIn && typeof signIn === 'function') {
+                setLoginData(result);
+                if (!hasAcceptedTerms) {
+                    setShowTermsModal(true);
+                } else {
                     await signIn(result);
                     redirectUserBasedOnType(result.user);
-                } else {
-                    throw new Error('El contexto de autenticación no está inicializado correctamente');
                 }
             } else {
                 throw new Error('Datos de usuario inválidos recibidos del login de Google');
@@ -100,9 +105,13 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 email: formData.email,
                 password: formData.password
             });
-
-            await signIn(result);
-            redirectUserBasedOnType(result.user);
+            setLoginData(result);
+            if (!hasAcceptedTerms) {
+                setShowTermsModal(true);
+            } else {
+                await signIn(result);
+                redirectUserBasedOnType(result.user);
+            }
         } catch (err) {
             console.error('Error de login:', err);
 
@@ -250,6 +259,28 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                     ¿No tienes cuenta? <Text style={styles.linkBold}>Regístrate</Text>
                 </Text>
             </TouchableOpacity>
+
+            <TermsAndConditionsModal
+                visible={showTermsModal}
+                onAccept={async () => {
+                    if (loginData) {
+                        await acceptTerms();
+                        await signIn(loginData);
+                        redirectUserBasedOnType(loginData.user);
+                    }
+                    setShowTermsModal(false);
+                }}
+                onClose={() => {
+                    setShowTermsModal(false);
+                    setLoginData(null);
+                    setLoading(false);
+                    Alert.alert(
+                        "Términos y Condiciones",
+                        "Debes aceptar los términos y condiciones para continuar usando la aplicación.",
+                        [{ text: "Entiendo" }]
+                    );
+                }}
+            />
         </View>
     );
 };
