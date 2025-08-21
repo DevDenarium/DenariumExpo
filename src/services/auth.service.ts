@@ -1,3 +1,7 @@
+// Marca que el usuario ha aceptado los términos y condiciones
+export const acceptTerms = async (): Promise<any> => {
+    return updateProfile({ hasAcceptedTerms: true });
+};
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';

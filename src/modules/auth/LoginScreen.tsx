@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, Platform } from 'react-native';
 import { styles } from './LoginScreen.styles';
-import { login, loginWithGoogle } from '../../services/auth.service';
+import { login, loginWithGoogle, acceptTerms } from '../../services/auth.service';
 import { useGoogleAuth } from '../../services/google-auth';
 import type { LoginScreenProps } from './LoginScreen.types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -22,15 +22,14 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     const { signIn, hasAcceptedTerms, acceptTerms } = useAuth();
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [loginData, setLoginData] = useState<AuthResponse | null>(null);
+    const [pendingLogin, setPendingLogin] = useState<AuthResponse | null>(null);
 
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
     };
 
-    useEffect(() => {
-        // No necesitamos este useEffect ya que manejamos la autenticación directamente
-    }, []);
+    // ...existing code...
 
     const handleGoogleLogin = async () => {
         setLoading(true);
@@ -38,8 +37,9 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
         try {
             const result = await googleLogin();
             if (result && result.user) {
-                setLoginData(result);
-                if (!hasAcceptedTerms) {
+                // Si es la primera vez, no ha aceptado términos
+                if (!result.user.hasAcceptedTerms) {
+                    setPendingLogin(result);
                     setShowTermsModal(true);
                 } else {
                     await signIn(result);
@@ -106,7 +106,9 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 password: formData.password
             });
             setLoginData(result);
-            if (!hasAcceptedTerms) {
+            // Solo mostrar el modal si el usuario es nuevo y no ha aceptado términos
+            if (result.user && typeof result.user.hasAcceptedTerms !== 'undefined' && !result.user.hasAcceptedTerms) {
+                setPendingLogin(result);
                 setShowTermsModal(true);
             } else {
                 await signIn(result);
@@ -263,16 +265,19 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <TermsAndConditionsModal
                 visible={showTermsModal}
                 onAccept={async () => {
-                    if (loginData) {
-                        await acceptTerms();
-                        await signIn(loginData);
-                        redirectUserBasedOnType(loginData.user);
+                    if (pendingLogin) {
+                        await acceptTerms(); // Actualiza en backend
+                        // Actualiza el usuario localmente para no volver a mostrar el modal
+                        pendingLogin.user.hasAcceptedTerms = true;
+                        await signIn(pendingLogin);
+                        redirectUserBasedOnType(pendingLogin.user);
                     }
                     setShowTermsModal(false);
+                    setPendingLogin(null);
                 }}
                 onClose={() => {
                     setShowTermsModal(false);
-                    setLoginData(null);
+                    setPendingLogin(null);
                     setLoading(false);
                     Alert.alert(
                         "Términos y Condiciones",

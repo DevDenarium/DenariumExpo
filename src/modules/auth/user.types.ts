@@ -21,6 +21,7 @@ export interface RegisterResponse {
 }
 
 export interface UserResponse {
+    hasAcceptedTerms?: boolean;
     id: string;
     access_token?: string;
     email: string;
