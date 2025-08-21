@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { getAuthToken } from './educational.service';
+import Constants from 'expo-constants';
 
 
-const API_BASE_URL = 'http://192.168.20.13:3000';
+const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.19:3000';
 
 export const VideoService = {
     getSignedUrl: async (contentId: string): Promise<string> => {

@@ -1,8 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appointment, AppointmentStatus } from '../modules/navegation/Navegation.types';
+import Constants from 'expo-constants';
 
-const API_BASE_URL = 'http://192.168.20.13:3000';
+const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.19:3000';
 
 interface ApiResponse<T> {
     data: T;
