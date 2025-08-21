@@ -20,12 +20,18 @@ const getGoogleConfig = () => {
     default: '1065172753437-lbvso6nmm20bksgh00uau9pildude834.apps.googleusercontent.com'
   });
 
-  const redirectUri = 'https://auth.expo.io/@hazelmolina/DenariumExpo';
+  const redirectUri = Platform.select({
+    ios: 'com.denarium.app:/oauth2redirect',
+    android: 'com.denarium.app:/oauth2redirect',
+    default: 'https://auth.expo.io/@hazelmolina/DenariumExpo'
+  });
 
   return {
     clientId,
     redirectUri,
-    scopes: ['openid', 'profile', 'email'],
+    scopes: ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/userinfo.profile'],
+    responseType: 'token',
+    usePKCE: true,
   };
 };
 
@@ -39,14 +45,20 @@ export const useGoogleAuthExpo = () => {
       const config = getGoogleConfig();
       
       // 🔧 Construir URL de Google OAuth manualmente
+      // Generate PKCE Challenge
+      const codeVerifier = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const codeChallenge = btoa(codeVerifier).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${encodeURIComponent(config.clientId)}&` +
         `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
-        `response_type=id_token&` +
+        `response_type=token&` +
         `scope=${encodeURIComponent(config.scopes.join(' '))}&` +
-        `nonce=${Math.random().toString(36).substring(2, 15)}`;
+        `code_challenge=${codeChallenge}&` +
+        `code_challenge_method=S256&` +
+        `state=${Math.random().toString(36).substring(2, 15)}`;
 
-      console.log('📱 Abriendo navegador para Google OAuth...');
+      console.log('📱 Abriendo navegador para Google OAuth...', { authUrl });
       
       // 🚀 Abrir navegador web
       const result = await WebBrowser.openAuthSessionAsync(

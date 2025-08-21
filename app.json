@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
-    "scheme": "denarium",
+    "scheme": "com.denarium.app",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -43,7 +43,8 @@
     "extra": {
       "googleClientIdAndroid": "1065172753437-725fg2ephiqug140qccfejgkdfocq7tl.apps.googleusercontent.com",
       "googleClientIdWeb": "1065172753437-lbvso6nmm20bksgh00uau9pildude834.apps.googleusercontent.com",
-      "googleClientIdIos": "1065172753437-t37ak00d7cfj6jqotjsm8q7aq8agtumq.apps.googleusercontent.com"
+      "googleClientIdIos": "1065172753437-t37ak00d7cfj6jqotjsm8q7aq8agtumq.apps.googleusercontent.com",
+      "apiUrl": "https://api.denarium.com"
     },
     "plugins": [
       "expo-web-browser",

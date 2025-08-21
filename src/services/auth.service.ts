@@ -11,7 +11,7 @@ import { User } from '@react-native-google-signin/google-signin';
 
 
 
-export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.19:3000';
+export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://10.0.2.2:3000';  // Using 10.0.2.2 for Android emulator localhost
 const API_URL = `${API_BASE_URL}/auth`;
 
 const axiosConfig = {
@@ -43,13 +43,26 @@ export const validateToken = async (): Promise<boolean> => {
         const token = await AsyncStorage.getItem('token');
         if (!token) return false;
 
-        const response = await axios.get(`${API_URL}/validate-token`, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        try {
+            const response = await axios.post(`${API_URL}/verify`, { token }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.status === 200;
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 404) {
+                // If the endpoint doesn't exist, try the alternative endpoint
+                const altResponse = await axios.get(`${API_URL}/validate`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                return altResponse.status === 200;
             }
-        });
-        
-        return response.status === 200;
+            throw error;
+        }
     } catch (error) {
         console.error('Error validating token:', error);
         return false;
@@ -324,17 +337,64 @@ export const registerCorporateEmployee = async (formData: {
 
 export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
     try {
-        const platform = Platform.OS === 'ios' ? 'ios' :
-            Platform.OS === 'android' ? 'android' : 'web';
+        console.log('🔐 Iniciando login con Google en el servidor...');
 
-        const response = await axios.post<AuthResponse>(
-            `${API_URL}/google/${platform}`,
-            { token },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
+        // Intentar el endpoint preferido primero
+        try {
+            const response = await axios.post<AuthResponse>(
+                `${API_URL}/login/google`,
+                { token },
+                {
+                    ...axiosConfig,
+                    timeout: 30000 // Increased timeout for slow networks
+                }
+            );
+
+            if (!response.data.access_token) {
+                throw new Error('No se recibió el token de acceso del servidor');
+            }
+
+            await storeToken(response.data.access_token);
+            return response.data;
+        } catch (err) {
+            // Si el primer endpoint falla, intentar con el endpoint alternativo
+            if (axios.isAxiosError(err) && (err.response?.status === 404 || err.code === 'ECONNREFUSED')) {
+                console.log('🔄 Intentando endpoint alternativo...');
+                const altResponse = await axios.post<AuthResponse>(
+                    `${API_URL}/google/login`,
+                    { token },
+                    {
+                        ...axiosConfig,
+                        timeout: 30000
+                    }
+                );
+
+                if (!altResponse.data.access_token) {
+                    throw new Error('No se recibió el token de acceso del servidor');
+                }
+
+                await storeToken(altResponse.data.access_token);
+                return altResponse.data;
+            }
+            throw err;
+        }
+    } catch (error: unknown) {
+        console.error('🚫 Error en login con Google:', error);
+        
+        if (axios.isAxiosError(error)) {
+            const message = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error al iniciar sesión con Google';
+                           
+            throw new Error(message);
+        }
+        
+        if (error instanceof Error) {
+            throw error;
+        }
+        
+        throw new Error('Error al iniciar sesión con Google');
+    }
                 timeout: 10000
             }
         );
