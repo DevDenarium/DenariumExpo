@@ -8,6 +8,7 @@ import { CommonActions } from '@react-navigation/native';
 import { UserRole } from '../auth/user.types';
 import { SubscriptionsService } from '../../services/subscription.service';
 import { useAuth } from '../auth/AuthContext';
+import { API_BASE_URL } from '../../services/auth.service';
 
 const DashboardScreen = ({ navigation }: { navigation: any }) => {
     const { user, signOut, loading: authLoading, isSigningOut } = useAuth();
@@ -61,7 +62,7 @@ const DashboardScreen = ({ navigation }: { navigation: any }) => {
                     headers: { Authorization: `Bearer ${token}` }
                 };
 
-                const profileResponse = await axios.get('http://192.168.20.13:3000/auth/me', config);
+                const profileResponse = await axios.get(`${API_BASE_URL}/auth/me`, config);
                 const updatedUser = profileResponse.data;
 
                 if (updatedUser.profilePicture) {

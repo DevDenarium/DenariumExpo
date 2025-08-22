@@ -11,8 +11,14 @@ import { User } from '@react-native-google-signin/google-signin';
 
 
 
-export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://10.0.2.2:3000';  // Using 10.0.2.2 for Android emulator localhost
+export const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.20.19:3000';
 const API_URL = `${API_BASE_URL}/auth`;
+
+console.log('🔧 API Configuration:', {
+    baseUrl: API_BASE_URL,
+    authUrl: API_URL,
+    configFromExpo: Constants.expoConfig?.extra?.apiUrl
+});
 
 const axiosConfig = {
     headers: {
@@ -338,11 +344,16 @@ export const registerCorporateEmployee = async (formData: {
 export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
     try {
         console.log('🔐 Iniciando login con Google en el servidor...');
+        console.log('🌐 API URL:', API_URL);
+        console.log('🌐 API Base URL:', API_BASE_URL);
+        console.log('🎫 Token length:', token?.length);
+        console.log('🎫 Token preview:', token?.substring(0, 50) + '...');
 
         // Intentar el endpoint preferido primero
         try {
+            console.log('📡 Intentando endpoint:', `${API_URL}/google/login`);
             const response = await axios.post<AuthResponse>(
-                `${API_URL}/login/google`,
+                `${API_URL}/google/login`,
                 { token },
                 {
                     ...axiosConfig,
@@ -350,6 +361,8 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
                 }
             );
 
+            console.log('✅ Respuesta exitosa del servidor:', response.status);
+            
             if (!response.data.access_token) {
                 throw new Error('No se recibió el token de acceso del servidor');
             }
@@ -357,24 +370,33 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
             await storeToken(response.data.access_token);
             return response.data;
         } catch (err) {
+            console.error('❌ Error en endpoint principal:', err);
+            
             // Si el primer endpoint falla, intentar con el endpoint alternativo
-            if (axios.isAxiosError(err) && (err.response?.status === 404 || err.code === 'ECONNREFUSED')) {
+            if (axios.isAxiosError(err)) {
                 console.log('🔄 Intentando endpoint alternativo...');
-                const altResponse = await axios.post<AuthResponse>(
-                    `${API_URL}/google/login`,
-                    { token },
-                    {
-                        ...axiosConfig,
-                        timeout: 30000
+                console.log('📡 Intentando endpoint:', `${API_URL}/login/google`);
+                
+                try {
+                    const altResponse = await axios.post<AuthResponse>(
+                        `${API_URL}/login/google`,
+                        { token },
+                        {
+                            ...axiosConfig,
+                            timeout: 30000
+                        }
+                    );
+
+                    if (!altResponse.data.access_token) {
+                        throw new Error('No se recibió el token de acceso del servidor');
                     }
-                );
 
-                if (!altResponse.data.access_token) {
-                    throw new Error('No se recibió el token de acceso del servidor');
+                    await storeToken(altResponse.data.access_token);
+                    return altResponse.data;
+                } catch (altErr) {
+                    console.error('❌ Error en endpoint alternativo también:', altErr);
+                    throw err; // Throw original error
                 }
-
-                await storeToken(altResponse.data.access_token);
-                return altResponse.data;
             }
             throw err;
         }
@@ -394,35 +416,6 @@ export const loginWithGoogle = async (token: string): Promise<AuthResponse> => {
         }
         
         throw new Error('Error al iniciar sesión con Google');
-    }
-                timeout: 10000
-            }
-        );
-
-        if (!response.data.access_token) {
-            throw new Error('No access token received');
-        }
-
-        await storeToken(response.data.access_token);
-        return response.data;
-    } catch (error) {
-        console.error('Full Google login error:', error);
-
-        let errorMessage = 'Google login failed';
-        if (axios.isAxiosError(error)) {
-            errorMessage = error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message;
-            console.error('Axios error details:', {
-                status: error.response?.status,
-                data: error.response?.data,
-                config: error.config
-            });
-        } else if (error instanceof Error) {
-            errorMessage = error.message;
-        }
-
-        throw new Error(errorMessage);
     }
 };
 
